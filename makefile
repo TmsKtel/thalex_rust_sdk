@@ -3,8 +3,6 @@ lint:
 fmt:
 	cargo fmt --all 
 	cargo clippy --all-features --all-targets --examples --tests --fix --allow-dirty -- -D warnings
-	# format examples
-	rustfmt examples/*.rs
 build:
 	cargo build --all-features
 test:
@@ -17,7 +15,7 @@ codegen:
 # 	bash build_scripts/pre_processing.sh
 
 	openapi-generator-cli generate \
-	  -i openapi.yaml \
+	  -i ws_spec.yaml \
 	  -g rust \
 	  -o ./generated \
 	--additional-properties=supportAsync=false,useSingleRequestParameter=true
@@ -25,7 +23,7 @@ codegen:
 
 	cp ./generated/src/models/* ./src/models/
 	cp ./generated/docs/* ./docs/generated/
-	cp -r ./generated/src/apis ./src/
+# 	cp -r ./generated/src/apis ./src/
 
 	# rebuild mod.rs
 	@echo "#![allow(clippy::all)]" > ./src/models/mod.rs
@@ -35,8 +33,8 @@ codegen:
 	@echo "#![allow(clippy::upper_case_acronyms)]" >> ./src/models/mod.rs
 	# rebuild api mod.rs
 
-	@echo "#![allow(clippy::all)]" > ./src/apis/mod.rs
-	cat ./generated/src/apis/mod.rs >> ./src/apis/mod.rs
+# 	@echo "#![allow(clippy::all)]" > ./src/apis/mod.rs
+#	cat ./generated/src/apis/mod.rs >> ./src/apis/mod.rs
 
 	# cleanup
 	rm -rf ./generated

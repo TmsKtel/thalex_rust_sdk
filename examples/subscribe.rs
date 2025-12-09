@@ -1,7 +1,24 @@
-// Simple example of subscribing to a WebSocket stream using the Thalex Rust SDK
+use thalex_rust_sdk::ws_client::WsClient;
 
-fn main() {
-    // This is a placeholder for the actual subscription code.
-    // You would typically create a WebSocket client and subscribe to the desired stream.
-    println!("Subscribing to Thalex WebSocket stream...");
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = WsClient::new();
+
+    client.connect().await?;
+
+    client
+        .subscribe("ticker.BTC-PERPETUAL.100ms", |msg| {
+            println!("BTC: {msg}");
+        })
+        .await?;
+
+    client
+        .subscribe("ticker.ETH-PERPETUAL.100ms", |msg| {
+            println!("ETH: {msg}");
+        })
+        .await?;
+
+    client.run_forever().await?;
+
+    Ok(())
 }
