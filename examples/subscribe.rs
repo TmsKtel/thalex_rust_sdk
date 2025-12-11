@@ -1,24 +1,28 @@
+use log::Level::Info;
+use serde_json::json;
+use simple_logger::init_with_level;
 use thalex_rust_sdk::ws_client::WsClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = WsClient::new();
+    init_with_level(Info).unwrap();
 
-    client.connect().await?;
+    let client = WsClient::connect_default().await.unwrap();
 
-    client
+    let response = client
+        .call_rpc("public/instruments", json!({}))
+        .await
+        .unwrap();
+    println!("RPC response: {response}");
+
+    let _ = client
         .subscribe("ticker.BTC-PERPETUAL.100ms", |msg| {
-            println!("BTC: {msg}");
+            println!("BTC tick: {msg}");
         })
-        .await?;
+        .await;
 
-    client
-        .subscribe("ticker.ETH-PERPETUAL.100ms", |msg| {
-            println!("ETH: {msg}");
-        })
-        .await?;
+    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
 
-    client.run_forever().await?;
-
+    client.shutdown().await.unwrap();
     Ok(())
 }
