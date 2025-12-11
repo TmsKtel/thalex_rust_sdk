@@ -1,38 +1,28 @@
-use std::sync::Arc;
-
 use log::Level::Info;
+use serde_json::json;
 use simple_logger::init_with_level;
 use thalex_rust_sdk::ws_client::WsClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_with_level(Info).unwrap();
-    let client = Arc::new(WsClient::new());
-    client.connect().await?;
 
-    // Spawn background task
-    let client_clone = Arc::clone(&client);
-    let handle = tokio::spawn(async move {
-        if let Err(e) = client_clone.run_forever().await {
-            eprintln!("WebSocket error: {e}");
-        }
-    });
+    let client = WsClient::connect_default().await.unwrap();
 
-    // Subscribe to ticker
-    // Make RPC call to get all instruments.
     let response = client
-        .call_rpc("public/instruments", serde_json::json!({}))
-        .await?;
-    println!("Response: {response}");
+        .call_rpc("public/instruments", json!({}))
+        .await
+        .unwrap();
+    println!("RPC response: {response}");
 
-    client
+    let _ = client
         .subscribe("ticker.BTC-PERPETUAL.100ms", |msg| {
-            println!("BTC: {msg}");
+            println!("BTC tick: {msg}");
         })
-        .await?;
+        .await;
 
-    client.disconnect().await?;
-    handle.abort();
+    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
 
+    client.shutdown().await.unwrap();
     Ok(())
 }
