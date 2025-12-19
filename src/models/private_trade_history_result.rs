@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateTradeHistoryResult {
     #[serde(rename = "trades", skip_serializing_if = "Option::is_none")]
-    pub trades: Option<Vec<models::OrderFill>>,
+    pub trades: Option<Vec<models::Trade>>,
     #[serde(rename = "bookmark", skip_serializing_if = "Option::is_none")]
     pub bookmark: Option<String>,
 }

@@ -14,7 +14,8 @@ use tokio_tungstenite::{
     MaybeTlsStream, WebSocketStream, connect_async, tungstenite::protocol::Message,
 };
 
-use crate::models::{ErrorResponse, Instrument, PublicInstruments, Ticker};
+use crate::auth_utils::make_auth_token;
+use crate::models::{ErrorResponse, Instrument,PrivateTradeHistoryResult, PublicInstruments, Ticker};
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type ResponseSender = oneshot::Sender<String>;
@@ -88,11 +89,32 @@ impl WsClient {
         Ok(client)
     }
 
+    pub async fn login(&self, 
+        key_id: &str,
+        account_id: &str,
+        private_key_path: &str) -> Result<(), Error> {
+
+        // we read the private key from the given file path
+        let private_key_pem = tokio::fs::read_to_string(private_key_path).await?;
+        let token = make_auth_token(key_id, private_key_pem)?;
+
+        let msg = serde_json::json!({
+            "method": "public/login",
+            "params": {
+                "token": token,
+                "account": account_id
+            }
+        });
+
+        self.send_json(msg)?;
+
+        info!("Sent login message");
+        Ok(())
+    }
+
     /// JSON-RPC style call: sends a method/params, waits for matching `id`.
     pub async fn get_instruments(
         &self,
-        method: &str,
-        params: Value,
     ) -> Result<Vec<Instrument>, Error> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
@@ -105,8 +127,8 @@ impl WsClient {
         let request = serde_json::json!({
             "jsonrpc": "2.0",
             "id": id,
-            "method": method,
-            "params": params
+            "method": "public/instruments",
+            "params": {}
         });
 
         let text = request.to_string();
@@ -121,7 +143,6 @@ impl WsClient {
         }
 
         let response = rx.await?;
-        info!("Received RPC response for id={id}: {response}");
 
         let parsed: RpcMessage = serde_json::from_str(&response)?;
 
@@ -137,6 +158,49 @@ impl WsClient {
         };
 
         Ok(instruments)
+    }
+
+    pub async fn get_trade_history(
+        &self,
+        bookmark: Option<String>,
+    ) -> Result<PrivateTradeHistoryResult, Error> {
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+
+        let (tx, rx) = oneshot::channel::<String>();
+        {
+            let mut pending = self.pending_requests.lock().await;
+            pending.insert(id, tx);
+        }
+
+        let mut request = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "private/trade_history",
+            "params": {
+            }
+        });
+        if let Some(bm) = bookmark {
+            request["params"]["bookmark"] = serde_json::Value::String(bm);
+        }
+
+        let text = request.to_string();
+
+        if let Err(e) = self
+            .write_tx
+            .send(InternalCommand::Send(Message::Text(text.into())))
+        {
+            let mut pending = self.pending_requests.lock().await;
+            pending.remove(&id);
+            return Err(Box::new(e));
+        }
+
+        let response = rx.await?;
+
+        let parsed_response: Value = serde_json::from_str(&response)?;
+
+        let parsed: PrivateTradeHistoryResult = serde_json::from_value(parsed_response["result"].clone())?;
+
+        Ok(parsed)
     }
 
     /// The callback runs in its own task and receives each message for this channel.
@@ -205,11 +269,7 @@ impl WsClient {
 
     /// Request clean shutdown of the websocket supervisor.
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
-        error!(
-            "WsClient::shutdown() reason {} called\n{}",
-            reason,
-            std::backtrace::Backtrace::capture()
-        );
+        info!("Shutdown requested: {}", reason);
         let _ = self.shutdown_tx.send(true);
         let _ = self.write_tx.send(InternalCommand::Close);
         Ok(())
@@ -351,7 +411,6 @@ async fn run_single_connection(
                         }
                     }
                     Some(Ok(Message::Ping(data))) => {
-                        info!("Received Ping on {url}, sending Pong");
                         ws.send(Message::Pong(data)).await?;
                     }
                     Some(Ok(Message::Pong(_))) => {

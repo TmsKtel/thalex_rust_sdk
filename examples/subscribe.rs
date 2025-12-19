@@ -1,5 +1,6 @@
+use std::env::var;
+
 use log::{Level::Info, info};
-use serde_json::json;
 use simple_logger::init_with_level;
 use thalex_rust_sdk::ws_client::WsClient;
 
@@ -10,10 +11,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = WsClient::connect_default().await.unwrap();
 
     let instruments = client
-        .get_instruments("public/instruments", json!({}))
+        .get_instruments()
         .await
         .unwrap();
-    info!("Instruments: {instruments:#?}");
+    info!("Total Instruments: {}", instruments.len());
 
     let _ = client
         .subscribe("ticker.BTC-PERPETUAL.raw", |msg| {

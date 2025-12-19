@@ -112,7 +112,7 @@ impl Trade {
     }
 }
 /// Type of the trade.  Note: as of API v2.31.0 we have stopped representing futures-style settlements as trades of `daily_mark` type. You might still get such trades in the history, but no new trades of `daily_mark` type will be created. To get information about daily marks, use `private/daily_mark_history` API endpoint.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, )]
 pub enum TradeType {
     #[serde(rename = "normal")]
     Normal,
