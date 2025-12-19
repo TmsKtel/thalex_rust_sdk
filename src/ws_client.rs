@@ -261,11 +261,14 @@ impl WsClient {
         Ok(())
     }
     pub fn subscriptions(&self) -> Subscriptions {
-        Subscriptions {
-            client: self,
-        }
+        Subscriptions { client: self }
     }
-    pub async fn subscribe_ticker<F>(&self, instrument: &str, delay: Delay, mut callback: F) -> Result<(), Error>
+    pub async fn subscribe_ticker<F>(
+        &self,
+        instrument: &str,
+        delay: Delay,
+        mut callback: F,
+    ) -> Result<(), Error>
     where
         F: FnMut(Ticker) + Send + 'static,
     {
