@@ -3,7 +3,7 @@ use log::{info, warn};
 use tokio::sync::mpsc;
 
 use crate::{models::{
-    Delay, Ticker, TickerResponse
+    TickerResponse, Delay, Ticker
 }, ws_client::WsClient};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -12,6 +12,7 @@ pub struct Subscriptions<'a> {
     pub client: &'a WsClient,
 }
 impl <'a> Subscriptions<'a> {
+
     pub async fn ticker<F>(&self, instrument: &str, delay: Delay, mut callback: F) -> Result<(), Error>
     where
         F: FnMut(Ticker) + Send + 'static,
@@ -53,5 +54,6 @@ impl <'a> Subscriptions<'a> {
         info!("Subscribed to channel: {channel}");
         Ok(())
     }
+
     
 }

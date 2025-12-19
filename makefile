@@ -39,5 +39,6 @@ codegen:
 	rm -rf ./generated
 
 	python build_scripts/post-process.py
+	python build_scripts/build-ws.py
 
 all: codegen fmt lint build test
