@@ -22,13 +22,15 @@ jobs:
           sudo apt-get update && \
           sudo apt-get install yq jq -y
 
-      - name: Install python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
-
-      - name: Install Openai python package
-        run: pip install openapi-generator-cli[jdk4py]==7.13.0
+          node-version: 20
+      
+      - name: Install openapi-generator-cli
+        run: npm i -g @openapitools/openapi-generator-cli
+      
+      - name: Pin generator version
+        run: openapi-generator-cli version-manager set 7.9.0
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
