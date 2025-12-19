@@ -10,6 +10,7 @@ What it does (generalised):
 - Rewrites a common problematic pattern for Rust generators:
     object property X is oneOf of arrays (or other complex schemas) and the object has a discriminator-like string field D.
   It lifts the union to the object level using a discriminator on D, producing stable, valid enums.
+- PRESERVES existing component $refs to avoid breaking existing schema relationships.
 
 Usage:
   ./pre-process.py            # reads openapi.json, writes openapi_updated.json
@@ -174,6 +175,48 @@ def generate_schema_name(operation_id: str, suffix: str) -> str:
     return f"{name}{suffix}" if name else suffix
 
 
+def is_component_ref(schema: Any) -> bool:
+    """Check if a schema is a pure component reference."""
+    if not isinstance(schema, dict):
+        return False
+    if "$ref" not in schema:
+        return False
+    ref = schema["$ref"]
+    if not isinstance(ref, str):
+        return False
+    if not ref.startswith("#/components/schemas/"):
+        return False
+    # Pure ref: only has $ref, no other properties
+    return len(schema) == 1
+
+
+def preserve_component_refs(schema: Any) -> Any:
+    """
+    Deep copy a schema while preserving component $refs.
+    This prevents existing component references from being expanded/lost.
+    """
+    if not isinstance(schema, dict):
+        return schema
+    
+    # If this is a component ref, preserve it as-is
+    if is_component_ref(schema):
+        return copy.copy(schema)
+    
+    # Otherwise, recursively process
+    out: Dict[str, Any] = {}
+    for k, v in schema.items():
+        if isinstance(v, dict):
+            out[k] = preserve_component_refs(v)
+        elif isinstance(v, list):
+            out[k] = [
+                preserve_component_refs(it) if isinstance(it, dict) else it
+                for it in v
+            ]
+        else:
+            out[k] = v
+    return out
+
+
 class SchemaInterner:
     """Deduplicate schemas by structural fingerprint, resolving local component $refs.
 
@@ -184,6 +227,7 @@ class SchemaInterner:
     - For tag == "error", title is dropped from fingerprint to enable deduplication, and if an equivalent schema 
       already exists in components, we reuse it (preferring names like ErrorResponse).
     - For tag == "success", title is kept in fingerprint to prevent false deduplication of semantically different schemas.
+    - PRESERVES existing component references to avoid breaking schema relationships.
     """
 
     _DROP_KEYS = {
@@ -230,10 +274,9 @@ class SchemaInterner:
 
     def intern(self, schema: Dict[str, Any], preferred_name: str, tag: Optional[str] = None) -> str:
         # If the schema is already a direct component ref, preserve that identity.
-        if isinstance(schema, dict) and "$ref" in schema and len(schema) == 1:
+        if is_component_ref(schema):
             ref = schema["$ref"]
-            if isinstance(ref, str) and ref.startswith("#/components/schemas/"):
-                return ref.split("/")[-1]
+            return ref.split("/")[-1]
 
         fp = self.fingerprint(schema, tag=tag)
         tag_key = (tag or "")
@@ -422,6 +465,10 @@ def _transform_tuple_arrays(schema: Any) -> Any:
     if not isinstance(schema, dict):
         return schema
 
+    # Preserve component refs
+    if is_component_ref(schema):
+        return copy.copy(schema)
+
     if _is_tuple_array(schema):
         return _tuple_array_to_object(schema)
 
@@ -460,11 +507,11 @@ def _set_in_tree(root: Any, path: Tuple[Any, ...], value: Any) -> Any:
 def _should_hoist(node: Any) -> bool:
     """
     Decide whether an inline schema node is worth hoisting.
-    We hoist only dict schemas that are not trivial.
+    We hoist only dict schemas that are not trivial and not already component refs.
     """
     if not isinstance(node, dict):
         return False
-    if "$ref" in node:
+    if is_component_ref(node):
         return False
     # Don't hoist tiny scalar schemas.
     t = node.get("type")
@@ -496,9 +543,14 @@ def hoist_inline_schemas(
     This is conservative: it targets common hotspots:
       - items schemas under arrays
       - entries inside oneOf/anyOf/allOf lists
+    PRESERVES existing component references.
     """
     if not isinstance(schema, (dict, list)):
         return schema
+
+    # Preserve component refs
+    if is_component_ref(schema):
+        return copy.copy(schema)
 
     out = copy.deepcopy(schema)
 
@@ -721,6 +773,7 @@ def extract_result_and_error_schemas(openapi_spec: Dict[str, Any]) -> Tuple[Dict
     """
     Extract result and error schemas from all endpoints.
     Returns: (result_schemas, error_schemas, endpoint_mapping)
+    PRESERVES existing component references.
     """
     operations = extract_response_schemas(openapi_spec)
     existing_schemas = (openapi_spec.get("components", {}) or {}).get("schemas", {}) or {}
@@ -747,15 +800,17 @@ def extract_result_and_error_schemas(openapi_spec: Dict[str, Any]) -> Tuple[Dict
 
         json_content = (success_response.get("application/json") or {})
         schema = (json_content.get("schema") or {})
-        expanded = expand_schema(schema, openapi_spec)
-
+        
+        # *** KEY FIX: Don't expand the schema - work with raw structure to preserve refs ***
+        # This keeps existing component $refs intact (e.g., Trade, OrderFill schemas)
+        
         # Extract success and error from a conventional wrapper:
         # response.schema.oneOf: [{title:Success, properties:{result:...}}, {title:Error, ...}]
         success_schema = None
         error_schema = None
 
-        if isinstance(expanded, dict) and isinstance(expanded.get("oneOf"), list):
-            for option in expanded["oneOf"]:
+        if isinstance(schema, dict) and isinstance(schema.get("oneOf"), list):
+            for option in schema["oneOf"]:
                 if not isinstance(option, dict):
                     continue
                 if option.get("title") == "Success":
@@ -764,9 +819,21 @@ def extract_result_and_error_schemas(openapi_spec: Dict[str, Any]) -> Tuple[Dict
                         success_schema = props["result"]
                 elif option.get("title") == "Error":
                     error_schema = option
+        
+        # Also handle direct ref case (no oneOf wrapper)
+        elif isinstance(schema, dict) and "$ref" in schema:
+            # If the response is directly a ref, check if it's an error response
+            ref_name = schema["$ref"].split("/")[-1] if isinstance(schema["$ref"], str) else ""
+            if "error" in ref_name.lower():
+                error_schema = schema
+            else:
+                success_schema = schema
 
         if not success_schema or not error_schema:
             continue
+
+        # Preserve component refs throughout transformations
+        success_schema = preserve_component_refs(success_schema)
 
         # Generalised transforms for codegen:
         # - tuple arrays -> objects

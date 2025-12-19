@@ -105,7 +105,7 @@ No authorization required
 
 ## rest_private_slash_cancel_all
 
-> models::RestPrivateCancelAll200Response rest_private_slash_cancel_all(body)
+> models::RestPrivateInsert200Response rest_private_slash_cancel_all(body)
 Bulk cancel all orders
 
 Exchange: `https://thalex.com/api/v2/private/cancel_all`  Testnet: `https://testnet.thalex.com/api/v2/private/cancel_all`  Cancels all orders for the account. This may *not* match new orders in flight (see `private/cancel_session`). 
@@ -119,7 +119,7 @@ Name | Type | Description  | Required | Notes
 
 ### Return type
 
-[**models::RestPrivateCancelAll200Response**](rest_private_cancel_all_200_response.md)
+[**models::RestPrivateInsert200Response**](rest_private_insert_200_response.md)
 
 ### Authorization
 

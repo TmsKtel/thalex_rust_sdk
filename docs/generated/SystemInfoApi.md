@@ -10,7 +10,7 @@ Method | HTTP request | Description
 
 ## rest_public_slash_system_info
 
-> models::RestPublicSystemInfo200Response rest_public_slash_system_info()
+> models::RestPrivateTradeHistory200Response rest_public_slash_system_info()
 System info
 
 Exchange: `https://thalex.com/api/v2/public/system_info`  Testnet: `https://testnet.thalex.com/api/v2/public/system_info`  Get system info
@@ -21,7 +21,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPublicSystemInfo200Response**](rest_public_system_info_200_response.md)
+[**models::RestPrivateTradeHistory200Response**](rest_private_trade_history_200_response.md)
 
 ### Authorization
 

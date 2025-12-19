@@ -20,7 +20,7 @@ Method | HTTP request | Description
 
 ## rest_private_slash_account_breakdown
 
-> models::RestPrivateRfqHistory200Response rest_private_slash_account_breakdown()
+> models::RestPrivateAccountBreakdown200Response rest_private_slash_account_breakdown()
 Account breakdown
 
 Exchange: `https://thalex.com/api/v2/private/account_breakdown`  Testnet: `https://testnet.thalex.com/api/v2/private/account_breakdown`  Get account breakdown
@@ -31,7 +31,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPrivateRfqHistory200Response**](rest_private_rfq_history_200_response.md)
+[**models::RestPrivateAccountBreakdown200Response**](rest_private_account_breakdown_200_response.md)
 
 ### Authorization
 

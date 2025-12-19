@@ -131,7 +131,7 @@ No authorization required
 
 ## rest_private_slash_mm_rfqs
 
-> models::ErrorResponse rest_private_slash_mm_rfqs()
+> models::RestPrivateOpenRfqs200Response rest_private_slash_mm_rfqs()
 Open RFQs
 
 Exchange: `https://thalex.com/api/v2/private/mm_rfqs`  Testnet: `https://testnet.thalex.com/api/v2/private/mm_rfqs`  Retrieves a list of open RFQs that this account has access to.
@@ -142,7 +142,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::ErrorResponse**](ErrorResponse.md)
+[**models::RestPrivateOpenRfqs200Response**](rest_private_open_rfqs_200_response.md)
 
 ### Authorization
 

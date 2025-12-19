@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -8,7 +8,10 @@ struct Claims {
     iat: i64,
 }
 
-pub fn make_auth_token(kid: &str, private_key_pem: String) -> Result<String, jsonwebtoken::errors::Error> {
+pub fn make_auth_token(
+    kid: &str,
+    private_key_pem: String,
+) -> Result<String, jsonwebtoken::errors::Error> {
     // jsonwebtoken expects iat as an integer timestamp (seconds)
     let claims = Claims {
         iat: SystemTime::now()

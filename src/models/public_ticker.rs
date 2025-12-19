@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PublicTicker {
-    PublicTickerResult(Box<models::PublicTickerResult>),
+    Ticker(Box<models::Ticker>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PublicTicker {
     fn default() -> Self {
-        Self::PublicTickerResult(Default::default())
+        Self::Ticker(Default::default())
     }
 }

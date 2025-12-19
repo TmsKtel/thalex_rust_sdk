@@ -13,45 +13,35 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum PrivateMmRfqInsertQuote {
-    RfqOrder(Box<models::RfqOrder>),
+pub enum PrivateCreateRfq {
+    Rfq(Box<models::Rfq>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
-impl Default for PrivateMmRfqInsertQuote {
+impl Default for PrivateCreateRfq {
     fn default() -> Self {
-        Self::RfqOrder(Default::default())
+        Self::Rfq(Default::default())
     }
 }
-///
+/// Detailed reason for creation. Visible only to the requester.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
+pub enum InsertReason {
+    #[serde(rename = "client_request")]
+    ClientRequest,
+    #[serde(rename = "liquidation")]
+    Liquidation,
 }
 
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
+impl Default for InsertReason {
+    fn default() -> InsertReason {
+        Self::ClientRequest
     }
 }
-/// Detailed reason of order deletion.
+/// Reason why this RFQ was removed. Visible only to the requester.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum DeleteReason {
     #[serde(rename = "client_cancel")]
     ClientCancel,
-    #[serde(rename = "session_end")]
-    SessionEnd,
-    #[serde(rename = "instrument_deactivated")]
-    InstrumentDeactivated,
-    #[serde(rename = "mm_protection")]
-    MmProtection,
-    #[serde(rename = "failover")]
-    Failover,
-    #[serde(rename = "margin_breach")]
-    MarginBreach,
     #[serde(rename = "filled")]
     Filled,
 }
@@ -61,23 +51,21 @@ impl Default for DeleteReason {
         Self::ClientCancel
     }
 }
-/// This field is set only on subscriptions.
+/// This field is set only on the `account.rfqs` subscription.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Event {
-    #[serde(rename = "Inserted")]
-    Inserted,
-    #[serde(rename = "Amended")]
-    Amended,
+    #[serde(rename = "Created")]
+    Created,
     #[serde(rename = "Cancelled")]
     Cancelled,
-    #[serde(rename = "Filled")]
-    Filled,
+    #[serde(rename = "Traded")]
+    Traded,
     #[serde(rename = "Existing")]
     Existing,
 }
 
 impl Default for Event {
     fn default() -> Event {
-        Self::Inserted
+        Self::Created
     }
 }

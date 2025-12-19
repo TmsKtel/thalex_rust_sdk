@@ -43,7 +43,7 @@ No authorization required
 
 ## rest_private_slash_create_rfq
 
-> models::RestPrivateRequiredMarginBreakdown200Response rest_private_slash_create_rfq(rest_private_create_rfq_request)
+> models::RestPrivateCreateRfq200Response rest_private_slash_create_rfq(rest_private_create_rfq_request)
 Create a request for quote
 
 Exchange: `https://thalex.com/api/v2/private/create_rfq`  Testnet: `https://testnet.thalex.com/api/v2/private/create_rfq`  Creates a new RFQ. You do not have to indicate upfront whether you want to buy or sell this package. Indicate the full size of the package. 
@@ -57,7 +57,7 @@ Name | Type | Description  | Required | Notes
 
 ### Return type
 
-[**models::RestPrivateRequiredMarginBreakdown200Response**](rest_private_required_margin_breakdown_200_response.md)
+[**models::RestPrivateCreateRfq200Response**](rest_private_create_rfq_200_response.md)
 
 ### Authorization
 

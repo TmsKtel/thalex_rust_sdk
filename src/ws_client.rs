@@ -15,7 +15,9 @@ use tokio_tungstenite::{
 };
 
 use crate::auth_utils::make_auth_token;
-use crate::models::{ErrorResponse, Instrument,PrivateTradeHistoryResult, PublicInstruments, Ticker};
+use crate::models::{
+    ErrorResponse, Instrument, PrivateTradeHistoryResult, PublicInstruments, Ticker,
+};
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type ResponseSender = oneshot::Sender<String>;
@@ -89,11 +91,12 @@ impl WsClient {
         Ok(client)
     }
 
-    pub async fn login(&self, 
+    pub async fn login(
+        &self,
         key_id: &str,
         account_id: &str,
-        private_key_path: &str) -> Result<(), Error> {
-
+        private_key_path: &str,
+    ) -> Result<(), Error> {
         // we read the private key from the given file path
         let private_key_pem = tokio::fs::read_to_string(private_key_path).await?;
         let token = make_auth_token(key_id, private_key_pem)?;
@@ -113,9 +116,7 @@ impl WsClient {
     }
 
     /// JSON-RPC style call: sends a method/params, waits for matching `id`.
-    pub async fn get_instruments(
-        &self,
-    ) -> Result<Vec<Instrument>, Error> {
+    pub async fn get_instruments(&self) -> Result<Vec<Instrument>, Error> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<String>();
@@ -198,7 +199,8 @@ impl WsClient {
 
         let parsed_response: Value = serde_json::from_str(&response)?;
 
-        let parsed: PrivateTradeHistoryResult = serde_json::from_value(parsed_response["result"].clone())?;
+        let parsed: PrivateTradeHistoryResult =
+            serde_json::from_value(parsed_response["result"].clone())?;
 
         Ok(parsed)
     }
@@ -269,7 +271,7 @@ impl WsClient {
 
     /// Request clean shutdown of the websocket supervisor.
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
-        info!("Shutdown requested: {}", reason);
+        info!("Shutdown requested: {reason}");
         let _ = self.shutdown_tx.send(true);
         let _ = self.write_tx.send(InternalCommand::Close);
         Ok(())

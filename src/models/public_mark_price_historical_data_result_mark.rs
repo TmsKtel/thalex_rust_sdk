@@ -17,7 +17,9 @@ pub enum PublicMarkPriceHistoricalDataResultMark {
     PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof0(
         Vec<models::TimeMarkFundingPaymentTopBidTopAsk>,
     ),
-    PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof1(Vec<models::TimeMarkTopBidTopAsk>),
+    PrivateAccountBreakdownInlinePropertiesCashItems(
+        Box<models::PrivateAccountBreakdownInlinePropertiesCashItems>,
+    ),
     PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof2(Vec<models::TimeMarkIvTopBidTopAsk>),
 }
 

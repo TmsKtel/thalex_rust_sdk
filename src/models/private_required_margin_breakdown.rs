@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateRequiredMarginBreakdown {
-    PrivateRequiredMarginBreakdownResult(Box<models::PrivateRequiredMarginBreakdownResult>),
+    PortfolioMarginBreakdown(Box<models::PortfolioMarginBreakdown>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PrivateRequiredMarginBreakdown {
     fn default() -> Self {
-        Self::PrivateRequiredMarginBreakdownResult(Default::default())
+        Self::PortfolioMarginBreakdown(Default::default())
     }
 }

@@ -13,13 +13,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum PrivateCancelAll {
-    PrivateCancelAllResult(f64),
+pub enum PrivateAccountBreakdown {
+    PrivateAccountBreakdownResult(Box<models::PrivateAccountBreakdownResult>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
-impl Default for PrivateCancelAll {
+impl Default for PrivateAccountBreakdown {
     fn default() -> Self {
-        Self::PrivateCancelAllResult(Default::default())
+        Self::PrivateAccountBreakdownResult(Default::default())
     }
 }

@@ -14,13 +14,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PublicInstrument {
-    PublicInstrumentResult(Box<models::PublicInstrumentResult>),
+    Instrument(Box<models::Instrument>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PublicInstrument {
     fn default() -> Self {
-        Self::PublicInstrumentResult(Default::default())
+        Self::Instrument(Default::default())
     }
 }
 ///

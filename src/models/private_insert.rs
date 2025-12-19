@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateInsert {
-    PrivateInsertResult(Box<models::PrivateInsertResult>),
+    PrivateInsertResult(Box<models::OrderStatus>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
@@ -105,7 +105,7 @@ impl Default for ChangeReason {
         Self::Existing
     }
 }
-///
+/// Detailed reason of order deletion if the order was deleted, omitted otherwise.  The following reasons are possible:  - `client_cancel`: Order was cancelled by the client, e.g. with a call to `private/cancel`.  - `client_bulk_cancel`: Order was cancelled by the client with a bulk cancel call, e.g. `private/cancel_all`.  - `session_end`: Non-persistent order was automatically cancelled when a WebSocket session ended.  - `instrument_deactivated`: Order was automatically cancelled when the order instrument was deactivated,   for example after expiration.  - `mm_protection`: Order was automatically cancelled when configured market maker protection amount was exhausted.  - `failover`: Non-persistent order was automatically cancelled on matching engine failover.  - `margin_breach`: Order was automatically cancelled in a response to a margin breach on the account as part   of automatic liquidation procedures.  - `filled`: Order was filled in full.  - `immediate_cancel`: The order was submitted as \"immediate-or-cancel\" and was not filled in full immediately.   Note that the order might be partially filled when this delete reason is set.  - `admin_cancel`: The order was cancelled by an exchange admin.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum DeleteReason {
     #[serde(rename = "client_cancel")]
@@ -135,7 +135,7 @@ impl Default for DeleteReason {
         Self::ClientCancel
     }
 }
-///
+/// Detailed reason of order insertion.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum InsertReason {
     #[serde(rename = "client_request")]

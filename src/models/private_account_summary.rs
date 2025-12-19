@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateAccountSummary {
-    PrivateAccountSummaryResult(Box<models::PrivateAccountSummaryResult>),
+    AccountSummary(Box<models::AccountSummary>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PrivateAccountSummary {
     fn default() -> Self {
-        Self::PrivateAccountSummaryResult(Default::default())
+        Self::AccountSummary(Default::default())
     }
 }

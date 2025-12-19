@@ -2,8 +2,7 @@ use std::env::var;
 
 use log::{Level::Info, info};
 use simple_logger::init_with_level;
-use thalex_rust_sdk::{models::{Trade,}, ws_client::WsClient};
-
+use thalex_rust_sdk::{models::Trade, ws_client::WsClient};
 
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
@@ -43,7 +42,6 @@ impl<'a> Serialize for TradeCsv<'a> {
     }
 }
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_with_level(Info).unwrap();
@@ -57,39 +55,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key_id = var("KEY_ID").unwrap();
     let account_id = var("ACCOUNT_ID").unwrap();
 
-    client.login(
-        &key_id,
-        &account_id,
-        key_path
-    ).await.unwrap();
+    client.login(&key_id, &account_id, key_path).await.unwrap();
 
     let mut all_trades = Vec::new();
-    let trade_result = client
-        .get_trade_history(None)
-        .await
-        .unwrap();
+    let trade_result = client.get_trade_history(None).await.unwrap();
 
     all_trades.extend(trade_result.trades.unwrap_or_default());
     let mut total_trades = all_trades.len();
 
-
     // While there is a bookmark, keep fetching more trades
     let mut bookmark = trade_result.bookmark;
     while let Some(bm) = bookmark {
-        let trade_result = client
-            .get_trade_history(Some(bm.clone()))
-            .await
-            .unwrap();
+        let trade_result = client.get_trade_history(Some(bm.clone())).await.unwrap();
         bookmark = trade_result.bookmark;
         let new_trades = trade_result.trades.unwrap_or_default();
         total_trades += new_trades.len();
         all_trades.extend(new_trades);
     }
-    info!("Total trades collected: {}", total_trades);
+    info!("Total trades collected: {total_trades}");
 
     // We write the trades to a csv file.
     let mut processed_trades = Vec::new();
-    let filename = format!("all_trades_{}.csv", account_id);
+    let filename = format!("all_trades_{account_id}.csv");
     let mut wtr = csv::WriterBuilder::new()
         .has_headers(true)
         .from_path(filename.clone())?;
@@ -98,11 +85,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         processed_trades.push(trade.clone());
     }
     wtr.flush()?;
-    info!("All trades written to {}", filename);
+    info!("All trades written to {filename}");
     // we check that we processed all trades
-    assert_eq!(all_trades.len(), processed_trades.len(), "Some trades were not processed!");
-
-
+    assert_eq!(
+        all_trades.len(),
+        processed_trades.len(),
+        "Some trades were not processed!"
+    );
 
     client.shutdown("Finished collecting trades").await.unwrap();
     Ok(())

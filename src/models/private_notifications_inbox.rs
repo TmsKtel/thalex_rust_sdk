@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateNotificationsInbox {
-    PrivateNotificationsInboxResult(Box<models::PrivateNotificationsInboxResult>),
+    Notifications(Box<models::Notifications>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PrivateNotificationsInbox {
     fn default() -> Self {
-        Self::PrivateNotificationsInboxResult(Default::default())
+        Self::Notifications(Default::default())
     }
 }

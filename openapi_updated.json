@@ -2977,18 +2977,26 @@
           }
         }
       },
-      "PrivateAccountSummaryResult": {
+      "PrivateAccountBreakdownResult": {
         "type": "object",
         "required": [
+          "portfolio",
           "cash",
           "unrealised_pnl",
           "cash_collateral",
           "margin",
           "required_margin",
           "remaining_margin",
-          "session_realised_pnl"
+          "session_realised_pnl",
+          "realised_position_pnl",
+          "realised_perpetual_funding",
+          "session_fees",
+          "account_number"
         ],
         "properties": {
+          "account_number": {
+            "type": "string"
+          },
           "unrealised_pnl": {
             "type": "number"
           },
@@ -3007,10 +3015,25 @@
           "session_realised_pnl": {
             "type": "number"
           },
+          "realised_position_pnl": {
+            "type": "number"
+          },
+          "realised_perpetual_funding": {
+            "type": "number"
+          },
+          "session_fees": {
+            "type": "number"
+          },
+          "portfolio": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PrivateAccountBreakdownInlinePropertiesPortfolioItems"
+            }
+          },
           "cash": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PrivateAccountSummaryInlinePropertiesCashItems"
+              "$ref": "#/components/schemas/PrivateAccountBreakdownInlinePropertiesCashItems"
             }
           }
         }
@@ -3021,126 +3044,33 @@
           "$ref": "#/components/schemas/Bot"
         }
       },
-      "PrivateBtcDepositAddressResult": {
-        "type": "string"
-      },
-      "PrivateCancelAllResult": {
-        "type": "number"
-      },
-      "PrivateCancelConditionalOrderResult": {
-        "type": "null"
-      },
       "PrivateConditionalOrdersResult": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ConditionalOrder"
         }
       },
-      "PrivateCreateBotResult": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof0"
-          },
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof1"
-          },
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof2"
-          },
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof3"
-          },
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof4"
-          },
-          {
-            "$ref": "#/components/schemas/PrivateBotsInlineItemsOneof5"
-          }
-        ]
-      },
       "PrivateCreateConditionalOrderResult": {
+        "$ref": "#/components/schemas/ConditionalOrder"
+      },
+      "PrivateCryptoDepositsResult": {
         "type": "object",
         "required": [
-          "order_id",
-          "instrument_name",
-          "direction",
-          "amount",
-          "stop_price",
-          "status",
-          "create_time",
-          "update_time",
-          "reject_reason",
-          "reduce_only",
-          "target"
+          "confirmed",
+          "unconfirmed"
         ],
         "properties": {
-          "order_id": {
-            "type": "string"
+          "confirmed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Deposit"
+            }
           },
-          "instrument_name": {
-            "type": "string"
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "buy",
-              "sell"
-            ]
-          },
-          "amount": {
-            "type": "number"
-          },
-          "target": {
-            "type": "string",
-            "enum": [
-              "last",
-              "mark",
-              "index"
-            ]
-          },
-          "stop_price": {
-            "type": "number"
-          },
-          "limit_price": {
-            "type": "number"
-          },
-          "bracket_price": {
-            "type": "number"
-          },
-          "trailing_stop_callback_rate": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "created",
-              "active",
-              "converted",
-              "rejected",
-              "cancel requested",
-              "cancelled"
-            ]
-          },
-          "create_time": {
-            "type": "number"
-          },
-          "update_time": {
-            "type": "number"
-          },
-          "convert_time": {
-            "type": "number"
-          },
-          "converted_order_id": {
-            "type": "string"
-          },
-          "reject_reason": {
-            "type": "string"
-          },
-          "reduce_only": {
-            "type": "boolean"
+          "unconfirmed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Deposit"
+            }
           }
         }
       },
@@ -3150,7 +3080,7 @@
           "daily_marks": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OrderFill"
+              "$ref": "#/components/schemas/DailyMark"
             }
           },
           "bookmark": {
@@ -3159,223 +3089,12 @@
         }
       },
       "PrivateInsertResult": {
-        "type": "object",
-        "required": [
-          "order_id",
-          "direction",
-          "amount",
-          "filled_amount",
-          "remaining_amount",
-          "status",
-          "fills",
-          "change_reason",
-          "insert_reason",
-          "create_time",
-          "order_type",
-          "time_in_force",
-          "persistent"
-        ],
-        "properties": {
-          "order_id": {
-            "type": "string"
-          },
-          "order_type": {
-            "type": "string",
-            "enum": [
-              "limit",
-              "market"
-            ]
-          },
-          "time_in_force": {
-            "type": "string",
-            "enum": [
-              "good_till_cancelled",
-              "immediate_or_cancel"
-            ]
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "legs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PrivateInsertInlinePropertiesLegsItems"
-            }
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "buy",
-              "sell"
-            ]
-          },
-          "price": {
-            "type": "number"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "filled_amount": {
-            "type": "number"
-          },
-          "remaining_amount": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          },
-          "client_order_id": {
-            "type": "number"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "partially_filled",
-              "cancelled",
-              "cancelled_partially_filled",
-              "filled"
-            ]
-          },
-          "fills": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderFill"
-            }
-          },
-          "change_reason": {
-            "type": "string",
-            "enum": [
-              "existing",
-              "insert",
-              "amend",
-              "cancel",
-              "fill"
-            ]
-          },
-          "delete_reason": {
-            "type": "string",
-            "enum": [
-              "client_cancel",
-              "client_bulk_cancel",
-              "session_end",
-              "instrument_deactivated",
-              "mm_protection",
-              "failover",
-              "margin_breach",
-              "filled",
-              "immediate_cancel",
-              "admin_cancel"
-            ]
-          },
-          "insert_reason": {
-            "type": "string",
-            "enum": [
-              "client_request",
-              "conditional_order",
-              "liquidation"
-            ]
-          },
-          "conditional_order_id": {
-            "type": "string"
-          },
-          "bot_id": {
-            "type": "string"
-          },
-          "create_time": {
-            "type": "number"
-          },
-          "close_time": {
-            "type": "number"
-          },
-          "reduce_only": {
-            "type": "boolean"
-          },
-          "persistent": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PrivateMmRfqInsertQuoteResult": {
-        "type": "object",
-        "required": [
-          "rfq_id",
-          "order_id",
-          "direction",
-          "price",
-          "amount"
-        ],
-        "properties": {
-          "rfq_id": {
-            "type": "string"
-          },
-          "order_id": {
-            "type": "string"
-          },
-          "client_order_id": {
-            "type": "number"
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "buy",
-              "sell"
-            ]
-          },
-          "price": {
-            "type": "number"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          },
-          "trade_price": {
-            "type": "number"
-          },
-          "trade_amount": {
-            "type": "number"
-          },
-          "delete_reason": {
-            "type": "string",
-            "enum": [
-              "client_cancel",
-              "session_end",
-              "instrument_deactivated",
-              "mm_protection",
-              "failover",
-              "margin_breach",
-              "filled"
-            ]
-          },
-          "event": {
-            "type": "string",
-            "enum": [
-              "Inserted",
-              "Amended",
-              "Cancelled",
-              "Filled",
-              "Existing"
-            ]
-          }
-        }
+        "$ref": "#/components/schemas/OrderStatus"
       },
       "PrivateMmRfqQuotesResult": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/RfqOrder"
-        }
-      },
-      "PrivateNotificationsInboxResult": {
-        "type": "object",
-        "properties": {
-          "notifications": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PrivateNotificationsInboxInlinePropertiesNotificationsItems"
-            }
-          }
         }
       },
       "PrivateOpenOrdersResult": {
@@ -3410,132 +3129,6 @@
           "$ref": "#/components/schemas/PortfolioEntry"
         }
       },
-      "PrivateRequiredMarginBreakdownResult": {
-        "type": "object",
-        "properties": {
-          "portfolio": {
-            "type": "object",
-            "properties": {
-              "required_margin": {
-                "type": "number"
-              },
-              "underlyings": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/PrivateRequiredMarginBreakdownInlinePropertiesPortfolioPropertiesUnderlyingsItems"
-                }
-              }
-            }
-          }
-        }
-      },
-      "PrivateRequiredMarginForOrderResult": {
-        "type": "object",
-        "properties": {
-          "current": {
-            "type": "object",
-            "properties": {
-              "required_margin": {
-                "type": "number"
-              },
-              "underlying": {
-                "type": "object",
-                "properties": {
-                  "underlying": {
-                    "type": "string"
-                  },
-                  "required_margin": {
-                    "type": "number"
-                  },
-                  "loss_margin": {
-                    "type": "number"
-                  },
-                  "roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "d1_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_contingency_margin": {
-                    "type": "number"
-                  }
-                }
-              }
-            }
-          },
-          "with_buy": {
-            "type": "object",
-            "properties": {
-              "required_margin": {
-                "type": "number"
-              },
-              "underlying": {
-                "type": "object",
-                "properties": {
-                  "underlying": {
-                    "type": "string"
-                  },
-                  "required_margin": {
-                    "type": "number"
-                  },
-                  "loss_margin": {
-                    "type": "number"
-                  },
-                  "roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "d1_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_contingency_margin": {
-                    "type": "number"
-                  }
-                }
-              }
-            }
-          },
-          "with_sell": {
-            "type": "object",
-            "properties": {
-              "required_margin": {
-                "type": "number"
-              },
-              "underlying": {
-                "type": "object",
-                "properties": {
-                  "underlying": {
-                    "type": "string"
-                  },
-                  "required_margin": {
-                    "type": "number"
-                  },
-                  "loss_margin": {
-                    "type": "number"
-                  },
-                  "roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "d1_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_roll_contingency_margin": {
-                    "type": "number"
-                  },
-                  "options_contingency_margin": {
-                    "type": "number"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "PrivateRfqHistoryResult": {
         "type": "object",
         "properties": {
@@ -3556,7 +3149,7 @@
           "trades": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OrderFill"
+              "$ref": "#/components/schemas/Trade"
             }
           },
           "bookmark": {
@@ -3653,38 +3246,6 @@
           }
         }
       },
-      "PrivateVerifyWithdrawalResult": {
-        "type": "object",
-        "required": [
-          "available_margin",
-          "required_margin"
-        ],
-        "properties": {
-          "available_margin": {
-            "type": "number"
-          },
-          "required_margin": {
-            "type": "number"
-          },
-          "fee": {
-            "type": "number"
-          },
-          "fee_asset": {
-            "type": "string"
-          },
-          "error": {
-            "type": "object",
-            "properties": {
-              "code": {
-                "type": "number"
-              },
-              "message": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      },
       "PublicBookResult": {
         "type": "object",
         "required": [
@@ -3730,104 +3291,6 @@
           }
         }
       },
-      "PublicIndexResult": {
-        "type": "object",
-        "summary": "Index",
-        "required": [
-          "index_name",
-          "price",
-          "timestamp"
-        ],
-        "properties": {
-          "index_name": {
-            "type": "string"
-          },
-          "price": {
-            "type": "number"
-          },
-          "timestamp": {
-            "type": "number"
-          },
-          "expiration_print_average": {
-            "type": "number"
-          },
-          "expiration_progress": {
-            "type": "number"
-          },
-          "expected_expiration_price": {
-            "type": "number"
-          },
-          "previous_settlement_price": {
-            "type": "number"
-          }
-        }
-      },
-      "PublicInstrumentResult": {
-        "type": "object",
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "product": {
-            "type": "string"
-          },
-          "tick_size": {
-            "type": "number"
-          },
-          "volume_tick_size": {
-            "type": "number"
-          },
-          "min_order_amount": {
-            "type": "number"
-          },
-          "underlying": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "perpetual",
-              "future",
-              "option",
-              "combination"
-            ]
-          },
-          "option_type": {
-            "type": "string",
-            "enum": [
-              "call",
-              "put"
-            ]
-          },
-          "expiry_date": {
-            "type": "string"
-          },
-          "expiration_timestamp": {
-            "type": "integer"
-          },
-          "strike_price": {
-            "type": "number"
-          },
-          "base_currency": {
-            "type": "string"
-          },
-          "legs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicInstrumentsInlineItemsPropertiesLegsItems"
-            }
-          },
-          "create_time": {
-            "type": "number"
-          },
-          "settlement_price": {
-            "type": "number"
-          },
-          "settlement_index_price": {
-            "type": "number"
-          }
-        }
-      },
       "PublicInstrumentsResult": {
         "type": "array",
         "items": {
@@ -3856,7 +3319,7 @@
                 "$ref": "#/components/schemas/PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof0"
               },
               {
-                "$ref": "#/components/schemas/PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof1"
+                "$ref": "#/components/schemas/PrivateAccountBreakdownInlinePropertiesCashItems"
               },
               {
                 "$ref": "#/components/schemas/PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof2"
@@ -3865,487 +3328,6 @@
           },
           "no_data": {
             "type": "boolean"
-          }
-        }
-      },
-      "PublicSystemInfoResult": {
-        "type": "object",
-        "required": [
-          "banners",
-          "environment"
-        ],
-        "properties": {
-          "environment": {
-            "type": "string",
-            "enum": [
-              "testnet",
-              "production"
-            ]
-          },
-          "api_version": {
-            "type": "string"
-          },
-          "banners": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Banner"
-            }
-          }
-        }
-      },
-      "PublicTickerResult": {
-        "type": "object",
-        "summary": "Ticker",
-        "properties": {
-          "best_bid_price": {
-            "type": "number"
-          },
-          "best_bid_amount": {
-            "type": "number"
-          },
-          "best_ask_price": {
-            "type": "number"
-          },
-          "best_ask_amount": {
-            "type": "number"
-          },
-          "last_price": {
-            "type": "number"
-          },
-          "mark_price": {
-            "type": "number"
-          },
-          "mark_timestamp": {
-            "type": "number"
-          },
-          "iv": {
-            "type": "number"
-          },
-          "delta": {
-            "type": "number"
-          },
-          "index": {
-            "type": "number"
-          },
-          "forward": {
-            "type": "number"
-          },
-          "volume_24h": {
-            "type": "number"
-          },
-          "value_24h": {
-            "type": "number"
-          },
-          "low_price_24h": {
-            "type": "number"
-          },
-          "high_price_24h": {
-            "type": "number"
-          },
-          "change_24h": {
-            "type": "number"
-          },
-          "collar_low": {
-            "type": "number"
-          },
-          "collar_high": {
-            "type": "number"
-          },
-          "open_interest": {
-            "type": "number"
-          },
-          "funding_rate": {
-            "type": "number"
-          },
-          "funding_mark": {
-            "type": "number"
-          },
-          "realised_funding_24h": {
-            "type": "number"
-          },
-          "average_funding_rate_24h": {
-            "type": "number"
-          }
-        }
-      },
-      "PrivateInsertInlinePropertiesLegsItems": {
-        "type": "object",
-        "required": [
-          "instrument_name",
-          "quantity",
-          "filled_amount",
-          "remaining_amount"
-        ],
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "filled_amount": {
-            "type": "number"
-          },
-          "remaining_amount": {
-            "type": "number"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof0": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "bot_id",
-          "status",
-          "instrument_name",
-          "entry_price",
-          "target_position",
-          "exit_price",
-          "exit_position",
-          "end_time",
-          "signal"
-        ],
-        "properties": {
-          "bot_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "stopped"
-            ]
-          },
-          "stop_reason": {
-            "type": "string"
-          },
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "signal": {
-            "type": "string",
-            "enum": [
-              "last",
-              "index",
-              "mark"
-            ]
-          },
-          "entry_price": {
-            "type": "number"
-          },
-          "target_position": {
-            "type": "number"
-          },
-          "exit_price": {
-            "type": "number"
-          },
-          "exit_position": {
-            "type": "number"
-          },
-          "max_slippage": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof1": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "instrument_name",
-          "status",
-          "bid_offset",
-          "ask_offset",
-          "signal",
-          "quote_size",
-          "min_position",
-          "max_position",
-          "end_time",
-          "bot_id"
-        ],
-        "properties": {
-          "bot_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "stopped"
-            ]
-          },
-          "stop_reason": {
-            "type": "string"
-          },
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "signal": {
-            "type": "string",
-            "enum": [
-              "index",
-              "mark"
-            ]
-          },
-          "bid_offset": {
-            "type": "number"
-          },
-          "ask_offset": {
-            "type": "number"
-          },
-          "quote_size": {
-            "type": "number"
-          },
-          "min_position": {
-            "type": "number"
-          },
-          "max_position": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof2": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "instrument_name",
-          "bids",
-          "asks",
-          "step_size",
-          "base_position",
-          "upside_exit_price",
-          "downside_exit_price",
-          "end_time",
-          "bot_id",
-          "status"
-        ],
-        "properties": {
-          "bot_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "stopped"
-            ]
-          },
-          "stop_reason": {
-            "type": "string"
-          },
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "bids": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "asks": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "step_size": {
-            "type": "number"
-          },
-          "base_position": {
-            "type": "number"
-          },
-          "upside_exit_price": {
-            "type": "number"
-          },
-          "downside_exit_price": {
-            "type": "number"
-          },
-          "max_slippage": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof3": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "instrument_name",
-          "grid",
-          "step_size",
-          "base_position",
-          "upside_exit_price",
-          "downside_exit_price",
-          "end_time",
-          "bot_id",
-          "status"
-        ],
-        "properties": {
-          "bot_id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "stop_reason": {
-            "type": "string"
-          },
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "grid": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "step_size": {
-            "type": "number"
-          },
-          "base_position": {
-            "type": "number"
-          },
-          "upside_exit_price": {
-            "type": "number"
-          },
-          "downside_exit_price": {
-            "type": "number"
-          },
-          "max_slippage": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof4": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "instrument_name",
-          "period",
-          "threshold",
-          "target_delta"
-        ],
-        "properties": {
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "position": {
-            "type": "string"
-          },
-          "target_delta": {
-            "type": "number"
-          },
-          "threshold": {
-            "type": "number"
-          },
-          "period": {
-            "type": "number"
-          },
-          "max_slippage": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateBotsInlineItemsOneof5": {
-        "type": "object",
-        "required": [
-          "strategy",
-          "instrument_name",
-          "target_instrument",
-          "target_amount",
-          "threshold",
-          "end_time",
-          "period"
-        ],
-        "properties": {
-          "strategy": {
-            "type": "string"
-          },
-          "instrument_name": {
-            "type": "string"
-          },
-          "target_instrument": {
-            "type": "string"
-          },
-          "target_amount": {
-            "type": "number"
-          },
-          "threshold": {
-            "type": "number"
-          },
-          "period": {
-            "type": "number"
-          },
-          "max_slippage": {
-            "type": "number"
-          },
-          "end_time": {
-            "type": "number"
-          },
-          "label": {
-            "type": "string"
-          }
-        }
-      },
-      "PrivateOrderHistoryInlinePropertiesOrdersItemsPropertiesLegsItems": {
-        "type": "object",
-        "required": [
-          "instrument_name",
-          "quantity",
-          "filled_amount"
-        ],
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "filled_amount": {
-            "type": "number"
           }
         }
       },
@@ -4387,25 +3369,6 @@
             ]
           },
           "balance_after": {
-            "type": "number"
-          }
-        }
-      },
-      "PrivateRfqHistoryInlinePropertiesRfqsItemsPropertiesLegsItems": {
-        "type": "object",
-        "required": [
-          "instrument_name",
-          "quantity",
-          "fee_quantity"
-        ],
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          },
-          "fee_quantity": {
             "type": "number"
           }
         }
@@ -4506,400 +3469,6 @@
           }
         }
       },
-      "PrivateAccountSummaryInlinePropertiesCashItems": {
-        "type": "object",
-        "required": [
-          "currency",
-          "balance",
-          "collateral_factor",
-          "collateral_index_price",
-          "transactable"
-        ],
-        "properties": {
-          "currency": {
-            "type": "string"
-          },
-          "balance": {
-            "type": "number"
-          },
-          "collateral_factor": {
-            "type": "number"
-          },
-          "collateral_index_price": {
-            "type": "number"
-          },
-          "transactable": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PrivateRequiredMarginBreakdownInlinePropertiesPortfolioPropertiesUnderlyingsItems": {
-        "type": "object",
-        "properties": {
-          "underlying": {
-            "type": "string"
-          },
-          "required_margin": {
-            "type": "number"
-          },
-          "scenario_margin": {
-            "type": "number"
-          },
-          "loss_margin": {
-            "type": "number"
-          },
-          "d1_roll_cash_position": {
-            "type": "number"
-          },
-          "options_roll_cash_position": {
-            "type": "number"
-          },
-          "roll_cash_position": {
-            "type": "number"
-          },
-          "d1_roll_contingency_margin": {
-            "type": "number"
-          },
-          "options_roll_contingency_margin": {
-            "type": "number"
-          },
-          "roll_contingency_margin": {
-            "type": "number"
-          },
-          "options_short_cash_position": {
-            "type": "number"
-          },
-          "options_contingency_margin": {
-            "type": "number"
-          },
-          "scenario_used": {
-            "type": "integer"
-          },
-          "scenarios": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "underlying_change_pct": {
-                  "type": "number"
-                },
-                "vol_change_pct_point": {
-                  "type": "number"
-                },
-                "pnl": {
-                  "type": "number"
-                },
-                "coverage_factor": {
-                  "type": "number"
-                },
-                "required_margin": {
-                  "type": "number"
-                },
-                "loss_margin": {
-                  "type": "number"
-                },
-                "roll_cash_position": {
-                  "type": "number"
-                },
-                "roll_contingency_margin": {
-                  "type": "number"
-                },
-                "d1_roll_cash_position": {
-                  "type": "number"
-                },
-                "d1_roll_contingency_margin": {
-                  "type": "number"
-                },
-                "options_roll_cash_position": {
-                  "type": "number"
-                },
-                "options_roll_contingency_margin": {
-                  "type": "number"
-                },
-                "options_short_cash_position": {
-                  "type": "number"
-                },
-                "options_contingency_margin": {
-                  "type": "number"
-                },
-                "positions": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "instrument_name": {
-                        "type": "string"
-                      },
-                      "position": {
-                        "type": "number"
-                      },
-                      "instrument_pnl": {
-                        "type": "number"
-                      },
-                      "pnl": {
-                        "type": "number"
-                      },
-                      "current_price": {
-                        "type": "number"
-                      },
-                      "scenario_price": {
-                        "type": "number"
-                      },
-                      "open_order": {
-                        "type": "boolean"
-                      },
-                      "assumed_filled": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                },
-                "assets": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "asset_name": {
-                        "type": "string"
-                      },
-                      "position": {
-                        "type": "number"
-                      },
-                      "underlying_pnl": {
-                        "type": "number"
-                      },
-                      "pnl": {
-                        "type": "number"
-                      },
-                      "current_price": {
-                        "type": "number"
-                      },
-                      "scenario_price": {
-                        "type": "number"
-                      }
-                    }
-                  }
-                },
-                "highlight": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        }
-      },
-      "PrivateRequiredMarginBreakdownInlinePropertiesPortfolioPropertiesUnderlyingsItemsPropertiesScenariosItems": {
-        "type": "object",
-        "properties": {
-          "underlying_change_pct": {
-            "type": "number"
-          },
-          "vol_change_pct_point": {
-            "type": "number"
-          },
-          "pnl": {
-            "type": "number"
-          },
-          "coverage_factor": {
-            "type": "number"
-          },
-          "required_margin": {
-            "type": "number"
-          },
-          "loss_margin": {
-            "type": "number"
-          },
-          "roll_cash_position": {
-            "type": "number"
-          },
-          "roll_contingency_margin": {
-            "type": "number"
-          },
-          "d1_roll_cash_position": {
-            "type": "number"
-          },
-          "d1_roll_contingency_margin": {
-            "type": "number"
-          },
-          "options_roll_cash_position": {
-            "type": "number"
-          },
-          "options_roll_contingency_margin": {
-            "type": "number"
-          },
-          "options_short_cash_position": {
-            "type": "number"
-          },
-          "options_contingency_margin": {
-            "type": "number"
-          },
-          "positions": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "instrument_name": {
-                  "type": "string"
-                },
-                "position": {
-                  "type": "number"
-                },
-                "instrument_pnl": {
-                  "type": "number"
-                },
-                "pnl": {
-                  "type": "number"
-                },
-                "current_price": {
-                  "type": "number"
-                },
-                "scenario_price": {
-                  "type": "number"
-                },
-                "open_order": {
-                  "type": "boolean"
-                },
-                "assumed_filled": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "assets": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "asset_name": {
-                  "type": "string"
-                },
-                "position": {
-                  "type": "number"
-                },
-                "underlying_pnl": {
-                  "type": "number"
-                },
-                "pnl": {
-                  "type": "number"
-                },
-                "current_price": {
-                  "type": "number"
-                },
-                "scenario_price": {
-                  "type": "number"
-                }
-              }
-            }
-          },
-          "highlight": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PrivateRequiredMarginBreakdownInlinePropertiesPortfolioPropertiesUnderlyingsItemsPropertiesScenariosItemsPro": {
-        "type": "object",
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number"
-          },
-          "instrument_pnl": {
-            "type": "number"
-          },
-          "pnl": {
-            "type": "number"
-          },
-          "current_price": {
-            "type": "number"
-          },
-          "scenario_price": {
-            "type": "number"
-          },
-          "open_order": {
-            "type": "boolean"
-          },
-          "assumed_filled": {
-            "type": "boolean"
-          }
-        }
-      },
-      "PrivateRequiredMarginBreakdownInlinePropertiesPortfolioPropertiesUnderlyingsItemsPropertiesScenariosItemsPro2": {
-        "type": "object",
-        "properties": {
-          "asset_name": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number"
-          },
-          "underlying_pnl": {
-            "type": "number"
-          },
-          "pnl": {
-            "type": "number"
-          },
-          "current_price": {
-            "type": "number"
-          },
-          "scenario_price": {
-            "type": "number"
-          }
-        }
-      },
-      "PrivateNotificationsInboxInlinePropertiesNotificationsItems": {
-        "type": "object",
-        "required": [
-          "id",
-          "time",
-          "category",
-          "title",
-          "message",
-          "display_type",
-          "read",
-          "popup"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "time": {
-            "type": "number"
-          },
-          "category": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "display_type": {
-            "type": "string",
-            "enum": [
-              "success",
-              "failure",
-              "info",
-              "warning",
-              "critical"
-            ]
-          },
-          "read": {
-            "type": "boolean"
-          },
-          "account_name": {
-            "type": "string"
-          },
-          "account_number": {
-            "type": "string"
-          },
-          "popup": {
-            "type": "boolean"
-          }
-        }
-      },
       "PrivateTradeRfqInlinePropertiesLegsItems": {
         "type": "object",
         "required": [
@@ -4920,17 +3489,6 @@
           },
           "amount": {
             "type": "number"
-          }
-        }
-      },
-      "PublicInstrumentsInlineItemsPropertiesLegsItems": {
-        "type": "object",
-        "properties": {
-          "instrument_name": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "integer"
           }
         }
       },
@@ -5051,63 +3609,6 @@
           ],
           "additionalProperties": false,
           "title": "Time, mark, funding payment, top bid, top ask"
-        }
-      },
-      "PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof1": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "v0": {
-              "type": "number"
-            },
-            "v1": {
-              "type": "number"
-            },
-            "v2": {
-              "type": "number"
-            },
-            "v3": {
-              "type": "number"
-            },
-            "v4": {
-              "type": "number"
-            },
-            "v5": {
-              "type": "object",
-              "properties": {
-                "v0": {
-                  "type": "number"
-                },
-                "v1": {
-                  "type": "number"
-                },
-                "v2": {
-                  "type": "number"
-                },
-                "v3": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "v0",
-                "v1",
-                "v2",
-                "v3"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "v0",
-            "v1",
-            "v2",
-            "v3",
-            "v4",
-            "v5"
-          ],
-          "additionalProperties": false,
-          "title": "Time, mark, top bid, top ask"
         }
       },
       "PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof2": {
@@ -5237,59 +3738,6 @@
           "v4",
           "v5",
           "v6"
-        ],
-        "additionalProperties": false
-      },
-      "PublicMarkPriceHistoricalDataInlinePropertiesMarkOneof1Items": {
-        "type": "object",
-        "properties": {
-          "v0": {
-            "type": "number"
-          },
-          "v1": {
-            "type": "number"
-          },
-          "v2": {
-            "type": "number"
-          },
-          "v3": {
-            "type": "number"
-          },
-          "v4": {
-            "type": "number"
-          },
-          "v5": {
-            "type": "object",
-            "properties": {
-              "v0": {
-                "type": "number"
-              },
-              "v1": {
-                "type": "number"
-              },
-              "v2": {
-                "type": "number"
-              },
-              "v3": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "v0",
-              "v1",
-              "v2",
-              "v3"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "v0",
-          "v1",
-          "v2",
-          "v3",
-          "v4",
-          "v5"
         ],
         "additionalProperties": false
       },
@@ -5674,7 +4122,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelAllResult"
+                      "$ref": "#/components/schemas/PrivateInsertResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -5845,7 +4293,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -5883,7 +4331,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -6372,7 +4820,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCreateBotResult"
+                      "$ref": "#/components/schemas/Bot"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -6419,7 +4867,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -6457,7 +4905,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -6953,7 +5401,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateRfqHistoryResult"
+                      "$ref": "#/components/schemas/PrivateAccountBreakdownResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -6983,7 +5431,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateAccountSummaryResult"
+                      "$ref": "#/components/schemas/AccountSummary"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7013,7 +5461,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateRequiredMarginBreakdownResult"
+                      "$ref": "#/components/schemas/PortfolioMarginBreakdown"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7043,7 +5491,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateRequiredMarginForOrderResult"
+                      "$ref": "#/components/schemas/MarginBreakdownWithOrder"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7126,7 +5574,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateNotificationsInboxResult"
+                      "$ref": "#/components/schemas/Notifications"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7193,7 +5641,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7261,7 +5709,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateRequiredMarginBreakdownResult"
+                      "$ref": "#/components/schemas/Rfq"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7308,7 +5756,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7428,7 +5876,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/PrivateOpenRfqsResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7503,7 +5951,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateMmRfqInsertQuoteResult"
+                      "$ref": "#/components/schemas/RfqOrder"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7563,7 +6011,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateMmRfqInsertQuoteResult"
+                      "$ref": "#/components/schemas/RfqOrder"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7611,7 +6059,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7749,7 +6197,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicInstrumentResult"
+                      "$ref": "#/components/schemas/Instrument"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7789,7 +6237,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicTickerResult"
+                      "$ref": "#/components/schemas/Ticker"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7829,7 +6277,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicIndexResult"
+                      "$ref": "#/components/schemas/Index"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -7909,7 +6357,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateVerifyWithdrawalResult"
+                      "$ref": "#/components/schemas/PrivateInsertResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8005,7 +6453,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8034,7 +6482,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicBookResult"
+                      "$ref": "#/components/schemas/PrivateTradeHistoryResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8064,7 +6512,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicBookResult"
+                      "$ref": "#/components/schemas/PrivateCryptoDepositsResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8094,7 +6542,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateBtcDepositAddressResult"
+                      "$ref": "#/components/schemas/PrivateCryptoDepositsResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8124,7 +6572,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateBtcDepositAddressResult"
+                      "$ref": "#/components/schemas/PrivateCryptoDepositsResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8321,7 +6769,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PrivateCancelConditionalOrderResult"
+                      "$ref": "#/components/schemas/Null"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"
@@ -8350,7 +6798,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/PublicSystemInfoResult"
+                      "$ref": "#/components/schemas/PrivateTradeHistoryResult"
                     },
                     {
                       "$ref": "#/components/schemas/ErrorResponse"

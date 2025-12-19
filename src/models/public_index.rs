@@ -14,12 +14,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PublicIndex {
-    PublicIndexResult(Box<models::PublicIndexResult>),
+    Index(Box<models::Index>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PublicIndex {
     fn default() -> Self {
-        Self::PublicIndexResult(Default::default())
+        Self::Index(Default::default())
     }
 }

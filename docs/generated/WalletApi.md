@@ -17,7 +17,7 @@ Method | HTTP request | Description
 
 ## rest_private_slash_btc_deposit_address
 
-> models::RestPrivateBtcDepositAddress200Response rest_private_slash_btc_deposit_address()
+> models::RestPrivateCryptoDeposits200Response rest_private_slash_btc_deposit_address()
 Bitcoin deposit address
 
 Exchange: `https://thalex.com/api/v2/private/btc_deposit_address`  Testnet: `https://testnet.thalex.com/api/v2/private/btc_deposit_address`  Get Bitcoin deposit address
@@ -28,7 +28,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPrivateBtcDepositAddress200Response**](rest_private_btc_deposit_address_200_response.md)
+[**models::RestPrivateCryptoDeposits200Response**](rest_private_crypto_deposits_200_response.md)
 
 ### Authorization
 
@@ -44,7 +44,7 @@ No authorization required
 
 ## rest_private_slash_crypto_deposits
 
-> models::RestPublicBook200Response rest_private_slash_crypto_deposits()
+> models::RestPrivateCryptoDeposits200Response rest_private_slash_crypto_deposits()
 Deposits
 
 Exchange: `https://thalex.com/api/v2/private/crypto_deposits`  Testnet: `https://testnet.thalex.com/api/v2/private/crypto_deposits`  Pending and confirmed deposits for the selected account.
@@ -55,7 +55,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPublicBook200Response**](rest_public_book_200_response.md)
+[**models::RestPrivateCryptoDeposits200Response**](rest_private_crypto_deposits_200_response.md)
 
 ### Authorization
 
@@ -71,7 +71,7 @@ No authorization required
 
 ## rest_private_slash_crypto_withdrawals
 
-> models::RestPublicBook200Response rest_private_slash_crypto_withdrawals()
+> models::RestPrivateTradeHistory200Response rest_private_slash_crypto_withdrawals()
 Withdrawals
 
 Exchange: `https://thalex.com/api/v2/private/crypto_withdrawals`  Testnet: `https://testnet.thalex.com/api/v2/private/crypto_withdrawals`  List of withdrawals from the selected account. Includes all withdrawals: pending, executed, rejected etc. 
@@ -82,7 +82,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPublicBook200Response**](rest_public_book_200_response.md)
+[**models::RestPrivateTradeHistory200Response**](rest_private_trade_history_200_response.md)
 
 ### Authorization
 
@@ -98,7 +98,7 @@ No authorization required
 
 ## rest_private_slash_eth_deposit_address
 
-> models::RestPrivateBtcDepositAddress200Response rest_private_slash_eth_deposit_address()
+> models::RestPrivateCryptoDeposits200Response rest_private_slash_eth_deposit_address()
 Ethereum deposit address
 
 Exchange: `https://thalex.com/api/v2/private/eth_deposit_address`  Testnet: `https://testnet.thalex.com/api/v2/private/eth_deposit_address`  Get Ethereum deposit address
@@ -109,7 +109,7 @@ This endpoint does not need any parameter.
 
 ### Return type
 
-[**models::RestPrivateBtcDepositAddress200Response**](rest_private_btc_deposit_address_200_response.md)
+[**models::RestPrivateCryptoDeposits200Response**](rest_private_crypto_deposits_200_response.md)
 
 ### Authorization
 
@@ -185,7 +185,7 @@ No authorization required
 
 ## rest_private_slash_verify_withdrawal
 
-> models::RestPrivateVerifyWithdrawal200Response rest_private_slash_verify_withdrawal(asset_name, amount, target_address)
+> models::RestPrivateInsert200Response rest_private_slash_verify_withdrawal(asset_name, amount, target_address)
 Verify if withdrawal is possible
 
 Exchange: `https://thalex.com/api/v2/private/verify_withdrawal`  Testnet: `https://testnet.thalex.com/api/v2/private/verify_withdrawal`  This method is subject to withdrawal permissions.
@@ -201,7 +201,7 @@ Name | Type | Description  | Required | Notes
 
 ### Return type
 
-[**models::RestPrivateVerifyWithdrawal200Response**](rest_private_verify_withdrawal_200_response.md)
+[**models::RestPrivateInsert200Response**](rest_private_insert_200_response.md)
 
 ### Authorization
 

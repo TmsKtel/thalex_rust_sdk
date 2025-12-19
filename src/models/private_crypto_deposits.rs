@@ -13,13 +13,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum PrivateBtcDepositAddress {
-    PrivateBtcDepositAddressResult(String),
+pub enum PrivateCryptoDeposits {
+    PrivateCryptoDepositsResult(Box<models::PrivateCryptoDepositsResult>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
-impl Default for PrivateBtcDepositAddress {
+impl Default for PrivateCryptoDeposits {
     fn default() -> Self {
-        Self::PrivateBtcDepositAddressResult(Default::default())
+        Self::PrivateCryptoDepositsResult(Default::default())
     }
 }

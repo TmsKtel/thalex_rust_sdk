@@ -14,13 +14,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateCreateBot {
-    PrivateCreateBotResult(Box<models::PrivateCreateBotResult>),
+    Bot(Box<models::Bot>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
 impl Default for PrivateCreateBot {
     fn default() -> Self {
-        Self::PrivateCreateBotResult(Default::default())
+        Self::Bot(Default::default())
     }
 }
 ///

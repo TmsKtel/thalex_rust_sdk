@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PrivateCreateConditionalOrder {
-    PrivateCreateConditionalOrderResult(Box<models::PrivateCreateConditionalOrderResult>),
+    PrivateCreateConditionalOrderResult(Box<models::ConditionalOrder>),
     ErrorResponse(Box<models::ErrorResponse>),
 }
 
@@ -37,7 +37,7 @@ impl Default for Direction {
         Self::Buy
     }
 }
-///
+/// The trigger type that `stop_price` and `bracket_price` will refer to.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Target {
     #[serde(rename = "last")]

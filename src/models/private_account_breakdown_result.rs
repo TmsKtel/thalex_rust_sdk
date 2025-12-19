@@ -12,7 +12,9 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateAccountSummaryResult {
+pub struct PrivateAccountBreakdownResult {
+    #[serde(rename = "account_number")]
+    pub account_number: String,
     #[serde(rename = "unrealised_pnl")]
     pub unrealised_pnl: f64,
     #[serde(rename = "cash_collateral")]
@@ -25,27 +27,45 @@ pub struct PrivateAccountSummaryResult {
     pub remaining_margin: f64,
     #[serde(rename = "session_realised_pnl")]
     pub session_realised_pnl: f64,
+    #[serde(rename = "realised_position_pnl")]
+    pub realised_position_pnl: f64,
+    #[serde(rename = "realised_perpetual_funding")]
+    pub realised_perpetual_funding: f64,
+    #[serde(rename = "session_fees")]
+    pub session_fees: f64,
+    #[serde(rename = "portfolio")]
+    pub portfolio: Vec<models::PrivateAccountBreakdownInlinePropertiesPortfolioItems>,
     #[serde(rename = "cash")]
-    pub cash: Vec<models::PrivateAccountSummaryInlinePropertiesCashItems>,
+    pub cash: Vec<models::PrivateAccountBreakdownInlinePropertiesCashItems>,
 }
 
-impl PrivateAccountSummaryResult {
+impl PrivateAccountBreakdownResult {
     pub fn new(
+        account_number: String,
         unrealised_pnl: f64,
         cash_collateral: f64,
         margin: f64,
         required_margin: f64,
         remaining_margin: f64,
         session_realised_pnl: f64,
-        cash: Vec<models::PrivateAccountSummaryInlinePropertiesCashItems>,
-    ) -> PrivateAccountSummaryResult {
-        PrivateAccountSummaryResult {
+        realised_position_pnl: f64,
+        realised_perpetual_funding: f64,
+        session_fees: f64,
+        portfolio: Vec<models::PrivateAccountBreakdownInlinePropertiesPortfolioItems>,
+        cash: Vec<models::PrivateAccountBreakdownInlinePropertiesCashItems>,
+    ) -> PrivateAccountBreakdownResult {
+        PrivateAccountBreakdownResult {
+            account_number,
             unrealised_pnl,
             cash_collateral,
             margin,
             required_margin,
             remaining_margin,
             session_realised_pnl,
+            realised_position_pnl,
+            realised_perpetual_funding,
+            session_fees,
+            portfolio,
             cash,
         }
     }
