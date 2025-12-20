@@ -19,7 +19,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/Instrument"
                         }
                     },
                     {
@@ -58,7 +58,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/Instrument"
                         }
                     },
                     {
@@ -113,7 +113,7 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/Instrument"
                         }
                     },
                     {
@@ -1456,6 +1456,128 @@
                     "strike_price": 70000,
                     "base_currency": "USD",
                     "create_time": 1631250800.103645
+                }
+            },
+            "Rfq": {
+                "type": "object",
+                "required": [
+                    "rfq_id",
+                    "legs",
+                    "amount",
+                    "create_time"
+                ],
+                "properties": {
+                    "rfq_id": {
+                        "type": "string",
+                        "description": "Identifier for this RFQ."
+                    },
+                    "amount": {
+                        "type": "number",
+                        "description": "Requested amount for this RFQ"
+                    },
+                    "create_time": {
+                        "type": "number",
+                        "description": "Timestamp of creation (unix timestamp)"
+                    },
+                    "valid_until": {
+                        "type": "number",
+                        "description": "Timestamp at which this RFQ will be automatically cancelled (unix timestamp)"
+                    },
+                    "legs": {
+                        "type": "array",
+                        "description": "Combo legs. A minimalised version of the request such that quantities are integer.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "instrument_name",
+                                "quantity",
+                                "fee_quantity"
+                            ],
+                            "properties": {
+                                "instrument_name": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "number",
+                                    "description": "Quantity for this leg. May be negative."
+                                },
+                                "fee_quantity": {
+                                    "type": "number",
+                                    "description": "Quantity for fee calculations. Anywhere between 0 and abs(quantity)."
+                                }
+                            }
+                        }
+                    },
+                    "label": {
+                        "type": "string",
+                        "description": "User label set at creation. Not visibible to market makers."
+                    },
+                    "insert_reason": {
+                        "type": "string",
+                        "enum": [
+                            "client_request",
+                            "liquidation"
+                        ],
+                        "description": "Detailed reason for creation. Visible only to the requester."
+                    },
+                    "delete_reason": {
+                        "type": "string",
+                        "enum": [
+                            "client_cancel",
+                            "filled"
+                        ],
+                        "description": "Reason why this RFQ was removed. Visible only to the requester."
+                    },
+                    "volume_tick_size": {
+                        "type": "number",
+                        "description": "The minimum size / size increase for quotes."
+                    },
+                    "quoted_bid": {
+                        "type": "object",
+                        "description": "The bid price/amount quoted so far, if any. Visible only to the requester.",
+                        "properties": {
+                            "price": {
+                                "type": "number"
+                            },
+                            "amount": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "quoted_ask": {
+                        "type": "object",
+                        "description": "The ask price/amount quoted so far, if any. Visible only to the requester.",
+                        "properties": {
+                            "price": {
+                                "type": "number"
+                            },
+                            "amount": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "trade_price": {
+                        "type": "number",
+                        "description": "Combo price for which this RFQ was traded."
+                    },
+                    "trade_amount": {
+                        "type": "number",
+                        "description": "Amount in which this RFQ was traded."
+                    },
+                    "close_time": {
+                        "type": "number",
+                        "description": "Time at which this RFQ was cancelled or traded."
+                    },
+                    "event": {
+                        "type": "string",
+                        "enum": [
+                            "Created",
+                            "Cancelled",
+                            "Traded",
+                            "Existing"
+                        ],
+                        "description": "This field is set only on the `account.rfqs` subscription."
+                    }
                 }
             }
         }
