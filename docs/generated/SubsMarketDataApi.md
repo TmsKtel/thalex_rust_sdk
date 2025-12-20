@@ -294,7 +294,7 @@ Subscribe to book.<instrument>.<grouping>.<nlevels>.<delay> channel
 
 Name | Type | Description  | Required | Notes
 ------------- | ------------- | ------------- | ------------- | -------------
-**instrument** | **String** |  | [required] |
+**instrument** | [**Instrument**](.md) |  | [required] |
 **grouping** | **String** |  | [required] |
 **nlevels** | **String** |  | [required] |
 **delay** | [**Delay**](.md) |  | [required] |
@@ -378,7 +378,7 @@ Subscribe to lwt.<instrument>.<delay> channel
 
 Name | Type | Description  | Required | Notes
 ------------- | ------------- | ------------- | ------------- | -------------
-**instrument** | **String** |  | [required] |
+**instrument** | [**Instrument**](.md) |  | [required] |
 **delay** | [**Delay**](.md) |  | [required] |
 
 ### Return type
@@ -589,7 +589,7 @@ Subscribe to ticker.<instrument>.<delay> channel
 
 Name | Type | Description  | Required | Notes
 ------------- | ------------- | ------------- | ------------- | -------------
-**instrument** | **String** |  | [required] |
+**instrument** | [**Instrument**](.md) |  | [required] |
 **delay** | [**Delay**](.md) |  | [required] |
 
 ### Return type
