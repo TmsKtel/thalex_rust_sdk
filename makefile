@@ -24,9 +24,8 @@ codegen:
 	  -g rust \
 	  -o ./generated \
 	--additional-properties=supportAsync=false,useSingleRequestParameter=true
-	rm -rf ./src/models/* ./docs/generated/*
+	rm -rf ./src/models/*
 	cp ./generated/src/models/* ./src/models/
-	cp ./generated/docs/* ./docs/generated/
 
 	# we do the websocket 
 	redocly bundle ws_spec.json -o ws_spec_updated.json 
@@ -36,9 +35,8 @@ codegen:
 	  -g rust \
 	  -o ./generated \
 	--additional-properties=supportAsync=false,useSingleRequestParameter=true,avoidBoxedModels=true,generateAliasAsModel=true
-	rm -rf ./src/models/* ./docs/generated/* 
+	rm -rf ./src/models/*
 	cp ./generated/src/models/* ./src/models/
-	cp ./generated/docs/* ./docs/generated/
 	rm -rf ./generated
 
 	python build_scripts/post-process.py
