@@ -16,9 +16,9 @@ use tokio_tungstenite::{
 };
 
 use crate::auth_utils::make_auth_token;
-use crate::models::{
-    ErrorResponse, Instrument, PrivateTradeHistoryResult, PublicInstruments, Ticker,
-};
+use crate::models::{ErrorResponse, Instrument, PrivateTradeHistoryResult, PublicInstruments};
+
+use crate::ws::Subscriptions;
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type ResponseSender = oneshot::Sender<String>;
@@ -33,12 +33,6 @@ enum InternalCommand {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct ChannelMessage {
-    pub channel_name: String,
-    pub notification: Ticker,
-}
-
-#[derive(Clone, Debug, Deserialize)]
 pub struct RpcMessage {
     pub id: u64,
     pub result: PublicInstruments,
@@ -49,7 +43,7 @@ pub struct WsClient {
     write_tx: mpsc::UnboundedSender<InternalCommand>,
     pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
     // channel_name -> mpsc::UnboundedSender<String>
-    subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pub subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
 }
@@ -216,48 +210,9 @@ impl WsClient {
     }
 
     /// The callback runs in its own task and receives each message for this channel.
-    pub async fn subscribe<F>(&self, channel: &str, mut callback: F) -> Result<(), Error>
-    where
-        F: FnMut(Ticker) + Send + 'static,
-    {
-        let channel = channel.to_string();
-
-        // Per-subscription channel from core -> user callback
-        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
-
-        {
-            let mut subs = self.subscriptions.lock().await;
-            subs.insert(channel.clone(), tx);
-        }
-
-        let msg = serde_json::json!({
-            "method": "public/subscribe",
-            "params": {
-                "channels": [channel]
-            }
-        });
-
-        self.send_json(msg)?;
-
-        // Spawn callback task
-        tokio::spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                // Parses into a json value initally
-                let parsed_msg: ChannelMessage = match serde_json::from_str(&msg) {
-                    Ok(m) => m,
-                    Err(e) => {
-                        warn!("Failed to parse channel message: {e}; raw: {msg}");
-                        continue;
-                    }
-                };
-                callback(parsed_msg.notification);
-            }
-        });
-
-        info!("Subscribed to channel: {channel}");
-        Ok(())
+    pub fn subscriptions(&self) -> Subscriptions {
+        Subscriptions { client: self }
     }
-
     pub async fn unsubscribe(&self, channel: &str) -> Result<(), Error> {
         let channel = channel.to_string();
 
@@ -287,7 +242,7 @@ impl WsClient {
         Ok(())
     }
 
-    fn send_json(&self, value: Value) -> Result<(), Error> {
+    pub fn send_json(&self, value: Value) -> Result<(), Error> {
         let text = value.to_string();
         self.write_tx
             .send(InternalCommand::Send(Message::Text(text.into())))?;
