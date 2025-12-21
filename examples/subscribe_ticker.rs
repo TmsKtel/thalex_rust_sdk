@@ -16,6 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .market_data()
         .ticker("BTC-PERPETUAL", Delay::Raw, |msg| {
             // Parses into a json value initally
+            async move {
             let best_bid_price: f64 = msg.best_bid_price.unwrap();
             let best_ask_price: f64 = msg.best_ask_price.unwrap();
             let index_price = msg.index.unwrap();
@@ -34,10 +35,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 0.0
             };
-            info!(
-                "Ticker update - Bid: {best_bid_price}, Ask: {best_ask_price} spread: {spread} spread_bps: {spread_bps} index: {index_price} index_delta_bps: {index_delta_bps}"
-            );
-        })
+            tokio::spawn(async move {
+                info!(
+                    "Ticker update - Bid: {best_bid_price}, Ask: {best_ask_price} spread: {spread} spread_bps: {spread_bps} index: {index_price} index_delta_bps: {index_delta_bps}"
+                );
+            });
+        }
+    })
         .await;
 
     loop {

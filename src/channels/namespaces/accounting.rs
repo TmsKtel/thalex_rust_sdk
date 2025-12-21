@@ -1,9 +1,7 @@
-
 use crate::{
     models::{
-        AccountOrderHistoryNotification,
-        AccountOrderHistoryPayload, AccountOrdersNotification, AccountOrdersPayload,
-        AccountPersistentOrdersNotification, AccountPersistentOrdersPayload,
+        AccountOrderHistoryNotification, AccountOrderHistoryPayload, AccountOrdersNotification,
+        AccountOrdersPayload, AccountPersistentOrdersNotification, AccountPersistentOrdersPayload,
         AccountPortfolioNotification, AccountPortfolioPayload, AccountRfqHistoryNotification,
         AccountRfqHistoryPayload, AccountRfqsNotification, AccountRfqsPayload, AccountSummary,
         AccountSummaryNotification, AccountTradeHistoryNotification, AccountTradeHistoryPayload,
@@ -53,9 +51,10 @@ impl<'a> AccountingSubscriptions<'a> {
         Ok(())
     }
 
-    pub async fn session_orders<F>(&self, mut callback: F) -> Result<(), Error>
+    pub async fn session_orders<F, Fut>(&self, mut callback: F) -> Result<(), Error>
     where
-        F: FnMut(SessionOrdersPayload) + Send + 'static,
+        F: FnMut(SessionOrdersPayload) -> Fut + Send + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         let channel = "session.orders".to_string();
         // Per-subscription channel from core -> user callback
@@ -64,7 +63,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel,
                 move |msg: SessionOrdersNotification| {
-                    callback(msg.notification);
+                    let fut = callback(msg.notification);
+                    tokio::spawn(fut);
                 },
             )
             .await?;

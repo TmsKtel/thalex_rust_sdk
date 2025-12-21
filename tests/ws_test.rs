@@ -7,7 +7,7 @@ async fn test_websocket_subscription_working() {
     let result = client
         .subscriptions()
         .market_data()
-        .ticker("BTC-PERPETUAL", Delay::Raw, |msg| {
+        .ticker("BTC-PERPETUAL", Delay::Raw, |msg| async move {
             info!("Received ticker update: {msg:?}");
         })
         .await;
@@ -21,7 +21,7 @@ async fn test_websocket_subscription_not_working() {
     let result = client
         .subscriptions()
         .market_data()
-        .ticker("NOT_EXISTING", Delay::Raw, |msg| {
+        .ticker("NOT_EXISTING", Delay::Raw, |msg| async move {
             info!("Received ticker update: {msg:?}");
         })
         .await;

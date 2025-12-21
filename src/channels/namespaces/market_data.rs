@@ -1,12 +1,10 @@
-
 use crate::{
     models::{
-        BasePrice, BasePriceNotification, Book, BookNotification, Delay, Index,
-        IndexComponents, IndexComponentsNotification,
-        InstrumentsNotification, InstrumentsPayload, Lwt,
-        LwtNotification,
-        PriceIndexNotification, RecentTrades, RecentTradesNotification, RfqsNotification, RfqsPayload, Ticker,
-        TickerNotification, UnderlyingStatistics, UnderlyingStatisticsNotification,
+        BasePrice, BasePriceNotification, Book, BookNotification, Delay, Index, IndexComponents,
+        IndexComponentsNotification, InstrumentsNotification, InstrumentsPayload, Lwt,
+        LwtNotification, PriceIndexNotification, RecentTrades, RecentTradesNotification,
+        RfqsNotification, RfqsPayload, Ticker, TickerNotification, UnderlyingStatistics,
+        UnderlyingStatisticsNotification,
     },
     ws_client::{RequestScope, WsClient},
 };
@@ -16,26 +14,30 @@ pub struct MarketDataSubscriptions<'a> {
     pub client: &'a WsClient,
 }
 impl<'a> MarketDataSubscriptions<'a> {
-    pub async fn ticker<F>(
+    pub async fn ticker<F, Fut>(
         &self,
         instrument: &str,
         delay: Delay,
         mut callback: F,
     ) -> Result<(), Error>
     where
-        F: FnMut(Ticker) + Send + 'static,
+        F: FnMut(Ticker) -> Fut + Send + 'static,
+        Fut: Future<Output = ()> + Send + 'static,
     {
         let channel = format!("ticker.{instrument}.{delay}");
-        // Per-subscription channel from core -> user callback
+
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel,
                 move |msg: TickerNotification| {
-                    callback(msg.notification);
+                    // bridge sync → async
+                    let fut = callback(msg.notification);
+                    tokio::spawn(fut);
                 },
             )
             .await?;
+
         Ok(())
     }
 
