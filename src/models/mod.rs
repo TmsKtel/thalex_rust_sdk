@@ -6,6 +6,10 @@
 
 pub mod account;
 pub use account::Account;
+pub mod account_bots_notification;
+pub use account_bots_notification::AccountBotsNotification;
+pub mod account_bots_payload;
+pub use account_bots_payload::AccountBotsPayload;
 pub mod account_conditional_orders_notification;
 pub use account_conditional_orders_notification::AccountConditionalOrdersNotification;
 pub mod account_conditional_orders_payload;
@@ -436,3 +440,5 @@ pub mod underlying_statistics_open_interest_totals;
 pub use underlying_statistics_open_interest_totals::UnderlyingStatisticsOpenInterestTotals;
 pub mod underlying_statistics_payload;
 pub use underlying_statistics_payload::UnderlyingStatisticsPayload;
+pub mod user_inbox_notifications_notification;
+pub use user_inbox_notifications_notification::UserInboxNotificationsNotification;

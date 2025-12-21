@@ -215,15 +215,6 @@ if __name__ == "__main__":
     processed = 0
     for ix, data in enumerate(all_data):
         # we just process the subs_market_data for now
-        if data['tag'] not in [
-            'subs_market_data',
-            'subs_accounting',
-            'subs_mm_prot',
-            'subs_mm_rfq',
-            'subs_conditional',
-            'subs_system',
-            ]:
-            continue
         print(f" Channel:     {data['channel']}")
         path, params = from_channel_to_path(data['channel'])
         print(f"   path:        {path}")
