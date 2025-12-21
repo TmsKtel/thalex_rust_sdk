@@ -29,10 +29,10 @@ use crate::{models::{
 }};
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
-pub struct Subscriptions<'a> {
+pub struct $tag<'a> {
     pub client: &'a WsClient,
 }
-impl <'a> Subscriptions<'a> {
+impl <'a> $tag<'a> {
 $functions
     
 }

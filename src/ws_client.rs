@@ -20,7 +20,7 @@ use tokio_tungstenite::{
 use crate::auth_utils::make_auth_token;
 use crate::models::{ErrorResponse, Instrument, PrivateTradeHistoryResult, PublicInstruments};
 
-use crate::ws::Subscriptions;
+use crate::channels::subscriptions::Subscriptions;
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 type ResponseSender = oneshot::Sender<String>;
