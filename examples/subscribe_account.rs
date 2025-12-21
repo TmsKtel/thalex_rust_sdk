@@ -1,7 +1,6 @@
 use log::{Level::Info, info};
 use simple_logger::init_with_level;
 use thalex_rust_sdk::ws_client::WsClient;
-use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,7 +9,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = WsClient::from_env().await.unwrap();
 
-    sleep(tokio::time::Duration::from_secs(1)).await;
     let _ = client
         .subscriptions()
         .accounting()
