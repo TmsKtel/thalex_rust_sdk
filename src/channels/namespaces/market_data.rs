@@ -1,9 +1,11 @@
 
 use crate::{
     models::{
-        BasePrice, BasePriceNotification, Book, BookNotification, Delay, Index, IndexComponents, IndexComponentsNotification, InstrumentsNotification, InstrumentsPayload, Lwt, LwtNotification, PriceIndexNotification,
-        RecentTrades, RecentTradesNotification,
-        RfqsNotification, RfqsPayload, Ticker,
+        BasePrice, BasePriceNotification, Book, BookNotification, Delay, Index,
+        IndexComponents, IndexComponentsNotification,
+        InstrumentsNotification, InstrumentsPayload, Lwt,
+        LwtNotification,
+        PriceIndexNotification, RecentTrades, RecentTradesNotification, RfqsNotification, RfqsPayload, Ticker,
         TickerNotification, UnderlyingStatistics, UnderlyingStatisticsNotification,
     },
     ws_client::{RequestScope, WsClient},

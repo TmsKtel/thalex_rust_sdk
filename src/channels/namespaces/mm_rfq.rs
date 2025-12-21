@@ -1,7 +1,8 @@
 
 use crate::{
     models::{
-        MmRfqQuotesNotification, MmRfqQuotesPayload, MmRfqsNotification, MmRfqsPayload,
+        MmRfqQuotesNotification,
+        MmRfqQuotesPayload, MmRfqsNotification, MmRfqsPayload,
     },
     ws_client::{RequestScope, WsClient},
 };

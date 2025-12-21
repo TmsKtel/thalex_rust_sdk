@@ -1,8 +1,7 @@
 
 use crate::{
     models::{
-        BannersNotification,
-        BannersPayload, SystemEvent, SystemNotification,
+        BannersNotification, BannersPayload, SystemEvent, SystemNotification,
     },
     ws_client::{RequestScope, WsClient},
 };

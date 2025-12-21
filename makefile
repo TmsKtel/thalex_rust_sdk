@@ -7,7 +7,7 @@ fmt:
 build:
 	cargo build --all-features
 test:
-	cargo test --all-features
+	cargo test --all-features -- --nocapture
 run:
 	cargo run --all-features
 
