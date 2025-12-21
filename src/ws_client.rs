@@ -18,7 +18,10 @@ use tokio_tungstenite::{
 };
 
 use crate::auth_utils::make_auth_token;
-use crate::models::{ErrorResponse, Instrument, PrivateTradeHistoryResult, PublicInstruments};
+use crate::models::order_status::{Direction, OrderType};
+use crate::models::{
+    ErrorResponse, Instrument, OrderStatus, PrivateTradeHistoryResult, PublicInstruments,
+};
 
 use crate::channels::subscriptions::Subscriptions;
 
@@ -143,6 +146,8 @@ impl WsClient {
 
         let text = request.to_string();
 
+        // info!("Sending RPC request: {}", text);
+
         if let Err(e) = self
             .write_tx
             .send(InternalCommand::Send(Message::Text(text.into())))
@@ -154,9 +159,12 @@ impl WsClient {
 
         let response = rx.await?;
 
+        // info!("Received RPC response: {}", response);
+
         let parsed: RpcMessage = serde_json::from_str(&response)?;
 
         // This assumes `RpcMessage` has a `result` field compatible with T
+        // info!("RPC response for id={id}: {:?}", parsed);
         let result: T = serde_json::from_value(parsed.result)?;
 
         Ok(result)
@@ -285,6 +293,61 @@ impl WsClient {
 
         Ok(parsed)
     }
+
+    pub async fn set_cancel_on_disconnect(&self) -> Result<(), Error> {
+        let result = self
+            .send_rpc::<Value>(
+                "private/set_cancel_on_disconnect",
+                serde_json::json!({ "timeout_secs": 6}),
+            )
+            .await;
+        info!("Set cancel_on_disconnect result: {result:?}");
+        Ok(())
+    }
+    pub async fn insert_order(
+        &self,
+        instrument_name: &str,
+        amount: f64,
+        price: f64,
+        direction: Direction,
+        order_type: OrderType,
+    ) -> Result<OrderStatus, Error> {
+        let result: Value = self
+            .send_rpc(
+                "private/insert",
+                serde_json::json!({
+                    "instrument_name": instrument_name,
+                    "amount": amount,
+                    "price": round_to_ticks(price, 0.1),
+                    "direction": direction,
+                    "order_type": order_type,
+                }),
+            )
+            .await?;
+
+        let order_status: OrderStatus = serde_json::from_value(result)?;
+        Ok(order_status)
+    }
+    pub async fn amend_order(
+        &self,
+        order_id: String,
+        amount: f64,
+        price: f64,
+    ) -> Result<OrderStatus, Error> {
+        let params = serde_json::json!({
+            "order_id": order_id,
+            "amount": amount,
+            "price": round_to_ticks(price, 0.1),
+        });
+        let result: Value = self.send_rpc("private/amend", params).await?;
+
+        let order_status: OrderStatus = serde_json::from_value(result)?;
+        Ok(order_status)
+    }
+}
+
+fn round_to_ticks(price: f64, tick_size: f64) -> f64 {
+    (price / tick_size).round() * tick_size
 }
 
 /// Supervisor: reconnects on failures, replays subscriptions on each new connection.
