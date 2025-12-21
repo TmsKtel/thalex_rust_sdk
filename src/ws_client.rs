@@ -36,8 +36,8 @@ enum InternalCommand {
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct RpcMessage {
-    pub id: u64,
-    pub result: PublicInstruments,
+    pub id: Option<u64>,
+    pub result: Value,
     pub error: Option<ErrorResponse>,
 }
 
@@ -67,7 +67,9 @@ pub struct WsClient {
 }
 
 impl WsClient {
-    /// Create a client and start the supervisor loop, connecting to the default URL.
+    pub fn subscriptions(&self) -> Subscriptions {
+        Subscriptions { client: self }
+    }
     pub async fn connect_default() -> Result<Self, Error> {
         Self::connect(URL).await
     }
@@ -112,76 +114,18 @@ impl WsClient {
 
         Ok(client)
     }
-    pub async fn subscribe_channel<P, F>(
-        &self,
-        scope: RequestScope,
-        channel: String,
-        mut callback: F,
-    ) -> Result<(), Error>
-    where
-        P: DeserializeOwned + Send + 'static,
-        F: FnMut(P) + Send + 'static,
-    {
-        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-        {
-            let mut subs = self.subscriptions.lock().await;
-            subs.insert(channel.clone(), tx);
-        }
-
-        let msg = serde_json::json!({
-            "method": format!("{}/subscribe", scope),
-            "params": {
-                "channels": [channel]
-            }
-        });
-
-        self.send_json(msg)?;
-
-        tokio::spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                let parsed: P = match serde_json::from_str(&msg) {
-                    Ok(m) => m,
-                    Err(e) => {
-                        warn!("Failed to parse channel message: {e}; raw: {msg}");
-                        continue;
-                    }
-                };
-
-                callback(parsed);
-            }
-        });
-
-        info!("Subscribed to channel: {channel}");
+    pub fn send_json(&self, value: Value) -> Result<(), Error> {
+        let text = value.to_string();
+        self.write_tx
+            .send(InternalCommand::Send(Message::Text(text.into())))?;
         Ok(())
     }
-
-    pub async fn login(
+    pub async fn send_rpc<T: DeserializeOwned>(
         &self,
-        key_id: &str,
-        account_id: &str,
-        private_key_path: &str,
-    ) -> Result<(), Error> {
-        // we read the private key from the given file path
-        let private_key_pem = tokio::fs::read_to_string(private_key_path).await?;
-        let token = make_auth_token(key_id, private_key_pem)?;
-
-        let msg = serde_json::json!({
-            "method": "public/login",
-            "params": {
-                "token": token,
-                "account": account_id
-            }
-        });
-
-        self.send_json(msg)?;
-
-        info!("Sent login message");
-        Ok(())
-    }
-
-    /// JSON-RPC style call: sends a method/params, waits for matching `id`.
-    pub async fn get_instruments(&self) -> Result<Vec<Instrument>, Error> {
+        method: &str,
+        params: serde_json::Value,
+    ) -> Result<T, Error> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<String>();
@@ -193,8 +137,8 @@ impl WsClient {
         let request = serde_json::json!({
             "jsonrpc": "2.0",
             "id": id,
-            "method": "public/instruments",
-            "params": {}
+            "method": method,
+            "params": params
         });
 
         let text = request.to_string();
@@ -212,68 +156,61 @@ impl WsClient {
 
         let parsed: RpcMessage = serde_json::from_str(&response)?;
 
-        let result: PublicInstruments = parsed.result;
+        // This assumes `RpcMessage` has a `result` field compatible with T
+        let result: T = serde_json::from_value(parsed.result)?;
 
-        let instruments = match result {
-            PublicInstruments::PublicInstrumentsResult(v) => v,
-            PublicInstruments::ErrorResponse(err) => {
-                return Err(Box::new(std::io::Error::other(format!(
-                    "API error: {err:?}"
-                ))));
-            }
-        };
-
-        Ok(instruments)
+        Ok(result)
     }
 
-    pub async fn get_trade_history(
+    pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
+        info!("Shutdown requested: {reason}");
+        let _ = self.shutdown_tx.send(true);
+        let _ = self.write_tx.send(InternalCommand::Close);
+        Ok(())
+    }
+
+    pub async fn subscribe_channel<P, F>(
         &self,
-        bookmark: Option<String>,
-    ) -> Result<PrivateTradeHistoryResult, Error> {
-        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+        scope: RequestScope,
+        channel: String,
+        mut callback: F,
+    ) -> Result<Vec<String>, Error>
+    where
+        P: DeserializeOwned + Send + 'static,
+        F: FnMut(P) + Send + 'static,
+    {
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-        let (tx, rx) = oneshot::channel::<String>();
         {
-            let mut pending = self.pending_requests.lock().await;
-            pending.insert(id, tx);
+            let mut subs = self.subscriptions.lock().await;
+            subs.insert(channel.clone(), tx);
         }
+        let sub_result: Vec<String> = serde_json::from_value(
+            self.send_rpc::<Value>(
+                &format!("{scope}/subscribe"),
+                serde_json::json!({
+                    "channels": [channel.clone()]
+                }),
+            )
+            .await?,
+        )?;
+        tokio::spawn(async move {
+            while let Some(msg) = rx.recv().await {
+                let parsed: P = match serde_json::from_str(&msg) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        warn!("Failed to parse channel message: {e}; raw: {msg}");
+                        continue;
+                    }
+                };
 
-        let mut request = serde_json::json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "method": "private/trade_history",
-            "params": {
+                callback(parsed);
             }
         });
-        if let Some(bm) = bookmark {
-            request["params"]["bookmark"] = serde_json::Value::String(bm);
-        }
-
-        let text = request.to_string();
-
-        if let Err(e) = self
-            .write_tx
-            .send(InternalCommand::Send(Message::Text(text.into())))
-        {
-            let mut pending = self.pending_requests.lock().await;
-            pending.remove(&id);
-            return Err(Box::new(e));
-        }
-
-        let response = rx.await?;
-
-        let parsed_response: Value = serde_json::from_str(&response)?;
-
-        let parsed: PrivateTradeHistoryResult =
-            serde_json::from_value(parsed_response["result"].clone())?;
-
-        Ok(parsed)
+        info!("Subscription result: {sub_result:?}");
+        Ok(sub_result)
     }
 
-    /// The callback runs in its own task and receives each message for this channel.
-    pub fn subscriptions(&self) -> Subscriptions {
-        Subscriptions { client: self }
-    }
     pub async fn unsubscribe(&self, channel: &str) -> Result<(), Error> {
         let channel = channel.to_string();
 
@@ -282,32 +219,71 @@ impl WsClient {
             subs.remove(&channel);
         }
 
-        let msg = serde_json::json!({
-            "method": "unsubscribe",
-            "params": {
-                "channels": [channel]
-            }
-        });
-
-        self.send_json(msg)?;
-
+        let _ = self
+            .send_rpc::<Value>(
+                "public/unsubscribe",
+                serde_json::json!({
+                    "channels": [channel.clone()]
+                }),
+            )
+            .await?;
         info!("Unsubscribed from channel: {channel}");
         Ok(())
     }
+    pub async fn login(
+        &self,
+        key_id: &str,
+        account_id: &str,
+        private_key_path: &str,
+    ) -> Result<(), Error> {
+        // we read the private key from the given file path
+        let private_key_pem = tokio::fs::read_to_string(private_key_path).await?;
+        let token = make_auth_token(key_id, private_key_pem)?;
+        let result: Value = self
+            .send_rpc(
+                "public/login",
+                serde_json::json!({
+                    "token": token,
+                    "account": account_id
+                }),
+            )
+            .await?;
 
-    /// Request clean shutdown of the websocket supervisor.
-    pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
-        info!("Shutdown requested: {reason}");
-        let _ = self.shutdown_tx.send(true);
-        let _ = self.write_tx.send(InternalCommand::Close);
+        info!("Sent login message, received response: {result:?}");
         Ok(())
     }
 
-    pub fn send_json(&self, value: Value) -> Result<(), Error> {
-        let text = value.to_string();
-        self.write_tx
-            .send(InternalCommand::Send(Message::Text(text.into())))?;
-        Ok(())
+    /// Get instruments using the generic RPC method
+    pub async fn get_instruments(&self) -> Result<Vec<Instrument>, Error> {
+        let result: PublicInstruments = self
+            .send_rpc("public/instruments", serde_json::json!({}))
+            .await?;
+
+        match result {
+            PublicInstruments::PublicInstrumentsResult(v) => Ok(v),
+            PublicInstruments::ErrorResponse(err) => Err(Box::new(std::io::Error::other(format!(
+                "API error: {err:?}"
+            )))),
+        }
+    }
+
+    pub async fn get_trade_history(
+        &self,
+        bookmark: Option<String>,
+    ) -> Result<PrivateTradeHistoryResult, Error> {
+        let result: Value = self
+            .send_rpc(
+                "private/trade_history",
+                if let Some(bm) = bookmark {
+                    serde_json::json!({ "bookmark": bm })
+                } else {
+                    serde_json::json!({})
+                },
+            )
+            .await?;
+        let parsed: PrivateTradeHistoryResult = serde_json::from_value(result)?;
+
+        Ok(parsed)
     }
 }
 
