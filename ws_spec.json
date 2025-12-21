@@ -639,6 +639,50 @@
                     }
                 }
             }
+        },
+        "/system": {
+            "get": {
+                "tags": [
+                    "subs_system"
+                ],
+                "summary": "Subscribe to system channel",
+                "operationId": "subscribe_system",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful subscription",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemNotification"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/banners": {
+            "get": {
+                "tags": [
+                    "subs_system"
+                ],
+                "summary": "Subscribe to banners channel",
+                "operationId": "subscribe_banners",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful subscription",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BannersNotification"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -3039,6 +3083,109 @@
                     "volume_24h": 0,
                     "value_24h": 0,
                     "open_interest": 123.456
+                }
+            },
+            "SystemNotification": {
+                "type": "object",
+                "required": [
+                    "channel_name",
+                    "notification"
+                ],
+                "properties": {
+                    "channel_name": {
+                        "type": "string",
+                        "description": "Channel name as in subscription."
+                    },
+                    "notification": {
+                        "$ref": "#/components/schemas/SystemPayload"
+                    }
+                }
+            },
+            "SystemPayload": {
+                "$ref": "./openapi_updated.json#/components/schemas/SystemEvent",
+                "description": "Channel-specific content"
+            },
+            "BannersNotification": {
+                "type": "object",
+                "required": [
+                    "channel_name",
+                    "notification"
+                ],
+                "properties": {
+                    "channel_name": {
+                        "type": "string",
+                        "description": "Channel name as in subscription."
+                    },
+                    "notification": {
+                        "$ref": "#/components/schemas/BannersPayload"
+                    }
+                }
+            },
+            "BannersPayload": {
+                "type": "array",
+                "items": {
+                    "$ref": "./openapi_updated.json#/components/schemas/Banner"
+                },
+                "description": "Channel-specific content"
+            },
+            "Banner": {
+                "type": "object",
+                "required": [
+                    "time",
+                    "severity",
+                    "message"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "number",
+                        "description": "The id of this banner."
+                    },
+                    "time": {
+                        "type": "number",
+                        "description": "Time when this banner was posted (Unix timestamp)."
+                    },
+                    "severity": {
+                        "type": "string",
+                        "description": "Severity of the banner message. Used to choose appropriate styling for banner display.",
+                        "enum": [
+                            "info",
+                            "warning",
+                            "critical"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Optional title of the banner."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Message text to be displayed in the banner."
+                    }
+                },
+                "example": {
+                    "id": 1,
+                    "time": 1630059868.4145653,
+                    "severity": "info",
+                    "title": "Important information",
+                    "message": "Starting next week we are lowering our fees by 10%."
+                }
+            },
+            "SystemEvent": {
+                "type": "object",
+                "required": [
+                    "event"
+                ],
+                "properties": {
+                    "event": {
+                        "type": "string",
+                        "description": "Type of the system event.\n\n- `reconnect`: you receive this event when the WebSocket connection is about to be closed by the server and you need to open a new one. This can happen, for example, during exchange maintenance windows. The event is sent at least 10 seconds before the connection is closed.\n",
+                        "enum": [
+                            "reconnect"
+                        ]
+                    }
+                },
+                "example": {
+                    "event": "reconnect"
                 }
             }
         }

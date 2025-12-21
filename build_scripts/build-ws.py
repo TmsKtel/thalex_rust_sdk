@@ -16,6 +16,7 @@ ALIASES = {
     "PriceIndex": "Index",
     "AccountSummaryPayload": "AccountSummary",
     "TickerPayload": "Ticker",
+    "SystemPayload": "SystemEvent",
 }
 
 ENUMS = [
@@ -24,7 +25,7 @@ ENUMS = [
 
 PUBLIC_TAGS = [
     "subs_market_data",
-    # "subs_system",
+    "subs_system",
 ]
 
 TO_PROCESS_TAGS = PUBLIC_TAGS + [

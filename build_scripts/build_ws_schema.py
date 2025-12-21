@@ -221,6 +221,7 @@ if __name__ == "__main__":
             'subs_mm_prot',
             'subs_mm_rfq',
             'subs_conditional',
+            'subs_system',
             ]:
             continue
         print(f" Channel:     {data['channel']}")
