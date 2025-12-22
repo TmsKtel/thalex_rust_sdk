@@ -20,7 +20,8 @@ use tokio_tungstenite::{
 use crate::auth_utils::make_auth_token;
 use crate::models::order_status::{Direction, OrderType};
 use crate::models::{
-    ErrorResponse, Instrument, OrderStatus, PrivateTradeHistoryResult, PublicInstruments,
+    ErrorResponse, Instrument, OrderStatus, PortfolioEntry, PrivatePortfolio,
+    PrivateTradeHistoryResult, PublicInstruments,
 };
 
 use crate::channels::subscriptions::Subscriptions;
@@ -334,6 +335,23 @@ impl WsClient {
         let parsed: PrivateTradeHistoryResult = serde_json::from_value(result)?;
 
         Ok(parsed)
+    }
+
+    pub async fn get_positions(&self) -> Result<Vec<PortfolioEntry>, Error> {
+        let result: Value = self
+            .send_rpc("private/portfolio", serde_json::json!({}))
+            .await?;
+        // We match the result to see if it's an error or a valid portfolio
+        let parsed: PrivatePortfolio = serde_json::from_value(result)?;
+        let positions = match parsed {
+            PrivatePortfolio::PrivatePortfolioResult(v) => v,
+            PrivatePortfolio::ErrorResponse(err) => {
+                return Err(Box::new(std::io::Error::other(format!(
+                    "API error: {err:?}"
+                ))));
+            }
+        };
+        Ok(positions)
     }
 
     pub async fn set_cancel_on_disconnect(&self) -> Result<(), Error> {
