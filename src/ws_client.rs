@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
-use tokio::{net::TcpStream, sync::oneshot};
+use tokio::{net::TcpStream, sync::oneshot, time::{interval, timeout, Duration, MissedTickBehavior}};
 
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -17,7 +17,7 @@ use tokio_tungstenite::{
     MaybeTlsStream, WebSocketStream, connect_async, tungstenite::protocol::Message,
 };
 
-use crate::auth_utils::make_auth_token;
+use crate::{auth_utils::make_auth_token, models::PrivateAmendRequest};
 use crate::models::order_status::{Direction, OrderType};
 use crate::models::{
     ErrorResponse, Instrument, OrderStatus, PortfolioEntry, PrivatePortfolio,
@@ -31,11 +31,22 @@ type ResponseSender = oneshot::Sender<String>;
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
 const URL: &str = "wss://thalex.com/ws/api/v2";
+const PING_INTERVAL: Duration = Duration::from_secs(10);
+const READ_TIMEOUT: Duration = Duration::from_secs(15); // 3x ping interval
 
 /// Commands sent from the client API to the connection task.
 enum InternalCommand {
     Send(Message),
     Close,
+    /// Trigger resubscription to all channels
+    Resubscribe,
+}
+
+#[derive(Clone, Debug)]
+struct LoginState {
+    key_id: String,
+    account_id: String,
+    key_path: String,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -69,6 +80,8 @@ pub struct WsClient {
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
     instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>,
+    login_state: Arc<Mutex<Option<LoginState>>>,
+    pending_login_id: Arc<Mutex<Option<u64>>>,
 }
 
 impl WsClient {
@@ -98,17 +111,21 @@ impl WsClient {
         let pending_requests = Arc::new(Mutex::new(HashMap::new()));
         let subscriptions = Arc::new(Mutex::new(HashMap::new()));
         let next_id = Arc::new(AtomicU64::new(1));
+        let login_state = Arc::new(Mutex::new(None));
+        let pending_login_id = Arc::new(Mutex::new(None));
 
         let client = WsClient {
-            // url: url.clone(),
             write_tx: cmd_tx.clone(),
             pending_requests: pending_requests.clone(),
             subscriptions: subscriptions.clone(),
             next_id: next_id.clone(),
             shutdown_tx: shutdown_tx.clone(),
             instruments_cache: Arc::new(Mutex::new(HashMap::new())),
+            login_state: login_state.clone(),
+            pending_login_id: pending_login_id.clone(),
         };
 
+        let cancel_on_disconnect = true;
         // Spawn supervisor that reconnects and owns the websocket.
         tokio::spawn(connection_supervisor(
             url,
@@ -116,6 +133,11 @@ impl WsClient {
             shutdown_rx,
             pending_requests,
             subscriptions,
+            login_state,
+            pending_login_id,
+            cmd_tx,
+            next_id.clone(),
+            cancel_on_disconnect
         ));
         client.cache_instruments().await?;
         Ok(client)
@@ -144,7 +166,7 @@ impl WsClient {
             .await
             .get(instrument_name)
             .cloned();
-        // refresh cache if not found?
+        // refresh cache if not found
         if let Some(instr) = instrument {
             Ok(instr)
         } else {
@@ -167,6 +189,7 @@ impl WsClient {
             .send(InternalCommand::Send(Message::Text(text.into())))?;
         Ok(())
     }
+    
     pub async fn send_rpc<T: DeserializeOwned>(
         &self,
         method: &str,
@@ -189,8 +212,6 @@ impl WsClient {
 
         let text = request.to_string();
 
-        // info!("Sending RPC request: {}", text);
-
         if let Err(e) = self
             .write_tx
             .send(InternalCommand::Send(Message::Text(text.into())))
@@ -202,15 +223,8 @@ impl WsClient {
 
         let response = rx.await?;
 
-        // info!("Received RPC response: {}", response);
-
         let parsed: RpcMessage = serde_json::from_str(&response)?;
-
-        // This assumes `RpcMessage` has a `result` field compatible with T
-        // info!("RPC response for id={id}: {:?}", parsed);
-        let result: T = serde_json::from_value(parsed.result)?;
-
-        Ok(result)
+        Ok(serde_json::from_value(parsed.result)?)
     }
 
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
@@ -281,13 +295,23 @@ impl WsClient {
         info!("Unsubscribed from channel: {channel}");
         Ok(())
     }
+    
     pub async fn login(
         &self,
         key_id: &str,
         account_id: &str,
         private_key_path: &str,
     ) -> Result<(), Error> {
-        // we read the private key from the given file path
+        // Store login state for reconnections
+        {
+            let mut state = self.login_state.lock().await;
+            *state = Some(LoginState {
+                key_id: key_id.to_string(),
+                account_id: account_id.to_string(),
+                key_path: private_key_path.to_string(),
+            });
+        }
+
         let private_key_pem = tokio::fs::read_to_string(private_key_path).await?;
         let token = make_auth_token(key_id, private_key_pem)?;
         let result: Value = self
@@ -341,7 +365,6 @@ impl WsClient {
         let result: Value = self
             .send_rpc("private/portfolio", serde_json::json!({}))
             .await?;
-        // We match the result to see if it's an error or a valid portfolio
         let parsed: PrivatePortfolio = serde_json::from_value(result)?;
         let positions = match parsed {
             PrivatePortfolio::PrivatePortfolioResult(v) => v,
@@ -364,6 +387,7 @@ impl WsClient {
         info!("Set cancel_on_disconnect result: {result:?}");
         Ok(())
     }
+    
     #[allow(clippy::too_many_arguments)]
     pub async fn insert_order(
         &self,
@@ -375,12 +399,12 @@ impl WsClient {
         post_only: bool,
         reject_post_only: bool,
     ) -> Result<OrderStatus, Error> {
-        // Check if instrument is already cached
         let instrument = self
             .check_and_refresh_instrument_cache(instrument_name)
             .await?;
         let tick_size = instrument.tick_size.unwrap();
 
+        // info!("Inserting order: instrument: {}, amount: {}, price: {}, direction: {:?}, order_type: {:?}, post_only: {}, reject_post_only: {}", instrument_name, amount, price, direction, order_type, post_only, reject_post_only);
         let result: Value = self
             .send_rpc(
                 "private/insert",
@@ -400,6 +424,7 @@ impl WsClient {
         let order_status: OrderStatus = serde_json::from_value(result)?;
         Ok(order_status)
     }
+    
     pub async fn amend_order(
         &self,
         order_id: String,
@@ -425,6 +450,40 @@ impl WsClient {
         let order_status: OrderStatus = serde_json::from_value(result)?;
         Ok(order_status)
     }
+    pub async fn cancel_order(&self, order_id: String) -> Result<OrderStatus, Error> {
+        let result: Value = self
+            .send_rpc(
+                "private/cancel",
+                serde_json::json!({
+                    "order_id": order_id
+                }),
+            )
+            .await?;
+
+        let order_status: OrderStatus = serde_json::from_value(result)?;
+        Ok(order_status)
+    }
+    pub async fn cancel_all_orders(&self) -> Result<Vec<OrderStatus>, Error> {
+        let result: Value = self
+            .send_rpc(
+                "private/cancel_all",
+                serde_json::json!({}),
+            )
+            .await?;
+
+        let orders_status: Vec<OrderStatus> = serde_json::from_value(result)?;
+        Ok(orders_status)
+    }
+    pub async fn cancel_session(&self) -> Result<(), Error> {
+        let result = self
+            .send_rpc::<Value>(
+                "private/cancel_session",
+                serde_json::json!({}),
+            )
+            .await;
+        info!("Cancel session result: {result:?}");
+        Ok(())
+    }
 }
 
 fn round_to_ticks(price: f64, tick_size: f64) -> f64 {
@@ -432,12 +491,18 @@ fn round_to_ticks(price: f64, tick_size: f64) -> f64 {
 }
 
 /// Supervisor: reconnects on failures, replays subscriptions on each new connection.
+#[allow(clippy::too_many_arguments)]
 async fn connection_supervisor(
     url: String,
     mut cmd_rx: mpsc::UnboundedReceiver<InternalCommand>,
     mut shutdown_rx: watch::Receiver<bool>,
     pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
     subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    login_state: Arc<Mutex<Option<LoginState>>>,
+    pending_login_id: Arc<Mutex<Option<u64>>>,
+    cmd_tx: mpsc::UnboundedSender<InternalCommand>,
+    next_id: Arc<AtomicU64>,
+    cancel_on_disconnect: bool
 ) {
     info!("Connection supervisor started for {url}");
 
@@ -458,6 +523,11 @@ async fn connection_supervisor(
                     &mut shutdown_rx,
                     &pending_requests,
                     &subscriptions,
+                    &login_state,
+                    &pending_login_id,
+                    &cmd_tx,
+                    &next_id,
+                    cancel_on_disconnect
                 )
                 .await;
 
@@ -498,6 +568,7 @@ async fn connection_supervisor(
 }
 
 /// Single connection lifetime. Exits on close / error / shutdown.
+#[allow(clippy::too_many_arguments)]
 async fn run_single_connection(
     url: &str,
     mut ws: WsStream,
@@ -505,21 +576,51 @@ async fn run_single_connection(
     shutdown_rx: &mut watch::Receiver<bool>,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
     subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    login_state: &Arc<Mutex<Option<LoginState>>>,
+    pending_login_id: &Arc<Mutex<Option<u64>>>,
+    cmd_tx: &mpsc::UnboundedSender<InternalCommand>,
+    next_id: &Arc<AtomicU64>,
+    cancel_on_disconnect: bool,
 ) -> Result<(), Error> {
-    // Re-subscribe active channels on new connection.
-    {
-        let subs = subscriptions.lock().await;
-        for channel in subs.keys() {
-            let msg = serde_json::json!({
-                "method": "public/subscribe",
-                "params": { "channels": [channel] },
-            });
-            ws.send(Message::Text(msg.to_string().into())).await?;
-        }
+    // Handle reconnect login
+    if let Some(login) = login_state.lock().await.clone() {
+        let private_key_pem = tokio::fs::read_to_string(&login.key_path).await?;
+        let token = make_auth_token(&login.key_id, private_key_pem)?;
+        
+        // Generate a unique ID for this login request using the shared counter
+        let login_id = next_id.fetch_add(1, Ordering::Relaxed);
+        
+        let msg = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": login_id,
+            "method": "public/login",
+            "params": {
+                "token": token,
+                "account": login.account_id
+            }
+        });
+        
+        *pending_login_id.lock().await = Some(login_id);
+        ws.send(Message::Text(msg.to_string().into())).await?;
+        info!("Re-logging in on reconnect for {url} with id {login_id}");
+    } else {
+        // No login required, immediately resubscribe
+        resubscribe_channels(&mut ws, subscriptions, next_id).await?;
     }
+
+    // Set up ping interval
+    let mut ping_interval = interval(PING_INTERVAL);
+    ping_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
     loop {
         tokio::select! {
+            _ = ping_interval.tick() => {
+                if let Err(e) = ws.send(Message::Ping(Vec::new().into())).await {
+                    warn!("Failed to send ping for {url}: {e}");
+                    return Err(Box::new(e));
+                }
+            }
+            
             _ = shutdown_rx.changed() => {
                 if *shutdown_rx.borrow() {
                     info!("Shutdown requested for {url}");
@@ -532,6 +633,12 @@ async fn run_single_connection(
                 match maybe_cmd {
                     Some(InternalCommand::Send(msg)) => {
                         ws.send(msg).await?;
+                    }
+                    Some(InternalCommand::Resubscribe) => {
+                        resubscribe_channels(&mut ws, subscriptions, next_id).await?;
+                        if cancel_on_disconnect {
+                            set_cancel_on_disconnect(&mut ws, next_id).await?;
+                        }
                     }
                     Some(InternalCommand::Close) => {
                         info!("Close command received for {url}");
@@ -546,37 +653,56 @@ async fn run_single_connection(
                 }
             }
 
-            msg = ws.next() => {
+            msg = timeout(READ_TIMEOUT, ws.next()) => {
                 match msg {
-                    Some(Ok(Message::Text(text))) => {
-                        handle_incoming(text.to_string(), pending_requests, subscriptions).await;
+                    Ok(Some(Ok(Message::Text(text)))) => {
+                        handle_incoming(
+                            text.to_string(), 
+                            pending_requests, 
+                            subscriptions,
+                            pending_login_id,
+                            cmd_tx,
+                            url
+                        ).await;
                     }
-                    Some(Ok(Message::Binary(bin))) => {
+                    Ok(Some(Ok(Message::Binary(bin)))) => {
                         if let Ok(text) = String::from_utf8(bin.to_vec()) {
-                            handle_incoming(text, pending_requests, subscriptions).await;
+                            handle_incoming(
+                                text,
+                                pending_requests,
+                                subscriptions,
+                                pending_login_id,
+                                cmd_tx,
+                                url
+                            ).await;
                         } else {
                             warn!("Non-UTF8 binary message on {url}");
                         }
                     }
-                    Some(Ok(Message::Ping(data))) => {
+                    Ok(Some(Ok(Message::Ping(data)))) => {
                         ws.send(Message::Pong(data)).await?;
                     }
-                    Some(Ok(Message::Pong(_))) => {
-                        // ignore
+                    Ok(Some(Ok(Message::Pong(_)))) => {
+                        // Pong received, connection is alive
                     }
-                    Some(Ok(Message::Close(frame))) => {
+                    Ok(Some(Ok(Message::Close(frame)))) => {
                         warn!("WebSocket closed for {url}: {frame:?}");
                         return Ok(());
                     }
-                    Some(Err(e)) => {
+                    Ok(Some(Err(e))) => {
+                        warn!("WebSocket error for {url}: {e}");
                         return Err(Box::new(e));
                     }
-                    Some(Ok(Message::Frame(_))) => {
+                    Ok(Some(Ok(Message::Frame(_)))) => {
                         warn!("Received unsupported Frame message on {url}");
                     }
-                    None => {
+                    Ok(None) => {
                         warn!("WebSocket stream ended for {url}");
                         return Ok(());
+                    }
+                    Err(_) => {
+                        warn!("WebSocket read timeout for {url} - connection appears dead");
+                        return Err("websocket read timeout".into());
                     }
                 }
             }
@@ -584,10 +710,51 @@ async fn run_single_connection(
     }
 }
 
+async fn resubscribe_channels(
+    ws: &mut WsStream,
+    subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    next_id: &Arc<AtomicU64>,
+) -> Result<(), Error> {
+    let subs = subscriptions.lock().await;
+    if subs.is_empty() {
+        return Ok(());
+    }
+    
+    info!("Re-subscribing to {} channels", subs.len());
+    for channel in subs.keys() {
+        let id = next_id.fetch_add(1, Ordering::Relaxed);
+        let msg = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "public/subscribe",
+            "params": { "channels": [channel] },
+        });
+        ws.send(Message::Text(msg.to_string().into())).await?;
+        info!("Re-subscribed to channel: {}", channel);
+    }
+    Ok(())
+}
+
+async fn set_cancel_on_disconnect(ws: &mut WsStream, next_id: &Arc<AtomicU64>) -> Result<(), Error> {
+    let id = next_id.fetch_add(1, Ordering::Relaxed);
+    let msg = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "method": "private/cancel_on_disconnect",
+        "params": {},
+    });
+    ws.send(Message::Text(msg.to_string().into())).await?;
+    info!("Set cancel on disconnect!");
+    Ok(())
+}
+
 async fn handle_incoming(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
     subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pending_login_id: &Arc<Mutex<Option<u64>>>,
+    cmd_tx: &mpsc::UnboundedSender<InternalCommand>,
+    url: &str,
 ) {
     let parsed: Value = match serde_json::from_str(&text) {
         Ok(v) => v,
@@ -597,15 +764,57 @@ async fn handle_incoming(
         }
     };
 
-    // RPC response: has "id"
-    if let Some(id) = parsed.get("id").and_then(|v| v.as_u64()) {
-        let mut pending = pending_requests.lock().await;
-        if let Some(tx) = pending.remove(&id) {
-            let _ = tx.send(text);
-        } else {
-            warn!("Received RPC response for unknown id={id}");
+    // RPC response: has "id" (including null)
+    if let Some(id_value) = parsed.get("id") {
+        // Handle messages with id: null (like subscription responses/errors)
+        if id_value.is_null() {
+            // Check if it's a subscription result or error
+            if let Some(result) = parsed.get("result") {
+                info!("Subscription confirmed: {result}");
+            } else if let Some(error) = parsed.get("error") {
+                warn!("Subscription error: {error}");
+            }
+            return;
         }
-        return;
+        
+        // Handle messages with numeric IDs
+        if let Some(id) = id_value.as_u64() {
+            // Check if this is the login response we're waiting for
+            let mut pending_login = pending_login_id.lock().await;
+            if *pending_login == Some(id) {
+                *pending_login = None;
+                
+                // Check for login errors
+                if let Some(error) = parsed.get("error") {
+                    warn!("Login failed for {url}: {error}");
+                    // Still send to pending_requests so the login() call gets the error
+                    let mut pending = pending_requests.lock().await;
+                    if let Some(tx) = pending.remove(&id) {
+                        let _ = tx.send(text);
+                    }
+                    return;
+                }
+                
+                info!("Login complete for {url}, triggering resubscription");
+                
+                // Trigger resubscription via command
+                let _ = cmd_tx.send(InternalCommand::Resubscribe);
+                
+                // Still send login response to the original login() call
+                let mut pending = pending_requests.lock().await;
+                if let Some(tx) = pending.remove(&id) {
+                    let _ = tx.send(text);
+                }
+                return;
+            }
+            
+            // Handle normal pending requests
+            let mut pending = pending_requests.lock().await;
+            if let Some(tx) = pending.remove(&id) {
+                let _ = tx.send(text);
+            }
+            return;
+        }
     }
 
     // Subscription notification: has "channel_name"
