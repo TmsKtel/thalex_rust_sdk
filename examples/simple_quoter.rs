@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use log::{Level::Info, info, warn};
+use log::{Level::Info, info};
 use simple_logger::init_with_level;
 use thalex_rust_sdk::{
     models::{
@@ -181,23 +181,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
 
     client.wait_for_connection().await;
+    info!("Starting receive loop!");
     loop {
-        info!("Starting receive loop!");
         match client.run_till_event().await {
             ExternalEvent::Connected => {
-                let _ = client.resubscribe_all().await;
-                warn!("Received Connected event in main loop!");
+                client.resubscribe_all().await.ok();
             }
-            ExternalEvent::Disconnected => {
-                warn!("Client is disconnected! waiting before running.");
-                continue;
-            }
-            ExternalEvent::Exited => {
-                break;
-            }
+            ExternalEvent::Disconnected => continue,
+            ExternalEvent::Exited => break,
         }
-        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
     }
+    client.shutdown("Time to go!").await.unwrap();
     client.shutdown("Time to go!").await.unwrap();
     Ok(())
 }
