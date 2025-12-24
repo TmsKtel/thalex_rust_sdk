@@ -7,6 +7,7 @@ use thalex_rust_sdk::{
         Delay, OrderStatus,
         order_status::{Direction, OrderType, Status},
     },
+    types::ExternalEvent,
     ws_client::WsClient,
 };
 use tokio::sync::Mutex;
@@ -59,6 +60,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if state.bid_order.is_none() {
                     let bid_price = best_bid_price * (1.0 - ORDER_OFFSET_BPS / 10000.0);
                     let bid_order = client
+                        .rpc()
+                        .trading()
                         .insert_order(
                             MARKET_NAME,
                             ORDER_SIZE,
@@ -76,6 +79,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if state.ask_order.is_none() {
                     let ask_price = best_ask_price * (1.0 + ORDER_OFFSET_BPS / 10000.0);
                     let ask_order = client
+                        .rpc()
+                        .trading()
                         .insert_order(
                             MARKET_NAME,
                             ORDER_SIZE,
@@ -102,6 +107,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         || price_diff_bps.abs() > PRICE_TOLERANCE_MAX_BPS
                     {
                         let updated_bid_order = client
+                            .rpc()
+                            .trading()
                             .amend_order(
                                 bid_order.order_id.clone(),
                                 MARKET_NAME,
@@ -127,6 +134,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         || price_diff_bps.abs() > PRICE_TOLERANCE_MAX_BPS
                     {
                         let updated_ask_order = client
+                            .rpc()
+                            .trading()
                             .amend_order(
                                 ask_order.order_id.clone(),
                                 MARKET_NAME,
@@ -180,17 +189,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await;
 
+    client.wait_for_connection().await;
+    info!("Starting receive loop!");
     loop {
-        // Catch ctrl-c to exit
-        tokio::select! {
-            _ = tokio::time::sleep(tokio::time::Duration::from_secs(1)) => {}
-            _ = tokio::signal::ctrl_c() => {
-                println!("Ctrl-C received, shutting down");
-                break;
+        match client.run_till_event().await {
+            ExternalEvent::Connected => {
+                client.resubscribe_all().await.ok();
             }
+            ExternalEvent::Disconnected => continue,
+            ExternalEvent::Exited => break,
         }
     }
-
-    // client.shutdown("Time to go!").await.unwrap();
+    client.shutdown("Time to go!").await.unwrap();
     Ok(())
 }
