@@ -957,6 +957,72 @@ def write_updated_spec(openapi_spec: Dict[str, Any], output_file: str) -> None:
         for name in sorted(error_schemas.keys()):
             print(f"  - {name}")
 
+    print("=" * 80)
+    # print("Extracting Enums...")
+    # enums = {}
+    # updated_schemas = {}
+    # for name, schema in updated_spec.get("components", {}).get("schemas", {}).items():
+    #     new_schema, extracted_enums = extract_enums_from_schema(name, schema, enums)
+    #     enums.update(extracted_enums)
+    #     updated_schemas[name] = new_schema
+
+    # # Add extracted enums to components
+    # for enum_name, enum_values in enums.items():
+    #     if enum_name in updated_spec["components"]["schemas"]:
+    #         raise ValueError(f"Enum name conflict for {enum_name} during enum extraction")
+    #     updated_spec["components"]["schemas"][enum_name] = {
+    #         "type": "string",
+    #         "enum": enum_values
+    #     }
+    # updated_spec["components"]["schemas"].update(updated_schemas)
+    # # Write final updated spec with enums
+    # with open(output_file, "w") as f:
+    #     json.dump(updated_spec, f, indent=2)
+
+
+def generate_enum_name(schema_name: str, property_name: str) -> str:
+    """
+    Generate a name for an enum based on the schema and property names.
+    schema_name: 'ConditionalOrder'
+    property_name: 'status'
+    returns: 'ConditionalOrderStatusEnum'
+    """
+    cleaned_property_name = ''.join(word.capitalize() for word in property_name.split('_'))
+    return f"{schema_name}{cleaned_property_name}"
+
+
+
+
+def extract_enums_from_schema(schema_name, schema: dict, enums: dict) -> tuple[dict, dict]:
+    """
+    Read in an a schema, and extract any enum definitions.
+    """
+    
+    updated_schema = copy.deepcopy(schema)
+    for property_name, property_schema in schema.get("properties", {}).items():
+        if property_schema.get("type") == "string" and "enum" in property_schema:
+            enum_name = generate_enum_name("", property_name)
+            enum_value = sorted(property_schema["enum"])
+            if enum_value in enums.values():
+                # Enum already exists, find its name
+                existing_enum_name = [k for k, v in enums.items() if v == enum_value][0]
+                print(f"Enum values already exist as {existing_enum_name}, reusing...")
+                enum_name = existing_enum_name
+            else:
+                if enum_name in enums:
+                    # Name conflict, append a number
+                    enum_name = generate_enum_name(schema_name, property_name)
+                    if enum_name in enums:
+                        breakpoint()
+                        raise ValueError(f"Enum name conflict for {enum_name}")
+                enums[enum_name] = enum_value
+                print(f"Extracted enum {enum_name} with values {enum_value}")
+            # Update the schema to reference the enum
+            updated_schema["properties"][property_name] = {"$ref": f"#/components/schemas/{enum_name}"}
+    return updated_schema, enums
+        
+    
+
 
 def main() -> None:
     import os
