@@ -1,4 +1,5 @@
-use serde::de::DeserializeOwned;
+use serde::{Deserialize, de::DeserializeOwned};
+
 use tokio::{
     sync::oneshot,
     time::{Duration, Instant, MissedTickBehavior, interval, sleep},
@@ -13,16 +14,46 @@ use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
 };
+use thiserror::Error;
 use tokio::sync::{Mutex, mpsc, watch};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
 use crate::{
     auth_utils::make_auth_token,
+    models::{RpcErrorResponse, RpcResponse},
     types::{
-        Error, ExternalEvent, InternalCommand, LoginState, RequestScope, ResponseSender,
-        RpcMessage, WsStream,
+        Error, ExternalEvent, InternalCommand, LoginState, RequestScope, ResponseSender, WsStream,
     },
 };
+
+// #[derive(Deserialize)]
+// #[serde(untagged)]
+// enum RpcEnvelope<T> {
+//     Ok { id: u64, result: T },
+//     Err { id: u64, error: RpcErrorResponse },
+// }
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum SubscribeResponse {
+    Ok { id: u64, result: Vec<String> },
+    Err { id: u64, error: RpcErrorResponse },
+}
+
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("RPC error: {0:?}")]
+    Rpc(RpcErrorResponse),
+
+    #[error("transport error")]
+    Transport(#[from] Box<dyn std::error::Error + Send + Sync>),
+
+    #[error("JSON parse error")]
+    Parse(#[from] serde_json::Error),
+
+    #[error("oneshot receive error")]
+    Recv(#[from] oneshot::error::RecvError),
+}
 
 use crate::channels::subscriptions::Subscriptions;
 use crate::rpc::Rpc;
@@ -152,11 +183,14 @@ impl WsClient {
     //     }
     // }
 
-    pub async fn send_rpc<T: DeserializeOwned>(
+    pub async fn send_rpc<T>(
         &self,
         method: &str,
         params: serde_json::Value,
-    ) -> Result<T, Error> {
+    ) -> Result<T, ClientError>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<String>();
@@ -180,13 +214,15 @@ impl WsClient {
         {
             let mut pending = self.pending_requests.lock().await;
             pending.remove(&id);
-            return Err(Box::new(e));
+            return Err(ClientError::Transport(Box::new(e)));
         }
 
         let response = rx.await?;
 
-        let parsed: RpcMessage = serde_json::from_str(&response)?;
-        Ok(serde_json::from_value(parsed.result)?)
+        let envelope: T = serde_json::from_str(&response)?;
+        Ok(envelope)
+
+        // print the keys and types in the response for debugging
     }
 
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
@@ -201,41 +237,50 @@ impl WsClient {
         scope: RequestScope,
         channel: String,
         mut callback: F,
-    ) -> Result<Vec<String>, Error>
+    ) -> Result<String, ClientError>
     where
         P: DeserializeOwned + Send + 'static,
         F: FnMut(P) + Send + 'static,
     {
-        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
-
-        {
-            let mut subs = self.subscriptions.lock().await;
-            subs.insert(channel.clone(), tx);
-        }
-        let sub_result: Vec<String> = serde_json::from_value(
-            self.send_rpc::<Value>(
+        let sub_result: SubscribeResponse = self
+            .send_rpc(
                 &format!("{scope}/subscribe"),
                 serde_json::json!({
                     "channels": [channel.clone()]
                 }),
             )
-            .await?,
-        )?;
-        tokio::spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                let parsed: P = match serde_json::from_str(&msg) {
-                    Ok(m) => m,
-                    Err(e) => {
-                        warn!("Failed to parse channel message: {e}; raw: {msg}");
-                        continue;
-                    }
-                };
+            .await?;
+        match sub_result {
+            SubscribeResponse::Ok {
+                id: _id,
+                result: _result,
+            } => {
+                let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-                callback(parsed);
+                {
+                    let mut subs = self.subscriptions.lock().await;
+                    subs.insert(channel.clone(), tx);
+                }
+
+                tokio::spawn(async move {
+                    while let Some(msg) = rx.recv().await {
+                        let parsed: P = match serde_json::from_str(&msg) {
+                            Ok(m) => m,
+                            Err(e) => {
+                                warn!("Failed to parse channel message: {e}; raw: {msg}");
+                                continue;
+                            }
+                        };
+
+                        callback(parsed);
+                    }
+                });
+                Ok(channel)
             }
-        });
-        info!("Subscription result: {sub_result:?}");
-        Ok(sub_result)
+            SubscribeResponse::Err { error, id: _id } => {
+                Err(ClientError::Rpc(error))
+            }
+        }
     }
 
     pub async fn unsubscribe(&self, channel: &str) -> Result<(), Error> {
@@ -246,8 +291,8 @@ impl WsClient {
             subs.remove(&channel);
         }
 
-        let _ = self
-            .send_rpc::<Value>(
+        let _: RpcResponse = self
+            .send_rpc(
                 "public/unsubscribe",
                 serde_json::json!({
                     "channels": [channel.clone()]
@@ -327,12 +372,12 @@ impl WsClient {
     // }
 
     pub async fn set_cancel_on_disconnect(&self) -> Result<(), Error> {
-        let result = self
-            .send_rpc::<Value>(
+        let result: RpcResponse = self
+            .send_rpc(
                 "private/set_cancel_on_disconnect",
                 serde_json::json!({ "timeout_secs": 6}),
             )
-            .await;
+            .await?;
         info!("Set cancel_on_disconnect result: {result:?}");
         Ok(())
     }
@@ -357,8 +402,8 @@ impl WsClient {
     pub async fn resubscribe_all(&self) -> Result<(), Error> {
         let subs = self.subscriptions.lock().await;
         for channel in subs.keys() {
-            let _ = self
-                .send_rpc::<Value>(
+            let _: RpcResponse = self
+                .send_rpc(
                     "public/subscribe",
                     serde_json::json!({
                         "channels": [channel.clone()]

@@ -17,7 +17,7 @@ pub struct InstrumentResult {
     pub result: models::Instrument,
     /// The request ID
     #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub id: Option<u64>,
 }
 
 impl InstrumentResult {

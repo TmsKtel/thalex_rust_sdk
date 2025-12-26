@@ -397,6 +397,14 @@ def clean_useless_files():
         if file_path.name.endswith("_request.rs") or file_path.name.endswith("all_of_params.rs"):
             print("  deleting unused file:", file_path)
             file_path.unlink()
+            continue
+        # smole fix for the id content
+        if file_path.name.endswith("_result.rs"):
+            content = file_path.read_text()
+            if "pub id: Option<String>" in content:
+                content = content.replace("pub id: Option<String>", "pub id: Option<u64>")
+                file_path.write_text(content)
+
     for file_path in (Path(GENERATION_OUTPUT) / "src" / "models").rglob("*.rs"):
         content = file_path.read_text()
         content = content \
