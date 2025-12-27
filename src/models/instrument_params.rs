@@ -11,18 +11,15 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// ErrorResponseError : Error code and message.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseError {
-    #[serde(rename = "code")]
-    pub code: i32,
-    #[serde(rename = "message")]
-    pub message: String,
+pub struct InstrumentParams {
+    /// Name of the instrument to query.
+    #[serde(rename = "instrument_name")]
+    pub instrument_name: String,
 }
 
-impl ErrorResponseError {
-    /// Error code and message.
-    pub fn new(code: i32, message: String) -> ErrorResponseError {
-        ErrorResponseError { code, message }
+impl InstrumentParams {
+    pub fn new(instrument_name: String) -> InstrumentParams {
+        InstrumentParams { instrument_name }
     }
 }

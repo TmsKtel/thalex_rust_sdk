@@ -12,14 +12,17 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RpcResponse {
-    /// Your request id, or null if not supplied.
+pub struct InstrumentsResult {
+    /// List of currently active instruments.
+    #[serde(rename = "result")]
+    pub result: Vec<models::Instrument>,
+    /// The request ID
     #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<serde_json::Value>,
+    pub id: Option<u64>,
 }
 
-impl RpcResponse {
-    pub fn new() -> RpcResponse {
-        RpcResponse { id: None }
+impl InstrumentsResult {
+    pub fn new(result: Vec<models::Instrument>) -> InstrumentsResult {
+        InstrumentsResult { result, id: None }
     }
 }

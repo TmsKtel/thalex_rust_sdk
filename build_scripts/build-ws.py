@@ -3,31 +3,10 @@ Script to build the WebSocket Subscriptions for the Thalex Rust SDK.
 """
 
 import json
-from pathlib import Path
 
+from utils import ALIASES, ENUMS, OUTPUT_PATH, PUBLIC_TAGS, WS_SPEC, collect_all_tags_from_spec
 from templates.subscriptions import func_template, file_template
 
-WS_SPEC = Path("ws_spec_updated.json")
-OUTPUT_PATH = Path("src/channels")
-
-
-ALIASES = {
-    "PriceIndexPayload": "Index",
-    "PriceIndex": "Index",
-    "AccountSummaryPayload": "AccountSummary",
-    "TickerPayload": "Ticker",
-    "SystemPayload": "SystemEvent",
-    "UserInboxNotificationsPayload": "NotificationsNotificationsInner"
-}
-
-ENUMS = [
-    "Delay",
-]
-
-PUBLIC_TAGS = [
-    "subs_market_data",
-    "subs_system",
-]
 
 
 def load_ws_spec():
@@ -103,18 +82,9 @@ def build_namespace_file(spec, functions, tag):
     )
     return file_content
 
-def collect_all_tags(spec):
-    tags = set()
-    for _, path_spec in spec["paths"].items():
-        path_tags = path_spec.get("get", {}).get("tags", [])
-        print("   Found tags:", path_tags)
-        for tag in path_tags:
-            tags.add(tag)
-    return tags
-
 if __name__ == "__main__":
     spec = load_ws_spec()
-    tags = collect_all_tags(spec)
+    tags = collect_all_tags_from_spec(spec)
     print("Collected tags:", tags)
     for tag in tags:
         print("Processing tag:", tag)

@@ -1,4 +1,5 @@
-use serde::de::DeserializeOwned;
+use serde::{Deserialize, de::DeserializeOwned};
+
 use tokio::{
     sync::oneshot,
     time::{Duration, Instant, MissedTickBehavior, interval, sleep},
@@ -13,19 +14,46 @@ use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
 };
+use thiserror::Error;
 use tokio::sync::{Mutex, mpsc, watch};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
-use crate::models::{
-    Instrument, PortfolioEntry, PrivatePortfolio, PrivateTradeHistoryResult, PublicInstruments,
-};
 use crate::{
     auth_utils::make_auth_token,
+    models::{RpcErrorResponse, RpcResponse},
     types::{
-        Error, ExternalEvent, InternalCommand, LoginState, RequestScope, ResponseSender,
-        RpcMessage, WsStream,
+        Error, ExternalEvent, InternalCommand, LoginState, RequestScope, ResponseSender, WsStream,
     },
 };
+
+// #[derive(Deserialize)]
+// #[serde(untagged)]
+// enum RpcEnvelope<T> {
+//     Ok { id: u64, result: T },
+//     Err { id: u64, error: RpcErrorResponse },
+// }
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum SubscribeResponse {
+    Ok { id: u64, result: Vec<String> },
+    Err { id: u64, error: RpcErrorResponse },
+}
+
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("RPC error: {0:?}")]
+    Rpc(RpcErrorResponse),
+
+    #[error("transport error")]
+    Transport(#[from] Box<dyn std::error::Error + Send + Sync>),
+
+    #[error("JSON parse error")]
+    Parse(#[from] serde_json::Error),
+
+    #[error("oneshot receive error")]
+    Recv(#[from] oneshot::error::RecvError),
+}
 
 use crate::channels::subscriptions::Subscriptions;
 use crate::rpc::Rpc;
@@ -40,7 +68,7 @@ pub struct WsClient {
     pub subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
-    instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>,
+    // instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>,
     login_state: LoginState,
     connection_state_rx: watch::Receiver<ExternalEvent>,
 }
@@ -66,7 +94,6 @@ impl WsClient {
         WsClient::new(URL, "".to_string(), "".to_string(), "".to_string()).await
     }
 
-    /// Create a client and start the supervisor loop, connecting to the given URL.
     pub async fn new(
         url: impl Into<String>,
         key_id: String,
@@ -82,7 +109,6 @@ impl WsClient {
         let subscriptions = Arc::new(Mutex::new(HashMap::new()));
         let next_id = Arc::new(AtomicU64::new(1));
 
-        // let (disconnect_tx, disconnect_rx) = watch::channel(false);
         let (connection_state_tx, connection_state_rx) =
             watch::channel(ExternalEvent::Disconnected);
 
@@ -100,85 +126,71 @@ impl WsClient {
             subscriptions: subscriptions.clone(),
             next_id: next_id.clone(),
             shutdown_tx: shutdown_tx.clone(),
-            instruments_cache: Arc::new(Mutex::new(HashMap::new())),
+            // instruments_cache: Arc::new(Mutex::new(HashMap::new())),
             login_state,
-            // pending_login_id: pending_login_id.clone(),
-            // disconnect_rx: disconnect_rx
             connection_state_rx,
         };
 
-        // let cancel_on_disconnect = true;
-        // Spawn supervisor that reconnects and owns the websocket.
         tokio::spawn(connection_supervisor(
             url,
             cmd_rx,
             shutdown_rx,
             pending_requests,
             subscriptions,
-            // login_state,
-            // pending_login_id,
-            // cmd_tx,
-            // next_id.clone(),
-            // cancel_on_disconnect,
-            // disconnect_tx,
             connection_state_tx,
         ));
-        client.cache_instruments().await?;
+        // client.cache_instruments().await?;
         Ok(client)
     }
 
-    async fn cache_instruments(&self) -> Result<(), Error> {
-        let instruments = self.get_instruments().await?;
-        let mut cache = self.instruments_cache.lock().await;
-        cache.clear();
-        for instrument in &instruments {
-            cache.insert(
-                instrument.instrument_name.clone().unwrap(),
-                instrument.clone(),
-            );
-        }
-        Ok(())
-    }
+    // async fn cache_instruments(&self) -> Result<(), Error> {
+    //     let instruments = self.get_instruments().await?;
+    //     let mut cache = self.instruments_cache.lock().await;
+    //     cache.clear();
+    //     for instrument in &instruments {
+    //         cache.insert(
+    //             instrument.instrument_name.clone().unwrap(),
+    //             instrument.clone(),
+    //         );
+    //     }
+    //     Ok(())
+    // }
 
-    pub async fn check_and_refresh_instrument_cache(
-        &self,
-        instrument_name: &str,
-    ) -> Result<Instrument, Error> {
-        let instrument = self
-            .instruments_cache
-            .lock()
-            .await
-            .get(instrument_name)
-            .cloned();
-        // refresh cache if not found
-        if let Some(instr) = instrument {
-            Ok(instr)
-        } else {
-            self.cache_instruments().await?;
-            let cache = self.instruments_cache.lock().await;
-            if let Some(instr) = cache.get(instrument_name).cloned() {
-                Ok(instr)
-            } else {
-                Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("Instrument not found: {instrument_name}"),
-                )))
-            }
-        }
-    }
+    // pub async fn check_and_refresh_instrument_cache(
+    //     &self,
+    //     instrument_name: &str,
+    // ) -> Result<Instrument, Error> {
+    //     let instrument = self
+    //         .instruments_cache
+    //         .lock()
+    //         .await
+    //         .get(instrument_name)
+    //         .cloned();
+    //     // refresh cache if not found
+    //     if let Some(instr) = instrument {
+    //         Ok(instr)
+    //     } else {
+    //         self.cache_instruments().await?;
+    //         let cache = self.instruments_cache.lock().await;
+    //         if let Some(instr) = cache.get(instrument_name).cloned() {
+    //             Ok(instr)
+    //         } else {
+    //             Err(Box::new(std::io::Error::new(
+    //                 std::io::ErrorKind::NotFound,
+    //                 format!("Instrument not found: {instrument_name}"),
+    //             )))
+    //         }
+    //     }
+    // }
 
-    pub fn send_json(&self, value: Value) -> Result<(), Error> {
-        let text = value.to_string();
-        self.write_tx
-            .send(InternalCommand::Send(Message::Text(text.into())))?;
-        Ok(())
-    }
-
-    pub async fn send_rpc<T: DeserializeOwned>(
+    pub async fn send_rpc<T>(
         &self,
         method: &str,
         params: serde_json::Value,
-    ) -> Result<T, Error> {
+    ) -> Result<T, ClientError>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<String>();
@@ -202,13 +214,15 @@ impl WsClient {
         {
             let mut pending = self.pending_requests.lock().await;
             pending.remove(&id);
-            return Err(Box::new(e));
+            return Err(ClientError::Transport(Box::new(e)));
         }
 
         let response = rx.await?;
 
-        let parsed: RpcMessage = serde_json::from_str(&response)?;
-        Ok(serde_json::from_value(parsed.result)?)
+        let envelope: T = serde_json::from_str(&response)?;
+        Ok(envelope)
+
+        // print the keys and types in the response for debugging
     }
 
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
@@ -223,41 +237,48 @@ impl WsClient {
         scope: RequestScope,
         channel: String,
         mut callback: F,
-    ) -> Result<Vec<String>, Error>
+    ) -> Result<String, ClientError>
     where
         P: DeserializeOwned + Send + 'static,
         F: FnMut(P) + Send + 'static,
     {
-        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
-
-        {
-            let mut subs = self.subscriptions.lock().await;
-            subs.insert(channel.clone(), tx);
-        }
-        let sub_result: Vec<String> = serde_json::from_value(
-            self.send_rpc::<Value>(
+        let sub_result: SubscribeResponse = self
+            .send_rpc(
                 &format!("{scope}/subscribe"),
                 serde_json::json!({
                     "channels": [channel.clone()]
                 }),
             )
-            .await?,
-        )?;
-        tokio::spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                let parsed: P = match serde_json::from_str(&msg) {
-                    Ok(m) => m,
-                    Err(e) => {
-                        warn!("Failed to parse channel message: {e}; raw: {msg}");
-                        continue;
-                    }
-                };
+            .await?;
+        match sub_result {
+            SubscribeResponse::Ok {
+                id: _id,
+                result: _result,
+            } => {
+                let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
-                callback(parsed);
+                {
+                    let mut subs = self.subscriptions.lock().await;
+                    subs.insert(channel.clone(), tx);
+                }
+
+                tokio::spawn(async move {
+                    while let Some(msg) = rx.recv().await {
+                        let parsed: P = match serde_json::from_str(&msg) {
+                            Ok(m) => m,
+                            Err(e) => {
+                                warn!("Failed to parse channel message: {e}; raw: {msg}");
+                                continue;
+                            }
+                        };
+
+                        callback(parsed);
+                    }
+                });
+                Ok(channel)
             }
-        });
-        info!("Subscription result: {sub_result:?}");
-        Ok(sub_result)
+            SubscribeResponse::Err { error, id: _id } => Err(ClientError::Rpc(error)),
+        }
     }
 
     pub async fn unsubscribe(&self, channel: &str) -> Result<(), Error> {
@@ -268,8 +289,8 @@ impl WsClient {
             subs.remove(&channel);
         }
 
-        let _ = self
-            .send_rpc::<Value>(
+        let _: RpcResponse = self
+            .send_rpc(
                 "public/unsubscribe",
                 serde_json::json!({
                     "channels": [channel.clone()]
@@ -299,62 +320,62 @@ impl WsClient {
         Ok(())
     }
 
-    /// Get instruments using the generic RPC method
-    pub async fn get_instruments(&self) -> Result<Vec<Instrument>, Error> {
-        let result: PublicInstruments = self
-            .send_rpc("public/instruments", serde_json::json!({}))
-            .await?;
+    // /// Get instruments using the generic RPC method
+    // pub async fn get_instruments(&self) -> Result<Vec<Instrument>, Error> {
+    //     let result: PublicInstruments = self
+    //         .send_rpc("public/instruments", serde_json::json!({}))
+    //         .await?;
 
-        match result {
-            PublicInstruments::PublicInstrumentsResult(v) => Ok(v),
-            PublicInstruments::ErrorResponse(err) => Err(Box::new(std::io::Error::other(format!(
-                "API error: {err:?}"
-            )))),
-        }
-    }
+    //     match result {
+    //         PublicInstruments::PublicInstrumentsResult(v) => Ok(v),
+    //         PublicInstruments::ErrorResponse(err) => Err(Box::new(std::io::Error::other(format!(
+    //             "API error: {err:?}"
+    //         )))),
+    //     }
+    // }
 
-    pub async fn get_trade_history(
-        &self,
-        bookmark: Option<String>,
-    ) -> Result<PrivateTradeHistoryResult, Error> {
-        let result: Value = self
-            .send_rpc(
-                "private/trade_history",
-                if let Some(bm) = bookmark {
-                    serde_json::json!({ "bookmark": bm })
-                } else {
-                    serde_json::json!({})
-                },
-            )
-            .await?;
-        let parsed: PrivateTradeHistoryResult = serde_json::from_value(result)?;
+    // pub async fn get_trade_history(
+    //     &self,
+    //     bookmark: Option<String>,
+    // ) -> Result<PrivateTradeHistoryResult, Error> {
+    //     let result: Value = self
+    //         .send_rpc(
+    //             "private/trade_history",
+    //             if let Some(bm) = bookmark {
+    //                 serde_json::json!({ "bookmark": bm })
+    //             } else {
+    //                 serde_json::json!({})
+    //             },
+    //         )
+    //         .await?;
+    //     let parsed: PrivateTradeHistoryResult = serde_json::from_value(result)?;
 
-        Ok(parsed)
-    }
+    //     Ok(parsed)
+    // }
 
-    pub async fn get_positions(&self) -> Result<Vec<PortfolioEntry>, Error> {
-        let result: Value = self
-            .send_rpc("private/portfolio", serde_json::json!({}))
-            .await?;
-        let parsed: PrivatePortfolio = serde_json::from_value(result)?;
-        let positions = match parsed {
-            PrivatePortfolio::PrivatePortfolioResult(v) => v,
-            PrivatePortfolio::ErrorResponse(err) => {
-                return Err(Box::new(std::io::Error::other(format!(
-                    "API error: {err:?}"
-                ))));
-            }
-        };
-        Ok(positions)
-    }
+    // pub async fn get_positions(&self) -> Result<Vec<PortfolioEntry>, Error> {
+    //     let result: Value = self
+    //         .send_rpc("private/portfolio", serde_json::json!({}))
+    //         .await?;
+    //     let parsed: PrivatePortfolio = serde_json::from_value(result)?;
+    //     let positions = match parsed {
+    //         PrivatePortfolio::PrivatePortfolioResult(v) => v,
+    //         PrivatePortfolio::ErrorResponse(err) => {
+    //             return Err(Box::new(std::io::Error::other(format!(
+    //                 "API error: {err:?}"
+    //             ))));
+    //         }
+    //     };
+    //     Ok(positions)
+    // }
 
     pub async fn set_cancel_on_disconnect(&self) -> Result<(), Error> {
-        let result = self
-            .send_rpc::<Value>(
+        let result: RpcResponse = self
+            .send_rpc(
                 "private/set_cancel_on_disconnect",
                 serde_json::json!({ "timeout_secs": 6}),
             )
-            .await;
+            .await?;
         info!("Set cancel_on_disconnect result: {result:?}");
         Ok(())
     }
@@ -379,8 +400,8 @@ impl WsClient {
     pub async fn resubscribe_all(&self) -> Result<(), Error> {
         let subs = self.subscriptions.lock().await;
         for channel in subs.keys() {
-            let _ = self
-                .send_rpc::<Value>(
+            let _: RpcResponse = self
+                .send_rpc(
                     "public/subscribe",
                     serde_json::json!({
                         "channels": [channel.clone()]
@@ -401,8 +422,6 @@ impl WsClient {
     }
 }
 
-/// Supervisor: reconnects on failures, replays subscriptions on each new connection.
-#[allow(clippy::too_many_arguments)]
 async fn connection_supervisor(
     url: String,
     mut cmd_rx: mpsc::UnboundedReceiver<InternalCommand>,
@@ -475,8 +494,6 @@ async fn connection_supervisor(
     info!("Connection supervisor exited for {url}");
 }
 
-/// Single connection lifetime. Exits on close / error / shutdown.
-#[allow(clippy::too_many_arguments)]
 async fn run_single_connection(
     url: &str,
     mut ws: WsStream,
@@ -536,9 +553,6 @@ async fn run_single_connection(
                             text.to_string(),
                             pending_requests,
                             subscriptions,
-                            // pending_login_id,
-                            // cmd_tx,
-                            // url
                         ).await;
                     }
                     Some(Ok(Message::Binary(bin))) => {
@@ -547,9 +561,6 @@ async fn run_single_connection(
                                 text,
                                 pending_requests,
                                 subscriptions,
-                                // pending_login_id,
-                                // cmd_tx,
-                                // url
                             ).await;
                         } else {
                             warn!("Non-UTF8 binary message on {url}");
@@ -591,9 +602,6 @@ async fn handle_incoming(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
     subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
-    // pending_login_id: &Arc<Mutex<Option<u64>>>,
-    // cmd_tx: &mpsc::UnboundedSender<InternalCommand>,
-    // url: &str,
 ) {
     let parsed: Value = match serde_json::from_str(&text) {
         Ok(v) => v,

@@ -11,18 +11,17 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// ErrorResponseError : Error code and message.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseError {
-    #[serde(rename = "code")]
-    pub code: i32,
-    #[serde(rename = "message")]
-    pub message: String,
+pub struct InstrumentResult {
+    #[serde(rename = "result")]
+    pub result: models::Instrument,
+    /// The request ID
+    #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
+    pub id: Option<u64>,
 }
 
-impl ErrorResponseError {
-    /// Error code and message.
-    pub fn new(code: i32, message: String) -> ErrorResponseError {
-        ErrorResponseError { code, message }
+impl InstrumentResult {
+    pub fn new(result: models::Instrument) -> InstrumentResult {
+        InstrumentResult { result, id: None }
     }
 }
