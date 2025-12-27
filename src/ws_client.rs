@@ -54,12 +54,13 @@ use crate::rpc::Rpc;
 
 const URL: &str = "wss://thalex.com/ws/api/v2";
 const PING_INTERVAL: Duration = Duration::from_secs(5);
-const READ_TIMEOUT: Duration = Duration::from_secs(5);
+const READ_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct WsClient {
     write_tx: mpsc::UnboundedSender<InternalCommand>,
     pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    pub subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pub public_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pub private_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
     instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>,
@@ -102,7 +103,8 @@ impl WsClient {
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
         let pending_requests = Arc::new(Mutex::new(HashMap::new()));
-        let subscriptions = Arc::new(Mutex::new(HashMap::new()));
+        let public_subscriptions = Arc::new(Mutex::new(HashMap::new()));
+        let private_subscriptions = Arc::new(Mutex::new(HashMap::new()));
         let next_id = Arc::new(AtomicU64::new(1));
 
         let (connection_state_tx, connection_state_rx) =
@@ -119,7 +121,8 @@ impl WsClient {
         let client = WsClient {
             write_tx: cmd_tx.clone(),
             pending_requests: pending_requests.clone(),
-            subscriptions: subscriptions.clone(),
+            public_subscriptions: public_subscriptions.clone(),
+            private_subscriptions: private_subscriptions.clone(),
             next_id: next_id.clone(),
             shutdown_tx: shutdown_tx.clone(),
             instruments_cache: Arc::new(Mutex::new(HashMap::new())),
@@ -132,7 +135,8 @@ impl WsClient {
             cmd_rx,
             shutdown_rx,
             pending_requests,
-            subscriptions,
+            public_subscriptions,
+            private_subscriptions,
             connection_state_tx,
         ));
         // client.cache_instruments().await?;
@@ -258,8 +262,18 @@ impl WsClient {
                 let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
                 {
-                    let mut subs = self.subscriptions.lock().await;
-                    subs.insert(channel.clone(), tx);
+                    match scope {
+                        RequestScope::Public => {
+                            let mut subs = self.public_subscriptions.lock().await;
+                            subs.insert(channel.clone(), tx);
+                            info!("Subscribed to public channel: {channel}");
+                        }
+                        RequestScope::Private => {
+                            let mut subs = self.private_subscriptions.lock().await;
+                            subs.insert(channel.clone(), tx);
+                            info!("Subscribed to private channel: {channel}");
+                        }
+                    }
                 }
 
                 tokio::spawn(async move {
@@ -288,20 +302,40 @@ impl WsClient {
         let channel = channel.to_string();
 
         {
-            let mut subs = self.subscriptions.lock().await;
-            subs.remove(&channel);
+            let mut subs = self.public_subscriptions.lock().await;
+            if subs.remove(&channel).is_some() {
+                let _: RpcResponse = self
+                    .send_rpc(
+                        "public/unsubscribe",
+                        serde_json::json!({
+                            "channels": [channel.clone()]
+                        }),
+                    )
+                    .await?;
+                info!("Unsubscribed from public channel: {channel}");
+                return Ok(());
+            }
         }
-
-        let _: RpcResponse = self
-            .send_rpc(
-                "public/unsubscribe",
-                serde_json::json!({
-                    "channels": [channel.clone()]
-                }),
-            )
-            .await?;
-        info!("Unsubscribed from channel: {channel}");
-        Ok(())
+        {
+            let mut subs = self.private_subscriptions.lock().await;
+            if subs.remove(&channel).is_some() {
+                let _: RpcResponse = self
+                    .send_rpc(
+                        "private/unsubscribe",
+                        serde_json::json!({
+                            "channels": [channel.clone()]
+                        }),
+                    )
+                    .await?;
+                info!("Unsubscribed from private channel: {channel}");
+                return Ok(());
+            }
+        }
+        warn!("No active subscription found for channel: {channel}");
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("No active subscription for channel: {channel}"),
+        )))
     }
 
     pub async fn login(&self) -> Result<(), Error> {
@@ -356,11 +390,29 @@ impl WsClient {
     }
 
     pub async fn resubscribe_all(&self) -> Result<(), Error> {
-        let subs = self.subscriptions.lock().await;
-        for channel in subs.keys() {
+        let public_channels: Vec<String> = {
+            let subs = self.public_subscriptions.lock().await;
+            subs.keys().cloned().collect()
+        };
+        for channel in public_channels {
             let _: RpcResponse = self
                 .send_rpc(
                     "public/subscribe",
+                    serde_json::json!({
+                        "channels": [channel.clone()]
+                    }),
+                )
+                .await?;
+            info!("Re-subscribed to channel: {channel}");
+        }
+        let private_channels: Vec<String> = {
+            let subs = self.private_subscriptions.lock().await;
+            subs.keys().cloned().collect()
+        };
+        for channel in private_channels {
+            let _: RpcResponse = self
+                .send_rpc(
+                    "private/subscribe",
                     serde_json::json!({
                         "channels": [channel.clone()]
                     }),
@@ -385,7 +437,8 @@ async fn connection_supervisor(
     mut cmd_rx: mpsc::UnboundedReceiver<InternalCommand>,
     mut shutdown_rx: watch::Receiver<bool>,
     pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    public_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    private_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
     connection_state_tx: watch::Sender<ExternalEvent>,
 ) {
     info!("Connection supervisor started for {url}");
@@ -409,7 +462,8 @@ async fn connection_supervisor(
                     &mut cmd_rx,
                     &mut shutdown_rx,
                     &pending_requests,
-                    &subscriptions,
+                    &public_subscriptions,
+                    &private_subscriptions,
                 )
                 .await;
 
@@ -458,7 +512,8 @@ async fn run_single_connection(
     cmd_rx: &mut mpsc::UnboundedReceiver<InternalCommand>,
     shutdown_rx: &mut watch::Receiver<bool>,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
 ) -> Result<(), Error> {
     // Set up ping interval
     let mut ping_interval = interval(PING_INTERVAL);
@@ -510,7 +565,8 @@ async fn run_single_connection(
                         handle_incoming(
                             text.to_string(),
                             pending_requests,
-                            subscriptions,
+                            public_subscriptions,
+                            private_subscriptions,
                         ).await;
                     }
                     Some(Ok(Message::Binary(bin))) => {
@@ -518,7 +574,8 @@ async fn run_single_connection(
                             handle_incoming(
                                 text,
                                 pending_requests,
-                                subscriptions,
+                                public_subscriptions,
+                                private_subscriptions,
                             ).await;
                         } else {
                             warn!("Non-UTF8 binary message on {url}");
@@ -559,7 +616,8 @@ async fn run_single_connection(
 async fn handle_incoming(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
 ) {
     let parsed: Value = match serde_json::from_str(&text) {
         Ok(v) => v,
@@ -594,16 +652,17 @@ async fn handle_incoming(
 
     // Subscription notification: has "channel_name"
     if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
-        let mut subs = subscriptions.lock().await;
-        if let Some(sender) = subs.get_mut(channel_name) {
-            if sender.send(text).is_err() {
-                // Receiver dropped; cleanup this subscription entry.
-                subs.remove(channel_name);
+        for route in [&private_subscriptions, &public_subscriptions] {
+            let mut subs = route.lock().await;
+            if let Some(sender) = subs.get_mut(channel_name) {
+                if sender.send(text).is_err() {
+                    // Receiver dropped; cleanup this subscription entry.
+                    subs.remove(channel_name);
+                }
+                return;
             }
-        } else {
-            warn!("Received message for unsubscribed channel: {channel_name}");
         }
-        return;
+        warn!("No subscription handler for channel: {channel_name}");
     }
 
     warn!("Received unhandled message: {text}");

@@ -43,10 +43,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     loop {
         match client.run_till_event().await {
             ExternalEvent::Connected => {
+                info!("Connected!");
+                client.login().await.ok();
                 client.resubscribe_all().await.ok();
             }
-            ExternalEvent::Disconnected => continue,
-            ExternalEvent::Exited => break,
+            ExternalEvent::Disconnected => {
+                info!("Disconnected, waiting for reconnect...");
+                continue;
+            }
+            ExternalEvent::Exited => {
+                info!("Client exited, stopping receive loop.");
+                break;
+            }
         }
     }
     client.shutdown("Time to go!").await.unwrap();
