@@ -4,7 +4,7 @@ use log::{Level::Info, info};
 use simple_logger::init_with_level;
 use thalex_rust_sdk::{
     models::{
-        AmendParams, Delay, InsertParams, OrderStatus,
+        AmendParams, CancelParams, Delay, InsertParams, OrderStatus, SetCancelOnDisconnectParams,
         insert_params::{Direction, OrderType},
         order_status::Status,
     },
@@ -13,15 +13,17 @@ use thalex_rust_sdk::{
 };
 use tokio::sync::Mutex;
 
-const MARKET_NAME: &str = "ETH-PERPETUAL";
-const ORDER_SIZE: f64 = 0.25;
-const PRICE_TOLERANCE_MIN_BPS: f64 = 0.5;
-const PRICE_TOLERANCE_MAX_BPS: f64 = 1.0;
+const MARKET_NAME: &str = "BTC-PERPETUAL";
+const ORDER_SIZE: f64 = 0.0001;
+const PRICE_TOLERANCE_MIN_BPS: f64 = 1.0;
+const PRICE_TOLERANCE_MAX_BPS: f64 = 5.0;
 const ORDER_OFFSET_BPS: f64 = (PRICE_TOLERANCE_MAX_BPS + PRICE_TOLERANCE_MIN_BPS) / 2.0;
+const MAX_POSITION_SIZE: f64 = 0.001;
 
 struct StrategyState {
     bid_order: Option<OrderStatus>,
     ask_order: Option<OrderStatus>,
+    position_size: f64,
 }
 
 #[tokio::main]
@@ -31,10 +33,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     let client = WsClient::from_env().await.unwrap();
     let _ = client.set_cancel_on_disconnect().await;
+    let position = client
+        .rpc()
+        .accounting()
+        .portfolio()
+        .await
+        .expect("Failed to fetch portfolio")
+        .into_iter()
+        .find(|p| p.instrument_name.as_deref() == Some(MARKET_NAME));
 
     let state = StrategyState {
         bid_order: None,
         ask_order: None,
+        position_size: position.map_or(0.0, |p| p.position.unwrap_or(0.0)),
     };
 
     // We make a mutex to allow mutable access inside the closure
@@ -69,7 +80,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .unwrap();
                 // Check if we have active orders
                 let mut state = state.lock().await;
-                if state.bid_order.is_none() {
+                if state.bid_order.is_none() && state.position_size + ORDER_SIZE < MAX_POSITION_SIZE
+                {
                     let bid_order = client
                         .rpc()
                         .trading()
@@ -88,7 +100,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     info!("Placed bid order: {bid_price:?}");
                     state.bid_order = Some(bid_order);
                 }
-                if state.ask_order.is_none() {
+                if state.ask_order.is_none()
+                    && state.position_size - ORDER_SIZE > -MAX_POSITION_SIZE
+                {
                     let ask_order = client
                         .rpc()
                         .trading()
@@ -109,7 +123,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 // We check if we need to do updates on existing orders
-                if state.bid_order.is_some() {
+                if state.bid_order.is_some() && state.position_size + ORDER_SIZE < MAX_POSITION_SIZE
+                {
                     let bid_order = state.bid_order.as_ref().unwrap();
                     let price_diff_bps = ((bid_price - bid_order.price.unwrap())
                         / bid_order.price.unwrap())
@@ -135,7 +150,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         state.bid_order = Some(updated_bid_order);
                     }
                 }
-                if state.ask_order.is_some() {
+                if state.ask_order.is_some()
+                    && state.position_size - ORDER_SIZE > -MAX_POSITION_SIZE
+                {
                     let ask_order = state.ask_order.as_ref().unwrap();
                     let price_diff_bps = ((ask_price - ask_order.price.unwrap())
                         / ask_order.price.unwrap())
@@ -199,12 +216,62 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .await;
 
+    let client_for_callback = client.clone();
+    let state_for_callback = state.clone();
+    let _ = client
+         .subscriptions()
+        .accounting()
+        .account_portfolio(move |msg| {
+            let state = Arc::clone(&state_for_callback);
+            let client = client_for_callback.clone();
+            async move {
+                for portfolio in msg {
+                    if Some(MARKET_NAME.to_string()) != portfolio.instrument_name {
+                        continue;
+                    }
+                    let mut state = state.lock().await;
+                    state.position_size = portfolio.position.unwrap_or(0.0);
+                    info!(
+                        "Portfolio Update: instrument_name={:?} position={:?} mark_price={:?} average_price={:?} realised_pnl={:?}",
+                        portfolio.instrument_name, portfolio.position, portfolio.mark_price, portfolio.average_price, portfolio.realised_pnl
+                    );
+                    // If we are over max position size, cancel orders
+                    if state.position_size + ORDER_SIZE >= MAX_POSITION_SIZE {
+                        info!("Position size {} exceeds max {}, cancelling orders.", state.position_size, MAX_POSITION_SIZE);
+                        if let Some(bid_order) = &state.bid_order {
+                            let _ = client.rpc().trading().cancel(CancelParams { order_id: Some(bid_order.order_id.clone()), ..Default::default() }).await;
+                            info!("Cancelled bid order: {}", bid_order.order_id);
+                            state.bid_order = None;
+                        }
+                    }
+                    if state.position_size - ORDER_SIZE <= -MAX_POSITION_SIZE {
+                        info!("Position size {} exceeds max {}, cancelling orders.", state.position_size, MAX_POSITION_SIZE);
+                        if let Some(ask_order) = &state.ask_order {
+                            let _ = client.rpc().trading().cancel(CancelParams { order_id: Some(ask_order.order_id.clone()), ..Default::default() }).await;
+                            info!("Cancelled ask order: {}", ask_order.order_id);
+                            state.ask_order = None;
+                        }
+                    }
+                }
+            }
+        })
+        .await;
+
     client.wait_for_connection().await;
     info!("Starting receive loop!");
     loop {
         match client.run_till_event().await {
             ExternalEvent::Connected => {
+                client.login().await.ok();
+                client
+                    .rpc()
+                    .session_management()
+                    .set_cancel_on_disconnect(SetCancelOnDisconnectParams { timeout_secs: 6 })
+                    .await
+                    .ok();
                 client.resubscribe_all().await.ok();
+                state.lock().await.bid_order = None;
+                state.lock().await.ask_order = None;
             }
             ExternalEvent::Disconnected => continue,
             ExternalEvent::Exited => break,
