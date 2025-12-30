@@ -69,6 +69,9 @@ def fix_schema(spec: Dict[str, Any]) -> Dict[str, Any]:
     # make `reject_reason` optional for `ConditionalOrder` model
     updated_spec['components']['schemas']['ConditionalOrder']['required'].remove('reject_reason')
 
+    # Add bot to `OrderHistory` & `OrderStatus` models insert_reason enum.
+    for model in ['OrderHistory', 'OrderStatus']:
+        updated_spec['components']['schemas'][model]['properties']['insert_reason']['enum'].append('bot')
     return updated_spec
 
 
