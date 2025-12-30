@@ -198,6 +198,8 @@ pub enum InsertReason {
     ConditionalOrder,
     #[serde(rename = "liquidation")]
     Liquidation,
+    #[serde(rename = "bot")]
+    Bot,
 }
 
 impl Default for InsertReason {

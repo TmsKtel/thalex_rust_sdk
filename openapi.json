@@ -456,7 +456,8 @@
             "enum": [
               "client_request",
               "conditional_order",
-              "liquidation"
+              "liquidation",
+              "bot"
             ],
             "description": "Detailed reason of order insertion."
           },
@@ -624,7 +625,8 @@
             "enum": [
               "client_request",
               "conditional_order",
-              "liquidation"
+              "liquidation",
+              "bot"
             ],
             "description": "Detailed reason of order insertion."
           },
