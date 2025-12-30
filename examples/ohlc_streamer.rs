@@ -6,7 +6,6 @@ use std::sync::Arc;
 use chrono::{DateTime, Utc};
 use log::{Level::Info, info};
 use rust_decimal::{Decimal, prelude::FromPrimitive};
-use rust_decimal_macros::dec;
 use simple_logger::init_with_level;
 use thalex_rust_sdk::{models::Delay, models::Ticker, types::ExternalEvent, ws_client::WsClient};
 use tokio::sync::Mutex;
@@ -69,22 +68,20 @@ async fn on_ticker(msg: Ticker, candle: Arc<Mutex<Candle>>, interval: i64) {
     if msg.best_ask_price.is_none() || msg.best_bid_price.is_none() {
         return;
     }
-    let best_bid_price: Decimal = Decimal::from_f64(msg.best_bid_price.unwrap()).unwrap();
-    let best_ask_price: Decimal = Decimal::from_f64(msg.best_ask_price.unwrap()).unwrap();
-    let mid_price = (best_bid_price + best_ask_price) / dec!(2);
+    let mark_price: Decimal = Decimal::from_f64(msg.mark_price.unwrap()).unwrap();
     let timestamp = (msg.mark_timestamp.unwrap() * 1000.0) as i64;
     let mut current_candle = candle.lock().await;
 
-    if Some(current_candle.high) < Some(mid_price) {
-        current_candle.high = mid_price;
+    if Some(current_candle.high) < Some(mark_price) {
+        current_candle.high = mark_price;
     }
-    if Some(current_candle.low) > Some(mid_price) {
-        current_candle.low = mid_price;
+    if Some(current_candle.low) > Some(mark_price) {
+        current_candle.low = mark_price;
     }
-    current_candle.close = mid_price;
+    current_candle.close = mark_price;
 
     if timestamp >= current_candle.timestamp.timestamp() * 1000 {
-        current_candle.close = mid_price;
+        current_candle.close = mark_price;
         // Emit candle
         info!(
             "Candle@{}: T: {:.0} O: {:.2}, H: {:.2}, L: {:.2}, C: {:.2}",
@@ -98,10 +95,10 @@ async fn on_ticker(msg: Ticker, candle: Arc<Mutex<Candle>>, interval: i64) {
         // Reset candle
         let interval_ending_timestamp = round_timestamp_to_interval(timestamp, interval);
         *current_candle = Candle {
-            open: mid_price,
-            high: mid_price,
-            low: mid_price,
-            close: mid_price,
+            open: mark_price,
+            high: mark_price,
+            low: mark_price,
+            close: mark_price,
             timestamp: from_time_stamp_to_date_time(interval_ending_timestamp),
         };
     }

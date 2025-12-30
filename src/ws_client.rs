@@ -27,7 +27,7 @@ use crate::{
     utils::round_to_ticks,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(untagged)]
 enum SubscribeResponse {
     Ok { id: u64, result: Vec<String> },
@@ -194,7 +194,7 @@ impl WsClient {
         params: serde_json::Value,
     ) -> Result<T, ClientError>
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + std::fmt::Debug,
     {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
@@ -223,9 +223,14 @@ impl WsClient {
         }
 
         let response = rx.await?;
-        // println!("RPC Response: {response}");
 
+        // let as_success = serde_json::from_str::<crate::models::OrderHistoryResult>(&response);
+        // let as_error = serde_json::from_str::<RpcErrorResponse>(&response);
+        // println!("Success parse: {as_success:?}");
+        // println!("Error parse:   {as_error:?}");
         let envelope: T = serde_json::from_str(&response)?;
+        // .inspect_err(|e| println!("Failed to parse JSON: {}", e))?;
+        // println!("RPC Response: {:?}", envelope);
         Ok(envelope)
     }
 
