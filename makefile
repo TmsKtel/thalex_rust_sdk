@@ -1,3 +1,35 @@
+TOML_FILE := pyproject.toml
+
+# Extract version from TOML
+VERSION := $(shell sed -n 's/^version *= *"\(.*\)"/\1/p' $(TOML_FILE))
+
+# Default: bump patch
+PATCH_VERSION := $(shell \
+	echo $(VERSION) | awk -F. '{printf "%d.%d.%d", $$1, $$2, $$3+1}' \
+)
+
+# Allow override
+NEW_VERSION ?= $(PATCH_VERSION)
+
+.PHONY: version tag release
+
+
+version:
+	@echo "Current version: $(VERSION)"
+	@echo "Release version: $(NEW_VERSION)"
+
+tag:
+	@git tag -a v$(NEW_VERSION) -m "Release v$(NEW_VERSION)"
+	@git push origin v$(NEW_VERSION)
+
+release: version tag
+	@echo "Creating GitHub release v$(NEW_VERSION)"
+	@gh release create v$(NEW_VERSION) \
+		--title "v$(NEW_VERSION)" \
+		--notes "Release v$(NEW_VERSION)"
+	@echo "Creating crate release v$(NEW_VERSION)"
+	@cargo publish
+
 lint: 
 	cargo clippy --examples --tests -- -D warnings 
 fmt:
