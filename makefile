@@ -26,6 +26,8 @@ tag:
 	@git push origin v$(NEW_VERSION)
 
 package:
+	@git add $(TOML_FILE) Cargo.lock
+	@git commit -m "Bump version to v$(NEW_VERSION)"
 	@cargo package
 
 release: version package tag
@@ -34,8 +36,6 @@ release: version package tag
 		--title "v$(NEW_VERSION)" \
 		--notes "Release v$(NEW_VERSION)"
 	@echo "Creating crate release v$(NEW_VERSION)"
-	@git add $(TOML_FILE) 
-	@git commit -m "Bump version to v$(NEW_VERSION)"
 	@cargo publish
 
 lint: 
