@@ -1,4 +1,4 @@
-TOML_FILE := pyproject.toml
+TOML_FILE := Cargo.toml
 
 # Extract version from TOML
 VERSION := $(shell sed -n 's/^version *= *"\(.*\)"/\1/p' $(TOML_FILE))
