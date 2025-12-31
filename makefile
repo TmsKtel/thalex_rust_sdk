@@ -20,7 +20,7 @@ version:
 	@sed -i.bak 's/^version *= *".*"/version = "$(NEW_VERSION)"/' $(TOML_FILE)
 	@rm -f $(TOML_FILE).bak
 	@echo "Release version: $(NEW_VERSION)"
-
+	cargo check
 tag:
 	@git tag -a v$(NEW_VERSION) -m "Release v$(NEW_VERSION)"
 	@git push origin v$(NEW_VERSION)
