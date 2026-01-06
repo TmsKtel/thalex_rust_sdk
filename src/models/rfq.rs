@@ -31,12 +31,10 @@ pub struct Rfq {
     /// User label set at creation. Not visibible to market makers.
     #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
-    /// Detailed reason for creation. Visible only to the requester.
     #[serde(rename = "insert_reason", skip_serializing_if = "Option::is_none")]
-    pub insert_reason: Option<InsertReason>,
-    /// Reason why this RFQ was removed. Visible only to the requester.
+    pub insert_reason: Option<models::RfqInsertReasonEnum>,
     #[serde(rename = "delete_reason", skip_serializing_if = "Option::is_none")]
-    pub delete_reason: Option<DeleteReason>,
+    pub delete_reason: Option<models::RfqDeleteReasonEnum>,
     /// The minimum size / size increase for quotes.
     #[serde(rename = "volume_tick_size", skip_serializing_if = "Option::is_none")]
     pub volume_tick_size: Option<f64>,
@@ -53,9 +51,8 @@ pub struct Rfq {
     /// Time at which this RFQ was cancelled or traded.
     #[serde(rename = "close_time", skip_serializing_if = "Option::is_none")]
     pub close_time: Option<f64>,
-    /// This field is set only on the `account.rfqs` subscription.
     #[serde(rename = "event", skip_serializing_if = "Option::is_none")]
-    pub event: Option<Event>,
+    pub event: Option<models::RfqEventEnum>,
 }
 
 impl Rfq {
@@ -82,51 +79,5 @@ impl Rfq {
             close_time: None,
             event: None,
         }
-    }
-}
-/// Detailed reason for creation. Visible only to the requester.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum InsertReason {
-    #[serde(rename = "client_request")]
-    ClientRequest,
-    #[serde(rename = "liquidation")]
-    Liquidation,
-}
-
-impl Default for InsertReason {
-    fn default() -> InsertReason {
-        Self::ClientRequest
-    }
-}
-/// Reason why this RFQ was removed. Visible only to the requester.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum DeleteReason {
-    #[serde(rename = "client_cancel")]
-    ClientCancel,
-    #[serde(rename = "filled")]
-    Filled,
-}
-
-impl Default for DeleteReason {
-    fn default() -> DeleteReason {
-        Self::ClientCancel
-    }
-}
-/// This field is set only on the `account.rfqs` subscription.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Event {
-    #[serde(rename = "Created")]
-    Created,
-    #[serde(rename = "Cancelled")]
-    Cancelled,
-    #[serde(rename = "Traded")]
-    Traded,
-    #[serde(rename = "Existing")]
-    Existing,
-}
-
-impl Default for Event {
-    fn default() -> Event {
-        Self::Created
     }
 }

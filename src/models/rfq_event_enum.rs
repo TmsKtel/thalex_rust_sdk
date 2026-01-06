@@ -13,33 +13,30 @@ use serde::{Deserialize, Serialize};
 
 ///
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum EventEnum {
-    #[serde(rename = "Inserted")]
-    Inserted,
-    #[serde(rename = "Amended")]
-    Amended,
+pub enum RfqEventEnum {
+    #[serde(rename = "Created")]
+    Created,
     #[serde(rename = "Cancelled")]
     Cancelled,
-    #[serde(rename = "Filled")]
-    Filled,
+    #[serde(rename = "Traded")]
+    Traded,
     #[serde(rename = "Existing")]
     Existing,
 }
 
-impl std::fmt::Display for EventEnum {
+impl std::fmt::Display for RfqEventEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::Inserted => write!(f, "Inserted"),
-            Self::Amended => write!(f, "Amended"),
+            Self::Created => write!(f, "Created"),
             Self::Cancelled => write!(f, "Cancelled"),
-            Self::Filled => write!(f, "Filled"),
+            Self::Traded => write!(f, "Traded"),
             Self::Existing => write!(f, "Existing"),
         }
     }
 }
 
-impl Default for EventEnum {
-    fn default() -> EventEnum {
-        Self::Inserted
+impl Default for RfqEventEnum {
+    fn default() -> RfqEventEnum {
+        Self::Created
     }
 }

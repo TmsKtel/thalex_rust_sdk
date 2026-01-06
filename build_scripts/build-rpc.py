@@ -79,6 +79,7 @@ MODELS_TO_LIFT = [
     "ErrorResponse",
     "EmptyObject",
     "InsertRequest",
+    "RfqOrder",
     "OrderStatus",
     "OrderFill",
     "Index",

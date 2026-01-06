@@ -1220,7 +1220,7 @@
             "Mm": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/Rfq"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/Rfq"
                 }
             },
             "AccountNotification": {
@@ -1318,7 +1318,7 @@
                             "type": "object",
                             "properties": {
                                 "added": {
-                                    "$ref": "./openapi.json#/components/schemas/Instrument"
+                                    "$ref": "./rpc_spec_generated.json#/components/schemas/Instrument"
                                 }
                             }
                         },
@@ -1326,7 +1326,7 @@
                             "type": "object",
                             "properties": {
                                 "removed": {
-                                    "$ref": "./openapi.json#/components/schemas/Instrument"
+                                    "$ref": "./rpc_spec_generated.json#/components/schemas/Instrument"
                                 }
                             }
                         }
@@ -1352,7 +1352,7 @@
             "RfqsPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/Rfq"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/Rfq"
                 }
             },
             "IndexComponentsNotification": {
@@ -1392,231 +1392,13 @@
                 }
             },
             "Instrument": {
-                "type": "object",
-                "properties": {
-                    "instrument_name": {
-                        "type": "string"
-                    },
-                    "product": {
-                        "type": "string",
-                        "description": "E.g. \"FBTCUSD\", \"OBTCUSD\"."
-                    },
-                    "tick_size": {
-                        "type": "number",
-                        "description": "Price alignment."
-                    },
-                    "volume_tick_size": {
-                        "type": "number",
-                        "description": "Amount alignment."
-                    },
-                    "min_order_amount": {
-                        "type": "number",
-                        "description": "Minimum order amount for this instrument. This value is always greater or equal to `volume_tick_size`.\n\nIf this value is greater than `volume_tick_size`, it is not possible to insert an order of a smaller amount,\nor amend an existing order to a smaller amount. However, orders in the books can have smaller remaining\namounts as they get partially filled, down to the minimum of `volume_tick_size`.\n"
-                    },
-                    "underlying": {
-                        "type": "string",
-                        "description": "Related index, e.g. \"BTCUSD\"."
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "perpetual",
-                            "future",
-                            "option",
-                            "combination"
-                        ]
-                    },
-                    "option_type": {
-                        "type": "string",
-                        "enum": [
-                            "call",
-                            "put"
-                        ]
-                    },
-                    "expiry_date": {
-                        "type": "string",
-                        "description": "Expiration date in ISO format (YYYY-mm-dd)."
-                    },
-                    "expiration_timestamp": {
-                        "type": "integer",
-                        "description": "Expiration time as Unix timestamp (seconds)."
-                    },
-                    "strike_price": {
-                        "type": "number",
-                        "description": "Strike price of option."
-                    },
-                    "base_currency": {
-                        "type": "string",
-                        "description": "Base currency for pricing (i.e. USD)."
-                    },
-                    "legs": {
-                        "type": "array",
-                        "description": "For combinations, array of objects with `instrument_name` and `quantity`.",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "instrument_name": {
-                                    "type": "string"
-                                },
-                                "quantity": {
-                                    "type": "integer"
-                                }
-                            }
-                        }
-                    },
-                    "create_time": {
-                        "type": "number",
-                        "description": "Creation time (Unix timestamp)."
-                    },
-                    "settlement_price": {
-                        "type": "number",
-                        "description": "For expired instruments, the final settlement price."
-                    },
-                    "settlement_index_price": {
-                        "type": "number",
-                        "description": "For expired instruments, the underlying delivery price."
-                    }
-                },
-                "example": {
-                    "instrument_name": "BTC-10SEP21-70000-C",
-                    "product": "OBTCUSD",
-                    "tick_size": 5,
-                    "volume_tick_size": 0.1,
-                    "min_order_amount": 0.1,
-                    "underlying": "BTCUSD",
-                    "type": "option",
-                    "option_type": "call",
-                    "expiry_date": "2021-09-10",
-                    "expiration_timestamp": 1631260800,
-                    "strike_price": 70000,
-                    "base_currency": "USD",
-                    "create_time": 1631250800.103645
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/Instrument"
             },
             "Rfq": {
-                "type": "object",
-                "required": [
-                    "rfq_id",
-                    "legs",
-                    "amount",
-                    "create_time"
-                ],
-                "properties": {
-                    "rfq_id": {
-                        "type": "string",
-                        "description": "Identifier for this RFQ."
-                    },
-                    "amount": {
-                        "type": "number",
-                        "description": "Requested amount for this RFQ"
-                    },
-                    "create_time": {
-                        "type": "number",
-                        "description": "Timestamp of creation (unix timestamp)"
-                    },
-                    "valid_until": {
-                        "type": "number",
-                        "description": "Timestamp at which this RFQ will be automatically cancelled (unix timestamp)"
-                    },
-                    "legs": {
-                        "type": "array",
-                        "description": "Combo legs. A minimalised version of the request such that quantities are integer.",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "instrument_name",
-                                "quantity",
-                                "fee_quantity"
-                            ],
-                            "properties": {
-                                "instrument_name": {
-                                    "type": "string"
-                                },
-                                "quantity": {
-                                    "type": "number",
-                                    "description": "Quantity for this leg. May be negative."
-                                },
-                                "fee_quantity": {
-                                    "type": "number",
-                                    "description": "Quantity for fee calculations. Anywhere between 0 and abs(quantity)."
-                                }
-                            }
-                        }
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "User label set at creation. Not visibible to market makers."
-                    },
-                    "insert_reason": {
-                        "type": "string",
-                        "enum": [
-                            "client_request",
-                            "liquidation"
-                        ],
-                        "description": "Detailed reason for creation. Visible only to the requester."
-                    },
-                    "delete_reason": {
-                        "type": "string",
-                        "enum": [
-                            "client_cancel",
-                            "filled"
-                        ],
-                        "description": "Reason why this RFQ was removed. Visible only to the requester."
-                    },
-                    "volume_tick_size": {
-                        "type": "number",
-                        "description": "The minimum size / size increase for quotes."
-                    },
-                    "quoted_bid": {
-                        "type": "object",
-                        "description": "The bid price/amount quoted so far, if any. Visible only to the requester.",
-                        "properties": {
-                            "price": {
-                                "type": "number"
-                            },
-                            "amount": {
-                                "type": "number"
-                            }
-                        }
-                    },
-                    "quoted_ask": {
-                        "type": "object",
-                        "description": "The ask price/amount quoted so far, if any. Visible only to the requester.",
-                        "properties": {
-                            "price": {
-                                "type": "number"
-                            },
-                            "amount": {
-                                "type": "number"
-                            }
-                        }
-                    },
-                    "trade_price": {
-                        "type": "number",
-                        "description": "Combo price for which this RFQ was traded."
-                    },
-                    "trade_amount": {
-                        "type": "number",
-                        "description": "Amount in which this RFQ was traded."
-                    },
-                    "close_time": {
-                        "type": "number",
-                        "description": "Time at which this RFQ was cancelled or traded."
-                    },
-                    "event": {
-                        "type": "string",
-                        "enum": [
-                            "Created",
-                            "Cancelled",
-                            "Traded",
-                            "Existing"
-                        ],
-                        "description": "This field is set only on the `account.rfqs` subscription."
-                    }
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/Rfq"
             },
             "OrderStatus": {
-                "$ref": "./openapi.json#/components/schemas/OrderStatus"
+                "$ref": "./rpc_spec_generated.json#/components/schemas/OrderStatus"
             },
             "SessionMmProtectionNotification": {
                 "type": "object",
@@ -1703,7 +1485,7 @@
             "MmRfqQuotesPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/RfqOrder"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/RfqOrder"
                 }
             },
             "AccountOrdersNotification": {
@@ -1791,7 +1573,7 @@
             "AccountTradeHistoryPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/Trade"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/Trade"
                 }
             },
             "AccountPortfolioNotification": {
@@ -1813,7 +1595,7 @@
             "AccountPortfolioPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/PortfolioEntry"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/PortfolioEntry"
                 }
             },
             "AccountSummaryNotification": {
@@ -1895,7 +1677,7 @@
             "AccountConditionalOrdersPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/ConditionalOrder"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/ConditionalOrder"
                 }
             },
             "BookPayload": {
@@ -1977,7 +1759,7 @@
                 }
             },
             "TickerPayload": {
-                "$ref": "./openapi.json#/components/schemas/Ticker"
+                "$ref": "./rpc_spec_generated.json#/components/schemas/Ticker"
             },
             "LwtPayload": {
                 "type": "object",
@@ -2353,76 +2135,7 @@
                 }
             },
             "RfqOrder": {
-                "type": "object",
-                "required": [
-                    "rfq_id",
-                    "order_id",
-                    "direction",
-                    "price",
-                    "amount"
-                ],
-                "properties": {
-                    "rfq_id": {
-                        "type": "string",
-                        "description": "Identifier of the RFQ."
-                    },
-                    "order_id": {
-                        "type": "string",
-                        "description": "Identifier of the individual quote."
-                    },
-                    "client_order_id": {
-                        "type": "number",
-                        "description": "Client-supplied order id. Field is omitted if no client order id was supplied."
-                    },
-                    "direction": {
-                        "type": "string",
-                        "enum": [
-                            "buy",
-                            "sell"
-                        ]
-                    },
-                    "price": {
-                        "type": "number"
-                    },
-                    "amount": {
-                        "type": "number"
-                    },
-                    "label": {
-                        "type": "string"
-                    },
-                    "trade_price": {
-                        "type": "number",
-                        "description": "the price at which this order traded."
-                    },
-                    "trade_amount": {
-                        "type": "number",
-                        "description": "the number of combinations that traded."
-                    },
-                    "delete_reason": {
-                        "type": "string",
-                        "enum": [
-                            "client_cancel",
-                            "session_end",
-                            "instrument_deactivated",
-                            "mm_protection",
-                            "failover",
-                            "margin_breach",
-                            "filled"
-                        ],
-                        "description": "Detailed reason of order deletion."
-                    },
-                    "event": {
-                        "type": "string",
-                        "enum": [
-                            "Inserted",
-                            "Amended",
-                            "Cancelled",
-                            "Filled",
-                            "Existing"
-                        ],
-                        "description": "This field is set only on subscriptions."
-                    }
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/RfqOrder"
             },
             "AccountOrderHistoryNotification": {
                 "type": "object",
@@ -2443,50 +2156,14 @@
             "AccountOrderHistoryPayload": {
                 "type": "array",
                 "items": {
-                    "$ref": "./openapi.json#/components/schemas/OrderHistory"
+                    "$ref": "./rpc_spec_generated.json#/components/schemas/OrderHistory"
                 }
             },
             "AccountSummaryPayload": {
-                "$ref": "./openapi.json#/components/schemas/AccountSummary"
+                "$ref": "./rpc_spec_generated.json#/components/schemas/AccountSummary"
             },
             "OrderFill": {
-                "type": "object",
-                "required": [
-                    "trade_id",
-                    "price",
-                    "amount",
-                    "maker_taker",
-                    "leg_index"
-                ],
-                "properties": {
-                    "trade_id": {
-                        "type": "string",
-                        "description": "Trade ID."
-                    },
-                    "price": {
-                        "type": "number",
-                        "description": "Fill price."
-                    },
-                    "amount": {
-                        "type": "number",
-                        "description": "Filled amount"
-                    },
-                    "time": {
-                        "type": "number"
-                    },
-                    "maker_taker": {
-                        "type": "string",
-                        "enum": [
-                            "maker",
-                            "taker"
-                        ],
-                        "description": "Maker (trade on book order) or taker (trade on new order), if applicable."
-                    },
-                    "leg_index": {
-                        "type": "number",
-                        "description": "Index of a leg on which the trade happened for combination orders. Zero for single-leg orders.\n\nFor combination orders the direction of the trade is defined by the direction of the order and\nthe sign of the leg quantity.\n"
-                    }
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/OrderFill"
             },
             "Ticker": {
                 "type": "object",
@@ -2681,91 +2358,7 @@
                 }
             },
             "Notifications": {
-                "type": "object",
-                "properties": {
-                    "notifications": {
-                        "type": "array",
-                        "description": "List of notifications ordered from newest to oldest.",
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "id",
-                                "time",
-                                "category",
-                                "title",
-                                "message",
-                                "display_type",
-                                "read",
-                                "popup"
-                            ],
-                            "properties": {
-                                "id": {
-                                    "type": "string",
-                                    "description": "Unique notification ID."
-                                },
-                                "time": {
-                                    "type": "number",
-                                    "description": "Time of notification (Unix timestamp)."
-                                },
-                                "category": {
-                                    "type": "string",
-                                    "description": "Notification category (see API description / Notifications)."
-                                },
-                                "title": {
-                                    "type": "string",
-                                    "description": "Human-readable title for the notification."
-                                },
-                                "message": {
-                                    "type": "string",
-                                    "description": "Human-readable message for the notification."
-                                },
-                                "display_type": {
-                                    "type": "string",
-                                    "description": "Specifies what style to use for notification display.",
-                                    "enum": [
-                                        "success",
-                                        "failure",
-                                        "info",
-                                        "warning",
-                                        "critical"
-                                    ]
-                                },
-                                "read": {
-                                    "type": "boolean",
-                                    "description": "set to true if notification was marked as read."
-                                },
-                                "account_name": {
-                                    "type": "string",
-                                    "description": "Optional account name, only present if the notification is related to an account."
-                                },
-                                "account_number": {
-                                    "type": "string",
-                                    "description": "Optional account number only present if the notification is related to an account."
-                                },
-                                "popup": {
-                                    "type": "boolean",
-                                    "description": "User preference - show popup for this notification"
-                                }
-                            }
-                        }
-                    }
-                },
-                "example": {
-                    "notifications": [
-                        {
-                            "id": "00000000000000A3",
-                            "time": 1630069885.130461,
-                            "category": "risk",
-                            "title": "Margin Requirements",
-                            "message": "Portfolio of account foo-123 breached initial margin requirements.",
-                            "display_type": "warning",
-                            "read": false,
-                            "account_name": "foo-123",
-                            "account_number": "A123456789",
-                            "popup": true
-                        }
-                    ]
-                }
+                "$ref": "./openapi.json#/components/schemas/Notifications"
             },
             "Bot": {
                 "oneOf": [
@@ -3201,135 +2794,7 @@
                 }
             },
             "Trade": {
-                "type": "object",
-                "properties": {
-                    "trade_type": {
-                        "type": "string",
-                        "description": "Type of the trade.\n\nNote: as of API v2.31.0 we have stopped representing futures-style settlements as trades of `daily_mark` type. You might still\nget such trades in the history, but no new trades of `daily_mark` type will be created.\nTo get information about daily marks, use `private/daily_mark_history` API endpoint.\n",
-                        "enum": [
-                            "normal",
-                            "block",
-                            "combo",
-                            "amend",
-                            "delete",
-                            "internal_transfer",
-                            "expiration",
-                            "daily_mark",
-                            "rfq",
-                            "liquidation"
-                        ]
-                    },
-                    "trade_id": {
-                        "type": "string"
-                    },
-                    "order_id": {
-                        "type": "string"
-                    },
-                    "instrument_name": {
-                        "type": "string"
-                    },
-                    "direction": {
-                        "type": "string",
-                        "enum": [
-                            "buy",
-                            "sell"
-                        ]
-                    },
-                    "price": {
-                        "type": "number",
-                        "description": "Trade price."
-                    },
-                    "amount": {
-                        "type": "number",
-                        "description": "Traded amount."
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "User label."
-                    },
-                    "time": {
-                        "type": "number",
-                        "description": "Time of trade (Unix timestamp)."
-                    },
-                    "position_after": {
-                        "type": "number",
-                        "description": "Position in this instrument right after the trade."
-                    },
-                    "session_realised_after": {
-                        "type": "number",
-                        "description": "Session realised P&L for this instrument right after the trade."
-                    },
-                    "position_pnl": {
-                        "type": "number",
-                        "description": "If trade closed a position, the positional P&L that was realised."
-                    },
-                    "perpetual_funding_pnl": {
-                        "type": "number",
-                        "description": "If trade closed a position in a perpetual, the funding P&L that was realised."
-                    },
-                    "fee": {
-                        "type": "number",
-                        "description": "The fee paid for this trade.\n\nThe fee for a trade is calculated as `fee_basis * fee_rate * amount`, and is then subject\nto clamping to minimum and maximum fee. Depending on the instrument, `fee_basis` can be different\n(e.g. it can be equal to the underlying index, trade price or combo mark price). Please\nrefer to trading information pages for more details.\n"
-                    },
-                    "index": {
-                        "type": "number",
-                        "description": "The relevant index at time of trade."
-                    },
-                    "fee_rate": {
-                        "type": "number",
-                        "description": "The fee rate applied to calculate the fee."
-                    },
-                    "fee_basis": {
-                        "type": "number",
-                        "description": "The fee basis on which the fee is calculated."
-                    },
-                    "funding_mark": {
-                        "type": "number",
-                        "description": "The perpetual funding mark as applied to the trade (see `Ticker`)."
-                    },
-                    "liquidation_fee": {
-                        "type": "number",
-                        "description": "Fee paid in case of liquidation."
-                    },
-                    "client_order_id": {
-                        "type": "number",
-                        "description": "Client order reference as set in related order."
-                    },
-                    "maker_taker": {
-                        "type": "string",
-                        "description": "Maker (trade on book order) or taker (trade on new order), if applicable.",
-                        "enum": [
-                            "maker",
-                            "taker"
-                        ]
-                    },
-                    "bot_id": {
-                        "type": "string",
-                        "description": "If the trade was made by a bot, the ID of that bot.\nOtherwise omitted.\n"
-                    },
-                    "leg_index": {
-                        "type": "number",
-                        "description": "Index of a leg on which the trade happened for combination orders. Zero for single-leg orders.\n\nFor combination orders the direction of the trade is defined by the direction of the order and\nthe sign of the leg quantity.\n"
-                    }
-                },
-                "example": {
-                    "order_id": "00011E570000004A",
-                    "trade_id": "0080000000000000169F22D05B785A2B",
-                    "instrument_name": "BTC-PERPETUAL",
-                    "direction": "buy",
-                    "price": 47280,
-                    "amount": 0.1,
-                    "label": "",
-                    "time": 1630059868.4145653,
-                    "position_after": 1.1,
-                    "trade_type": "normal",
-                    "session_realised_after": 25,
-                    "fee_rate": 0.00025,
-                    "index": 47200,
-                    "fee": 1.18,
-                    "funding_mark": 0.014,
-                    "leg_index": 0
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/Trade"
             },
             "Banner": {
                 "type": "object",
@@ -3392,114 +2857,7 @@
                 }
             },
             "ConditionalOrder": {
-                "type": "object",
-                "required": [
-                    "order_id",
-                    "instrument_name",
-                    "direction",
-                    "amount",
-                    "stop_price",
-                    "status",
-                    "create_time",
-                    "update_time",
-                    "reduce_only",
-                    "target"
-                ],
-                "properties": {
-                    "order_id": {
-                        "type": "string",
-                        "description": "Unique ID, use to identify in cancel"
-                    },
-                    "instrument_name": {
-                        "type": "string"
-                    },
-                    "direction": {
-                        "type": "string",
-                        "enum": [
-                            "buy",
-                            "sell"
-                        ]
-                    },
-                    "amount": {
-                        "type": "number",
-                        "description": "Size of the order when activated"
-                    },
-                    "target": {
-                        "type": "string",
-                        "enum": [
-                            "last",
-                            "mark",
-                            "index"
-                        ],
-                        "description": "The trigger type that `stop_price` and `bracket_price` will refer to."
-                    },
-                    "stop_price": {
-                        "type": "number",
-                        "description": "Trigger price at which the order will be activated"
-                    },
-                    "limit_price": {
-                        "type": "number",
-                        "description": "For stop limit order, the price at which the order will be placed"
-                    },
-                    "bracket_price": {
-                        "type": "number",
-                        "description": "For bracket order, the price at which profit will be taken (upper activation price)"
-                    },
-                    "trailing_stop_callback_rate": {
-                        "type": "number",
-                        "description": "For trailing stop loss, the callback rate as a ratio (e.g. 0.05 for 5%)"
-                    },
-                    "label": {
-                        "type": "string",
-                        "description": "Optional user label"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "created",
-                            "active",
-                            "converted",
-                            "rejected",
-                            "cancel requested",
-                            "cancelled"
-                        ]
-                    },
-                    "create_time": {
-                        "type": "number"
-                    },
-                    "update_time": {
-                        "type": "number",
-                        "description": "Time of last update (conversion or change of trailing stop price)"
-                    },
-                    "convert_time": {
-                        "type": "number",
-                        "description": "Time of trigger"
-                    },
-                    "converted_order_id": {
-                        "type": "string",
-                        "description": "System order ID of the created order."
-                    },
-                    "reject_reason": {
-                        "type": "string",
-                        "description": "If conversion failed, the reason"
-                    },
-                    "reduce_only": {
-                        "type": "boolean"
-                    }
-                },
-                "example": {
-                    "order_id": "00011E570000004B",
-                    "instrument_name": "BTC-PERPETUAL",
-                    "direction": "buy",
-                    "amount": 1,
-                    "stop_price": 50000,
-                    "limit_price": 45000,
-                    "status": "created",
-                    "create_time": 1630062311.3324597,
-                    "update_time": 1630062311.3324597,
-                    "reduce_only": false,
-                    "target": "mark"
-                }
+                "$ref": "./rpc_spec_generated.json#/components/schemas/ConditionalOrder"
             },
             "AccountSummary": {
                 "type": "object",
@@ -3592,7 +2950,7 @@
                 }
             },
             "OrderHistory": {
-                "$ref": "./openapi.json#/components/schemas/OrderHistory"
+                "$ref": "./rpc_spec_generated.json#/components/schemas/OrderHistory"
             }
         }
     }

@@ -19,13 +19,12 @@ pub struct ConditionalOrder {
     #[serde(rename = "instrument_name")]
     pub instrument_name: String,
     #[serde(rename = "direction")]
-    pub direction: Direction,
+    pub direction: models::DirectionEnum,
     /// Size of the order when activated
     #[serde(rename = "amount")]
     pub amount: f64,
-    /// The trigger type that `stop_price` and `bracket_price` will refer to.
     #[serde(rename = "target")]
-    pub target: Target,
+    pub target: models::TargetEnum,
     /// Trigger price at which the order will be activated
     #[serde(rename = "stop_price")]
     pub stop_price: f64,
@@ -45,7 +44,7 @@ pub struct ConditionalOrder {
     #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(rename = "status")]
-    pub status: Status,
+    pub status: models::ConditionalOrderStatusEnum,
     #[serde(rename = "create_time")]
     pub create_time: f64,
     /// Time of last update (conversion or change of trailing stop price)
@@ -68,11 +67,11 @@ impl ConditionalOrder {
     pub fn new(
         order_id: String,
         instrument_name: String,
-        direction: Direction,
+        direction: models::DirectionEnum,
         amount: f64,
-        target: Target,
+        target: models::TargetEnum,
         stop_price: f64,
-        status: Status,
+        status: models::ConditionalOrderStatusEnum,
         create_time: f64,
         update_time: f64,
         reduce_only: bool,
@@ -96,57 +95,5 @@ impl ConditionalOrder {
             reject_reason: None,
             reduce_only,
         }
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
-}
-
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
-    }
-}
-/// The trigger type that `stop_price` and `bracket_price` will refer to.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Target {
-    #[serde(rename = "last")]
-    Last,
-    #[serde(rename = "mark")]
-    Mark,
-    #[serde(rename = "index")]
-    Index,
-}
-
-impl Default for Target {
-    fn default() -> Target {
-        Self::Last
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Status {
-    #[serde(rename = "created")]
-    Created,
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "converted")]
-    Converted,
-    #[serde(rename = "rejected")]
-    Rejected,
-    #[serde(rename = "cancel requested")]
-    CancelRequested,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-}
-
-impl Default for Status {
-    fn default() -> Status {
-        Self::Created
     }
 }

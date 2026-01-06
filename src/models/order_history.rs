@@ -18,7 +18,7 @@ pub struct OrderHistory {
     #[serde(rename = "order_id")]
     pub order_id: String,
     #[serde(rename = "order_type")]
-    pub order_type: OrderType,
+    pub order_type: models::OrderTypeEnum,
     /// Order instrument name.  Not present for combination orders. Refer to `legs` field instead.
     #[serde(rename = "instrument_name", skip_serializing_if = "Option::is_none")]
     pub instrument_name: Option<String>,
@@ -26,7 +26,7 @@ pub struct OrderHistory {
     #[serde(rename = "legs", skip_serializing_if = "Option::is_none")]
     pub legs: Option<Vec<models::OrderHistoryLegsInner>>,
     #[serde(rename = "direction")]
-    pub direction: Direction,
+    pub direction: models::DirectionEnum,
     /// Limit price. May be omitted if no price was supplied (e.g. for a market order).  For combination orders this specifies limit price per unit of the combination.
     #[serde(rename = "price", skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
@@ -43,16 +43,14 @@ pub struct OrderHistory {
     #[serde(rename = "client_order_id", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<f64>,
     #[serde(rename = "status")]
-    pub status: Status,
+    pub status: models::StatusEnum,
     /// All fills for this order.
     #[serde(rename = "fills")]
     pub fills: Vec<models::OrderFill>,
-    /// Detailed reason of order deletion if the order was deleted, omitted otherwise.  The following reasons are possible:  - `client_cancel`: Order was cancelled by the client, e.g. with a call to `private/cancel`.  - `client_bulk_cancel`: Order was cancelled by the client with a bulk cancel call, e.g. `private/cancel_all`.  - `session_end`: Non-persistent order was automatically cancelled when a WebSocket session ended.  - `instrument_deactivated`: Order was automatically cancelled when the order instrument was deactivated,   for example after expiration.  - `mm_protection`: Order was automatically cancelled when configured market maker protection amount was exhausted.  - `failover`: Non-persistent order was automatically cancelled on matching engine failover.  - `margin_breach`: Order was automatically cancelled in a response to a margin breach on the account as part   of automatic liquidation procedures.  - `filled`: Order was filled in full.  - `immediate_cancel`: The order was submitted as \"immediate-or-cancel\" and was not filled in full immediately.   Note that the order might be partially filled when this delete reason is set.  - `admin_cancel`: The order was cancelled by an exchange admin.
     #[serde(rename = "delete_reason")]
-    pub delete_reason: DeleteReason,
-    /// Detailed reason of order insertion.
+    pub delete_reason: models::OrderHistoryDeleteReasonEnum,
     #[serde(rename = "insert_reason")]
-    pub insert_reason: InsertReason,
+    pub insert_reason: models::InsertReasonEnum,
     /// If the order was triggered by a conditional order (stop order), the ID of that conditional order. Otherwise omitted.
     #[serde(
         rename = "conditional_order_id",
@@ -77,14 +75,14 @@ impl OrderHistory {
     /// Historical order.
     pub fn new(
         order_id: String,
-        order_type: OrderType,
-        direction: Direction,
+        order_type: models::OrderTypeEnum,
+        direction: models::DirectionEnum,
         amount: f64,
         filled_amount: f64,
-        status: Status,
+        status: models::StatusEnum,
         fills: Vec<models::OrderFill>,
-        delete_reason: DeleteReason,
-        insert_reason: InsertReason,
+        delete_reason: models::OrderHistoryDeleteReasonEnum,
+        insert_reason: models::InsertReasonEnum,
         create_time: f64,
         close_time: f64,
     ) -> OrderHistory {
@@ -109,101 +107,5 @@ impl OrderHistory {
             close_time,
             reduce_only: None,
         }
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum OrderType {
-    #[serde(rename = "limit")]
-    Limit,
-    #[serde(rename = "market")]
-    Market,
-}
-
-impl Default for OrderType {
-    fn default() -> OrderType {
-        Self::Limit
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
-}
-
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Status {
-    #[serde(rename = "open")]
-    Open,
-    #[serde(rename = "partially_filled")]
-    PartiallyFilled,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-    #[serde(rename = "cancelled_partially_filled")]
-    CancelledPartiallyFilled,
-    #[serde(rename = "filled")]
-    Filled,
-}
-
-impl Default for Status {
-    fn default() -> Status {
-        Self::Open
-    }
-}
-/// Detailed reason of order deletion if the order was deleted, omitted otherwise.  The following reasons are possible:  - `client_cancel`: Order was cancelled by the client, e.g. with a call to `private/cancel`.  - `client_bulk_cancel`: Order was cancelled by the client with a bulk cancel call, e.g. `private/cancel_all`.  - `session_end`: Non-persistent order was automatically cancelled when a WebSocket session ended.  - `instrument_deactivated`: Order was automatically cancelled when the order instrument was deactivated,   for example after expiration.  - `mm_protection`: Order was automatically cancelled when configured market maker protection amount was exhausted.  - `failover`: Non-persistent order was automatically cancelled on matching engine failover.  - `margin_breach`: Order was automatically cancelled in a response to a margin breach on the account as part   of automatic liquidation procedures.  - `filled`: Order was filled in full.  - `immediate_cancel`: The order was submitted as \"immediate-or-cancel\" and was not filled in full immediately.   Note that the order might be partially filled when this delete reason is set.  - `admin_cancel`: The order was cancelled by an exchange admin.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum DeleteReason {
-    #[serde(rename = "client_cancel")]
-    ClientCancel,
-    #[serde(rename = "client_bulk_cancel")]
-    ClientBulkCancel,
-    #[serde(rename = "session_end")]
-    SessionEnd,
-    #[serde(rename = "instrument_deactivated")]
-    InstrumentDeactivated,
-    #[serde(rename = "mm_protection")]
-    MmProtection,
-    #[serde(rename = "failover")]
-    Failover,
-    #[serde(rename = "margin_breach")]
-    MarginBreach,
-    #[serde(rename = "filled")]
-    Filled,
-    #[serde(rename = "immediate_cancel")]
-    ImmediateCancel,
-    #[serde(rename = "admin_cancel")]
-    AdminCancel,
-}
-
-impl Default for DeleteReason {
-    fn default() -> DeleteReason {
-        Self::ClientCancel
-    }
-}
-/// Detailed reason of order insertion.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum InsertReason {
-    #[serde(rename = "client_request")]
-    ClientRequest,
-    #[serde(rename = "conditional_order")]
-    ConditionalOrder,
-    #[serde(rename = "liquidation")]
-    Liquidation,
-    #[serde(rename = "bot")]
-    Bot,
-}
-
-impl Default for InsertReason {
-    fn default() -> InsertReason {
-        Self::ClientRequest
     }
 }

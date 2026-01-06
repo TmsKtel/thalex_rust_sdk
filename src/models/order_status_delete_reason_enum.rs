@@ -13,9 +13,11 @@ use serde::{Deserialize, Serialize};
 
 ///
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum DeleteReasonEnum {
+pub enum OrderStatusDeleteReasonEnum {
     #[serde(rename = "client_cancel")]
     ClientCancel,
+    #[serde(rename = "client_bulk_cancel")]
+    ClientBulkCancel,
     #[serde(rename = "session_end")]
     SessionEnd,
     #[serde(rename = "instrument_deactivated")]
@@ -28,24 +30,31 @@ pub enum DeleteReasonEnum {
     MarginBreach,
     #[serde(rename = "filled")]
     Filled,
+    #[serde(rename = "immediate_cancel")]
+    ImmediateCancel,
+    #[serde(rename = "admin_cancel")]
+    AdminCancel,
 }
 
-impl std::fmt::Display for DeleteReasonEnum {
+impl std::fmt::Display for OrderStatusDeleteReasonEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::ClientCancel => write!(f, "client_cancel"),
+            Self::ClientBulkCancel => write!(f, "client_bulk_cancel"),
             Self::SessionEnd => write!(f, "session_end"),
             Self::InstrumentDeactivated => write!(f, "instrument_deactivated"),
             Self::MmProtection => write!(f, "mm_protection"),
             Self::Failover => write!(f, "failover"),
             Self::MarginBreach => write!(f, "margin_breach"),
             Self::Filled => write!(f, "filled"),
+            Self::ImmediateCancel => write!(f, "immediate_cancel"),
+            Self::AdminCancel => write!(f, "admin_cancel"),
         }
     }
 }
 
-impl Default for DeleteReasonEnum {
-    fn default() -> DeleteReasonEnum {
+impl Default for OrderStatusDeleteReasonEnum {
+    fn default() -> OrderStatusDeleteReasonEnum {
         Self::ClientCancel
     }
 }

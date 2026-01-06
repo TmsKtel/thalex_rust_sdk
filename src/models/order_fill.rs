@@ -24,9 +24,8 @@ pub struct OrderFill {
     pub amount: f64,
     #[serde(rename = "time", skip_serializing_if = "Option::is_none")]
     pub time: Option<f64>,
-    /// Maker (trade on book order) or taker (trade on new order), if applicable.
     #[serde(rename = "maker_taker")]
-    pub maker_taker: MakerTaker,
+    pub maker_taker: models::MakerTakerEnum,
     /// Index of a leg on which the trade happened for combination orders. Zero for single-leg orders.  For combination orders the direction of the trade is defined by the direction of the order and the sign of the leg quantity.
     #[serde(rename = "leg_index")]
     pub leg_index: f64,
@@ -37,7 +36,7 @@ impl OrderFill {
         trade_id: String,
         price: f64,
         amount: f64,
-        maker_taker: MakerTaker,
+        maker_taker: models::MakerTakerEnum,
         leg_index: f64,
     ) -> OrderFill {
         OrderFill {
@@ -48,19 +47,5 @@ impl OrderFill {
             maker_taker,
             leg_index,
         }
-    }
-}
-/// Maker (trade on book order) or taker (trade on new order), if applicable.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum MakerTaker {
-    #[serde(rename = "maker")]
-    Maker,
-    #[serde(rename = "taker")]
-    Taker,
-}
-
-impl Default for MakerTaker {
-    fn default() -> MakerTaker {
-        Self::Maker
     }
 }
