@@ -18,9 +18,9 @@ pub struct OrderStatus {
     #[serde(rename = "order_id")]
     pub order_id: String,
     #[serde(rename = "order_type")]
-    pub order_type: OrderType,
+    pub order_type: models::OrderTypeEnum,
     #[serde(rename = "time_in_force")]
-    pub time_in_force: TimeInForce,
+    pub time_in_force: models::TimeInForceEnum,
     /// Order instrument name.  Not present for combination orders. Refer to `legs` field instead.
     #[serde(rename = "instrument_name", skip_serializing_if = "Option::is_none")]
     pub instrument_name: Option<String>,
@@ -28,7 +28,7 @@ pub struct OrderStatus {
     #[serde(rename = "legs", skip_serializing_if = "Option::is_none")]
     pub legs: Option<Vec<models::OrderStatusLegsInner>>,
     #[serde(rename = "direction")]
-    pub direction: Direction,
+    pub direction: models::DirectionEnum,
     /// Limit price. May be omitted if no price was supplied (e.g. for a market order).  For combination orders this specifies limit price per unit of the combination.
     #[serde(rename = "price", skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
@@ -48,18 +48,16 @@ pub struct OrderStatus {
     #[serde(rename = "client_order_id", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<f64>,
     #[serde(rename = "status")]
-    pub status: Status,
+    pub status: models::StatusEnum,
     /// These are new fills related to this order status update, except if `change_reason` is `existing`, then the list will contain all known fills.
     #[serde(rename = "fills")]
     pub fills: Vec<models::OrderFill>,
     #[serde(rename = "change_reason")]
-    pub change_reason: ChangeReason,
-    /// Detailed reason of order deletion if the order was deleted, omitted otherwise.  The following reasons are possible:  - `client_cancel`: Order was cancelled by the client, e.g. with a call to `private/cancel`.  - `client_bulk_cancel`: Order was cancelled by the client with a bulk cancel call, e.g. `private/cancel_all`.  - `session_end`: Non-persistent order was automatically cancelled when a WebSocket session ended.  - `instrument_deactivated`: Order was automatically cancelled when the order instrument was deactivated,   for example after expiration.  - `mm_protection`: Order was automatically cancelled when configured market maker protection amount was exhausted.  - `failover`: Non-persistent order was automatically cancelled on matching engine failover.  - `margin_breach`: Order was automatically cancelled in a response to a margin breach on the account as part   of automatic liquidation procedures.  - `filled`: Order was filled in full.  - `immediate_cancel`: The order was submitted as \"immediate-or-cancel\" and was not filled in full immediately.   Note that the order might be partially filled when this delete reason is set.  - `admin_cancel`: The order was cancelled by an exchange admin.
+    pub change_reason: models::ChangeReasonEnum,
     #[serde(rename = "delete_reason", skip_serializing_if = "Option::is_none")]
-    pub delete_reason: Option<DeleteReason>,
-    /// Detailed reason of order insertion.
+    pub delete_reason: Option<models::OrderStatusDeleteReasonEnum>,
     #[serde(rename = "insert_reason")]
-    pub insert_reason: InsertReason,
+    pub insert_reason: models::InsertReasonEnum,
     /// If the order was triggered by a conditional order (stop order), the ID of that conditional order. Otherwise omitted.
     #[serde(
         rename = "conditional_order_id",
@@ -87,16 +85,16 @@ impl OrderStatus {
     /// Order status.
     pub fn new(
         order_id: String,
-        order_type: OrderType,
-        time_in_force: TimeInForce,
-        direction: Direction,
+        order_type: models::OrderTypeEnum,
+        time_in_force: models::TimeInForceEnum,
+        direction: models::DirectionEnum,
         amount: f64,
         filled_amount: f64,
         remaining_amount: f64,
-        status: Status,
+        status: models::StatusEnum,
         fills: Vec<models::OrderFill>,
-        change_reason: ChangeReason,
-        insert_reason: InsertReason,
+        change_reason: models::ChangeReasonEnum,
+        insert_reason: models::InsertReasonEnum,
         create_time: f64,
         persistent: bool,
     ) -> OrderStatus {
@@ -125,135 +123,5 @@ impl OrderStatus {
             reduce_only: None,
             persistent,
         }
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum OrderType {
-    #[serde(rename = "limit")]
-    Limit,
-    #[serde(rename = "market")]
-    Market,
-}
-
-impl Default for OrderType {
-    fn default() -> OrderType {
-        Self::Limit
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum TimeInForce {
-    #[serde(rename = "good_till_cancelled")]
-    GoodTillCancelled,
-    #[serde(rename = "immediate_or_cancel")]
-    ImmediateOrCancel,
-}
-
-impl Default for TimeInForce {
-    fn default() -> TimeInForce {
-        Self::GoodTillCancelled
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
-}
-
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Status {
-    #[serde(rename = "open")]
-    Open,
-    #[serde(rename = "partially_filled")]
-    PartiallyFilled,
-    #[serde(rename = "cancelled")]
-    Cancelled,
-    #[serde(rename = "cancelled_partially_filled")]
-    CancelledPartiallyFilled,
-    #[serde(rename = "filled")]
-    Filled,
-}
-
-impl Default for Status {
-    fn default() -> Status {
-        Self::Open
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum ChangeReason {
-    #[serde(rename = "existing")]
-    Existing,
-    #[serde(rename = "insert")]
-    Insert,
-    #[serde(rename = "amend")]
-    Amend,
-    #[serde(rename = "cancel")]
-    Cancel,
-    #[serde(rename = "fill")]
-    Fill,
-}
-
-impl Default for ChangeReason {
-    fn default() -> ChangeReason {
-        Self::Existing
-    }
-}
-/// Detailed reason of order deletion if the order was deleted, omitted otherwise.  The following reasons are possible:  - `client_cancel`: Order was cancelled by the client, e.g. with a call to `private/cancel`.  - `client_bulk_cancel`: Order was cancelled by the client with a bulk cancel call, e.g. `private/cancel_all`.  - `session_end`: Non-persistent order was automatically cancelled when a WebSocket session ended.  - `instrument_deactivated`: Order was automatically cancelled when the order instrument was deactivated,   for example after expiration.  - `mm_protection`: Order was automatically cancelled when configured market maker protection amount was exhausted.  - `failover`: Non-persistent order was automatically cancelled on matching engine failover.  - `margin_breach`: Order was automatically cancelled in a response to a margin breach on the account as part   of automatic liquidation procedures.  - `filled`: Order was filled in full.  - `immediate_cancel`: The order was submitted as \"immediate-or-cancel\" and was not filled in full immediately.   Note that the order might be partially filled when this delete reason is set.  - `admin_cancel`: The order was cancelled by an exchange admin.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum DeleteReason {
-    #[serde(rename = "client_cancel")]
-    ClientCancel,
-    #[serde(rename = "client_bulk_cancel")]
-    ClientBulkCancel,
-    #[serde(rename = "session_end")]
-    SessionEnd,
-    #[serde(rename = "instrument_deactivated")]
-    InstrumentDeactivated,
-    #[serde(rename = "mm_protection")]
-    MmProtection,
-    #[serde(rename = "failover")]
-    Failover,
-    #[serde(rename = "margin_breach")]
-    MarginBreach,
-    #[serde(rename = "filled")]
-    Filled,
-    #[serde(rename = "immediate_cancel")]
-    ImmediateCancel,
-    #[serde(rename = "admin_cancel")]
-    AdminCancel,
-}
-
-impl Default for DeleteReason {
-    fn default() -> DeleteReason {
-        Self::ClientCancel
-    }
-}
-/// Detailed reason of order insertion.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum InsertReason {
-    #[serde(rename = "client_request")]
-    ClientRequest,
-    #[serde(rename = "conditional_order")]
-    ConditionalOrder,
-    #[serde(rename = "liquidation")]
-    Liquidation,
-    #[serde(rename = "bot")]
-    Bot,
-}
-
-impl Default for InsertReason {
-    fn default() -> InsertReason {
-        Self::ClientRequest
     }
 }

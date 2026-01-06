@@ -13,9 +13,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trade {
-    /// Type of the trade.  Note: as of API v2.31.0 we have stopped representing futures-style settlements as trades of `daily_mark` type. You might still get such trades in the history, but no new trades of `daily_mark` type will be created. To get information about daily marks, use `private/daily_mark_history` API endpoint.
     #[serde(rename = "trade_type", skip_serializing_if = "Option::is_none")]
-    pub trade_type: Option<TradeType>,
+    pub trade_type: Option<models::TradeTypeEnum>,
     #[serde(rename = "trade_id", skip_serializing_if = "Option::is_none")]
     pub trade_id: Option<String>,
     #[serde(rename = "order_id", skip_serializing_if = "Option::is_none")]
@@ -23,7 +22,7 @@ pub struct Trade {
     #[serde(rename = "instrument_name", skip_serializing_if = "Option::is_none")]
     pub instrument_name: Option<String>,
     #[serde(rename = "direction", skip_serializing_if = "Option::is_none")]
-    pub direction: Option<Direction>,
+    pub direction: Option<models::DirectionEnum>,
     /// Trade price.
     #[serde(rename = "price", skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
@@ -75,9 +74,8 @@ pub struct Trade {
     /// Client order reference as set in related order.
     #[serde(rename = "client_order_id", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<f64>,
-    /// Maker (trade on book order) or taker (trade on new order), if applicable.
     #[serde(rename = "maker_taker", skip_serializing_if = "Option::is_none")]
-    pub maker_taker: Option<MakerTaker>,
+    pub maker_taker: Option<models::MakerTakerEnum>,
     /// If the trade was made by a bot, the ID of that bot. Otherwise omitted.
     #[serde(rename = "bot_id", skip_serializing_if = "Option::is_none")]
     pub bot_id: Option<String>,
@@ -113,63 +111,5 @@ impl Trade {
             bot_id: None,
             leg_index: None,
         }
-    }
-}
-/// Type of the trade.  Note: as of API v2.31.0 we have stopped representing futures-style settlements as trades of `daily_mark` type. You might still get such trades in the history, but no new trades of `daily_mark` type will be created. To get information about daily marks, use `private/daily_mark_history` API endpoint.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum TradeType {
-    #[serde(rename = "normal")]
-    Normal,
-    #[serde(rename = "block")]
-    Block,
-    #[serde(rename = "combo")]
-    Combo,
-    #[serde(rename = "amend")]
-    Amend,
-    #[serde(rename = "delete")]
-    Delete,
-    #[serde(rename = "internal_transfer")]
-    InternalTransfer,
-    #[serde(rename = "expiration")]
-    Expiration,
-    #[serde(rename = "daily_mark")]
-    DailyMark,
-    #[serde(rename = "rfq")]
-    Rfq,
-    #[serde(rename = "liquidation")]
-    Liquidation,
-}
-
-impl Default for TradeType {
-    fn default() -> TradeType {
-        Self::Normal
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
-}
-
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
-    }
-}
-/// Maker (trade on book order) or taker (trade on new order), if applicable.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum MakerTaker {
-    #[serde(rename = "maker")]
-    Maker,
-    #[serde(rename = "taker")]
-    Taker,
-}
-
-impl Default for MakerTaker {
-    fn default() -> MakerTaker {
-        Self::Maker
     }
 }

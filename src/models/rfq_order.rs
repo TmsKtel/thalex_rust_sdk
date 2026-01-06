@@ -23,7 +23,7 @@ pub struct RfqOrder {
     #[serde(rename = "client_order_id", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<f64>,
     #[serde(rename = "direction")]
-    pub direction: Direction,
+    pub direction: models::DirectionEnum,
     #[serde(rename = "price")]
     pub price: f64,
     #[serde(rename = "amount")]
@@ -36,19 +36,17 @@ pub struct RfqOrder {
     /// the number of combinations that traded.
     #[serde(rename = "trade_amount", skip_serializing_if = "Option::is_none")]
     pub trade_amount: Option<f64>,
-    /// Detailed reason of order deletion.
     #[serde(rename = "delete_reason", skip_serializing_if = "Option::is_none")]
-    pub delete_reason: Option<DeleteReason>,
-    /// This field is set only on subscriptions.
+    pub delete_reason: Option<models::DeleteReasonEnum>,
     #[serde(rename = "event", skip_serializing_if = "Option::is_none")]
-    pub event: Option<Event>,
+    pub event: Option<models::EventEnum>,
 }
 
 impl RfqOrder {
     pub fn new(
         rfq_id: String,
         order_id: String,
-        direction: Direction,
+        direction: models::DirectionEnum,
         price: f64,
         amount: f64,
     ) -> RfqOrder {
@@ -65,63 +63,5 @@ impl RfqOrder {
             delete_reason: None,
             event: None,
         }
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Direction {
-    #[serde(rename = "buy")]
-    Buy,
-    #[serde(rename = "sell")]
-    Sell,
-}
-
-impl Default for Direction {
-    fn default() -> Direction {
-        Self::Buy
-    }
-}
-/// Detailed reason of order deletion.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum DeleteReason {
-    #[serde(rename = "client_cancel")]
-    ClientCancel,
-    #[serde(rename = "session_end")]
-    SessionEnd,
-    #[serde(rename = "instrument_deactivated")]
-    InstrumentDeactivated,
-    #[serde(rename = "mm_protection")]
-    MmProtection,
-    #[serde(rename = "failover")]
-    Failover,
-    #[serde(rename = "margin_breach")]
-    MarginBreach,
-    #[serde(rename = "filled")]
-    Filled,
-}
-
-impl Default for DeleteReason {
-    fn default() -> DeleteReason {
-        Self::ClientCancel
-    }
-}
-/// This field is set only on subscriptions.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Event {
-    #[serde(rename = "Inserted")]
-    Inserted,
-    #[serde(rename = "Amended")]
-    Amended,
-    #[serde(rename = "Cancelled")]
-    Cancelled,
-    #[serde(rename = "Filled")]
-    Filled,
-    #[serde(rename = "Existing")]
-    Existing,
-}
-
-impl Default for Event {
-    fn default() -> Event {
-        Self::Inserted
     }
 }

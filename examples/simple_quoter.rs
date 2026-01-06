@@ -5,7 +5,7 @@ use simple_logger::init_with_level;
 use thalex_rust_sdk::{
     models::{
         AmendParams, CancelParams, Delay, DirectionEnum, InsertParams, OrderStatus, OrderTypeEnum,
-        SetCancelOnDisconnectParams, order_status::Status,
+        SetCancelOnDisconnectParams, StatusEnum,
     },
     types::ExternalEvent,
     ws_client::WsClient,
@@ -195,7 +195,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         order.order_id, order.instrument_name, order.order_type, order.amount, order.price, order.status
                     );
                     match order.status {
-                        Status::Filled | Status::Cancelled => {
+                        StatusEnum::Filled | StatusEnum::Cancelled => {
                             let mut state = state.lock().await;
                             info!("Order {} is no longer active.", order.order_id);
                             info!("Removing order from strategy state.");

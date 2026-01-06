@@ -31,9 +31,9 @@ pub struct Instrument {
     #[serde(rename = "underlying", skip_serializing_if = "Option::is_none")]
     pub underlying: Option<String>,
     #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<Type>,
+    pub r#type: Option<models::TypeEnum>,
     #[serde(rename = "option_type", skip_serializing_if = "Option::is_none")]
-    pub option_type: Option<OptionType>,
+    pub option_type: Option<models::OptionTypeEnum>,
     /// Expiration date in ISO format (YYYY-mm-dd).
     #[serde(rename = "expiry_date", skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
@@ -86,37 +86,5 @@ impl Instrument {
             settlement_price: None,
             settlement_index_price: None,
         }
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum Type {
-    #[serde(rename = "perpetual")]
-    Perpetual,
-    #[serde(rename = "future")]
-    Future,
-    #[serde(rename = "option")]
-    Option,
-    #[serde(rename = "combination")]
-    Combination,
-}
-
-impl Default for Type {
-    fn default() -> Type {
-        Self::Perpetual
-    }
-}
-///
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum OptionType {
-    #[serde(rename = "call")]
-    Call,
-    #[serde(rename = "put")]
-    Put,
-}
-
-impl Default for OptionType {
-    fn default() -> OptionType {
-        Self::Call
     }
 }
