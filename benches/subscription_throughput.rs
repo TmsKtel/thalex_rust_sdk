@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc};
@@ -59,17 +59,19 @@ fn bench_subscription_throughput(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let mut group = c.benchmark_group("subscription_throughput");
 
-    let test_message = r#"{"channel_name":"ticker.BTC-PERPETUAL.100ms","notification":{"mark_price":50000.6}}"#.to_string();
+    let test_message =
+        r#"{"channel_name":"ticker.BTC-PERPETUAL.100ms","notification":{"mark_price":50000.6}}"#
+            .to_string();
 
     // Бенчмарк: обработка одного сообщения
     group.bench_function("single_message", |b| {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
             let (tx, mut rx) = mpsc::unbounded_channel();
-            subs.lock().await.insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move {
-                while let Some(_) = rx.recv().await {}
-            });
+            subs.lock()
+                .await
+                .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
+            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -86,10 +88,10 @@ fn bench_subscription_throughput(c: &mut Criterion) {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
             let (tx, mut rx) = mpsc::unbounded_channel();
-            subs.lock().await.insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move {
-                while let Some(_) = rx.recv().await {}
-            });
+            subs.lock()
+                .await
+                .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
+            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -106,10 +108,10 @@ fn bench_subscription_throughput(c: &mut Criterion) {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
             let (tx, mut rx) = mpsc::unbounded_channel();
-            subs.lock().await.insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move {
-                while let Some(_) = rx.recv().await {}
-            });
+            subs.lock()
+                .await
+                .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
+            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -131,15 +133,13 @@ fn bench_subscription_throughput(c: &mut Criterion) {
                 let channel_names: Vec<String> = (0..count)
                     .map(|i| format!("ticker.INSTR-{}.100ms", i))
                     .collect();
-                
+
                 rt.block_on(async {
                     let mut guard = subs.lock().await;
                     for name in &channel_names {
                         let (tx, mut rx) = mpsc::unbounded_channel();
                         guard.insert(name.clone(), tx);
-                        tokio::spawn(async move {
-                            while let Some(_) = rx.recv().await {}
-                        });
+                        tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
                     }
                 });
 
@@ -161,10 +161,10 @@ fn bench_subscription_throughput(c: &mut Criterion) {
         let msg = test_message.clone();
         rt.block_on(async {
             let (tx, mut rx) = mpsc::unbounded_channel();
-            subs.lock().await.insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move {
-                while let Some(_) = rx.recv().await {}
-            });
+            subs.lock()
+                .await
+                .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
+            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
         });
         b.to_async(&rt).iter_custom(|iters| {
             let subs_clone = subs.clone();
@@ -187,4 +187,3 @@ fn bench_subscription_throughput(c: &mut Criterion) {
 
 criterion_group!(benches, bench_subscription_throughput);
 criterion_main!(benches);
-

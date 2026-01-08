@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use serde_json::{json, Value};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use serde_json::{Value, json};
 
 /// Бенчмарк для измерения производительности JSON парсинга
 /// Тестирует различные размеры сообщений и типы данных
@@ -13,7 +13,8 @@ fn bench_json_parsing(c: &mut Criterion) {
         "result": {
             "instruments": ["BTC-PERPETUAL", "ETH-PERPETUAL"]
         }
-    }).to_string();
+    })
+    .to_string();
 
     // Ticker сообщение (среднее сообщение)
     let ticker_message = json!({
@@ -43,7 +44,8 @@ fn bench_json_parsing(c: &mut Criterion) {
             "realised_funding_24h": 120.0,
             "average_funding_rate_24h": 0.0001
         }
-    }).to_string();
+    })
+    .to_string();
 
     // Большое сообщение (множество инструментов)
     let large_message = json!({
@@ -57,7 +59,8 @@ fn bench_json_parsing(c: &mut Criterion) {
                 "values": (0..20).collect::<Vec<_>>()
             })).collect::<Vec<_>>()
         }
-    }).to_string();
+    })
+    .to_string();
 
     // Бенчмарк: полный парсинг RPC ответа
     group.bench_with_input(
@@ -141,4 +144,3 @@ fn bench_json_parsing(c: &mut Criterion) {
 
 criterion_group!(benches, bench_json_parsing);
 criterion_main!(benches);
-
