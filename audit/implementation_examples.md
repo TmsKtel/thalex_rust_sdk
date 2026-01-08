@@ -1,21 +1,34 @@
 # Полные примеры кода для внедрения оптимизаций
 
+> **Важно:** Примеры в этом файле иллюстративны. В актуальном коде используются `public_subscriptions` и `private_subscriptions`.
+> Если пример использует единую `subscriptions` / `self.subscriptions`, адаптируйте его, выбрав соответствующую таблицу (public или private).
+
 Этот документ содержит полные примеры кода "до" и "после" для каждой оптимизации.
 
 ---
 
 ## 1. Убрать лишние копирования входящих сообщений
 
-### В run_single_connection
+### В resubscribe_all()
 
-**До (строки 299, 302):**
+**До (строки 592, 599):**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text.to_string(), pending_requests, subscriptions).await;  // Лишнее копирование
+    handle_incoming(
+        text.to_string(),  // Лишнее копирование
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin.to_vec()) {  // Лишнее копирование буфера
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -23,11 +36,21 @@ Some(Ok(Message::Binary(bin))) => {
 **После:**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text, pending_requests, subscriptions).await;  // text уже String
+    handle_incoming(
+        text,  // text уже String
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin) {  // Без .to_vec()
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -67,8 +90,10 @@ async fn handle_incoming(
 
     // Subscription notification: has "channel_name"
     if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
-        let mut subs = subscriptions.lock().await;
-        if let Some(sender) = subs.get_mut(channel_name) {
+        // Проверяем оба map'а: public_subscriptions и private_subscriptions
+        for route in [&private_subscriptions, &public_subscriptions] {
+            let mut subs = route.lock().await;
+            if let Some(sender) = subs.get_mut(channel_name) {
             if sender.send(text).is_err() {
                 // Receiver dropped; cleanup this subscription entry.
                 subs.remove(channel_name);
@@ -223,14 +248,15 @@ let subscriptions = Arc::new(DashMap::new());
 **До:**
 ```rust
 {
-    let mut subs = self.subscriptions.lock().await;
+    // Choose the appropriate map: public_subscriptions OR private_subscriptions
+    let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
     subs.insert(channel.clone(), tx);
 }
 ```
 
 **После:**
 ```rust
-self.subscriptions.insert(channel.clone(), tx);
+self.public_subscriptions.insert(channel.clone(), tx);  // Или private_subscriptions, в зависимости от контекста
 ```
 
 ### Шаг 5: Изменить unsubscribe()
@@ -238,14 +264,15 @@ self.subscriptions.insert(channel.clone(), tx);
 **До:**
 ```rust
 {
-    let mut subs = self.subscriptions.lock().await;
+    // Choose the appropriate map: public_subscriptions OR private_subscriptions
+    let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
     subs.remove(&channel);
 }
 ```
 
 **После:**
 ```rust
-self.subscriptions.remove(&channel);
+self.public_subscriptions.remove(&channel);  // Или private_subscriptions, в зависимости от контекста
 ```
 
 ### Шаг 6: Изменить handle_incoming()
@@ -283,7 +310,7 @@ if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) 
 }
 ```
 
-### Шаг 7: Изменить run_single_connection() для переподписки
+### Шаг 7: Изменить resubscribe_all() для переподписки
 
 **До:**
 ```rust
@@ -402,7 +429,7 @@ async fn connection_supervisor(
                 // Reset backoff on successful connection
                 backoff_secs = INITIAL_BACKOFF;
 
-                let result = run_single_connection(
+                let result = resubscribe_all(
                     &url,
                     ws_stream,
                     &mut cmd_rx,
@@ -417,9 +444,15 @@ async fn connection_supervisor(
                 }
 
                 // Fail all pending RPCs on this connection.
-                let mut pending = pending_requests.lock().await;
-                for (_, tx) in pending.drain() {
-                    let _ = tx.send(r#"{"error":"connection closed"}"#.to_string());
+                // ✅ Оптимизация: собираем все под lock, отправляем вне lock
+                let failed_requests: Vec<_> = {
+                    let mut pending = pending_requests.lock().await;
+                    pending.drain().collect()  // Собираем все в Vec
+                };
+                // Lock отпущен здесь
+                
+                for (_, tx) in failed_requests {
+                    let _ = tx.send(r#"{"error":"connection closed"}"#.to_string());  // ✅ Отправка вне lock
                 }
 
                 if *shutdown_rx.borrow() {
@@ -476,7 +509,7 @@ let jitter = (SystemTime::now()
 
 ## 6. Батчинг переподписок - полный код
 
-### Полный код run_single_connection с батчингом
+### Полный код resubscribe_all() с батчингом
 
 **До (строки 256-266):**
 ```rust
@@ -532,20 +565,22 @@ if !channels.is_empty() {
 
 ## 7. Уменьшение клонирования строк - конкретные примеры
 
-### Пример 1: subscribe() - убрать лишнее клонирование
+### Пример 1: subscribe_channel() - убрать лишнее клонирование
 
-**До (строка 115, 122):**
+**До (строка 309):**
 ```rust
-pub async fn subscribe<F>(&self, channel: &str, mut callback: F) -> Result<(), Error>
+pub async fn subscribe_channel<P, F>(&self, scope: RequestScope, channel: String, callback: F) -> Result<String, Error>
 where
-    F: FnMut(String) + Send + 'static,
+    P: DeserializeOwned + Send + 'static,
+    F: FnMut(P) + Send + 'static,
 {
-    let channel = channel.to_string(); // Клонирование 1
+    let channel = channel.to_string(); // Клонирование (если channel уже String)
 
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
     {
-        let mut subs = self.subscriptions.lock().await;
+        // Choose the appropriate map: public_subscriptions OR private_subscriptions
+        let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
         subs.insert(channel.clone(), tx); // Клонирование 2
     }
 
@@ -571,7 +606,8 @@ where
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
     {
-        let mut subs = self.subscriptions.lock().await;
+        // Choose the appropriate map: public_subscriptions OR private_subscriptions
+        let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
         // Используем уже созданную строку, не клонируем снова
         subs.insert(channel.clone(), tx);
     }
@@ -597,7 +633,8 @@ where
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
     {
-        let mut subs = self.subscriptions.lock().await;
+        // Choose the appropriate map: public_subscriptions OR private_subscriptions
+        let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
         // Вставляем channel_owned, больше не нужно
         subs.insert(channel_owned.clone(), tx);
     }
@@ -654,7 +691,7 @@ async fn handle_incoming(
 
 **Но нужно изменить вызов:**
 ```rust
-// В run_single_connection
+// В resubscribe_all()
 Some(Ok(Message::Text(text))) => {
     handle_incoming(&text, pending_requests, subscriptions).await;
 }

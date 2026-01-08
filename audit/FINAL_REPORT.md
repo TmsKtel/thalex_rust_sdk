@@ -1,8 +1,10 @@
 # Финальный отчет аудита кода Thalex Rust SDK
 
-**Дата:** Декабрь 2024  
-**Версия:** 1.0  
+**Дата:** Декабрь 2025 (обновлено: Январь 2026)  
+**Версия:** 1.1  
 **Статус:** Завершен
+
+**См. также:** [thalex_rust_sdk_performance_reaudit_2025.md](./thalex_rust_sdk_performance_reaudit_2025.md) - переанализ производительности после мержа main
 
 ---
 
@@ -14,7 +16,7 @@
 
 ✅ **Сильные стороны:**
 - Архитектура хорошо спроектирована с использованием современных паттернов
-- Обработка RPC запросов очень эффективна (~300 ns)
+- Обработка RPC запросов очень эффективна (335 ns, обновлено 2025)
 - Система автоматически переподключается и восстанавливает подписки
 - Последовательная обработка имеет высокий throughput (~3.8M сообщений/сек)
 
@@ -91,9 +93,10 @@ Thalex Rust SDK - это асинхронный WebSocket клиент для б
 - При высокой частоте сообщений (например, ticker с задержкой 100ms) блокировки создают очередь
 
 **Локации в коде:**
-- `handle_incoming`: строки 349, 360 - блокировки для доступа к `pending_requests` и `subscriptions`
-- `call_rpc`: строки 81, 98 - блокировки при добавлении/удалении запросов
-- `subscribe/unsubscribe`: строки 121, 149 - блокировки при управлении подписками
+- `handle_incoming()` — per-message hot path; блокировки для доступа к `pending_requests` и subscription maps (`public_subscriptions` / `private_subscriptions`)
+- `send_rpc()` — добавляет/удаляет записи в `pending_requests`
+- `subscribe_channel()` / `unsubscribe_channel()` — обновляет subscription maps
+- instrument cache access (e.g., `instruments_cache`) — используется при парсинге payload, связанных с инструментами
 
 **Влияние:**
 - Задержка обработки каждого сообщения из-за ожидания блокировки
@@ -140,6 +143,8 @@ Thalex Rust SDK - это асинхронный WebSocket клиент для б
 
 - Создание отдельной задачи для каждого callback
 - Отсутствие пула для переиспользования буферов
+- Блокировки Mutex для `instruments_cache` при частом использовании
+- `pending_requests.drain()` + `send()` под lock при разрыве соединения (см. обработку ошибок соединения / cleanup path)
 
 ---
 
@@ -224,15 +229,20 @@ Thalex Rust SDK - это асинхронный WebSocket клиент для б
 async fn handle_incoming(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
 ) {
     // Быстрая проверка перед полным парсингом
     if text.contains("\"id\":") {
         // Это RPC ответ - парсим только если нужно
         let parsed: Value = serde_json::from_str(&text)?;
         if let Some(id) = parsed.get("id").and_then(|v| v.as_u64()) {
-            let mut pending = pending_requests.lock().await;
-            if let Some(tx) = pending.remove(&id) {
+            // Клонируем sender под lock, отправляем вне lock
+            let tx_opt = {
+                let mut pending = pending_requests.lock().await;
+                pending.remove(&id)
+            };
+            if let Some(tx) = tx_opt {
                 let _ = tx.send(text);
             }
         }
@@ -245,16 +255,25 @@ async fn handle_incoming(
         if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
             // Клонируем sender под lock, отправляем вне lock
             let sender_opt = {
-                let mut subs = subscriptions.lock().await;
-                subs.get_mut(channel_name).map(|s| s.clone())  // UnboundedSender клонируется дёшево
+                for route in [private_subscriptions, public_subscriptions] {
+                    let mut subs = route.lock().await;
+                    if let Some(sender) = subs.get_mut(channel_name) {
+                        return Some(sender.clone());  // UnboundedSender клонируется дёшево
+                    }
+                }
+                None
             };
             // Lock отпущен здесь
             
             if let Some(mut sender) = sender_opt {
                 if sender.send(text).is_err() {
                     // Если send failed, коротко взять lock и удалить entry
-                    let mut subs = subscriptions.lock().await;
-                    subs.remove(channel_name);
+                    for route in [private_subscriptions, public_subscriptions] {
+                        let mut subs = route.lock().await;
+                        if subs.remove(channel_name).is_some() {
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -281,14 +300,21 @@ use dashmap::DashMap;
 
 pub struct WsClient {
     // ...
-    subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    public_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Два map'а
+    private_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Два map'а
+    instruments_cache: Arc<DashMap<String, Instrument>>,  // ✅ Также можно оптимизировать
     // ...
 }
 
 // В handle_incoming
 if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
-    if let Some(mut sender) = subscriptions.get_mut(channel_name) {
-        let _ = sender.send(text);
+    for route in [&private_subscriptions, &public_subscriptions] {
+        if let Some(sender) = route.get(channel_name) {
+            if sender.send(text.clone()).is_err() {
+                route.remove(channel_name);
+            }
+            return;
+        }
     }
 }
 ```
@@ -312,25 +338,27 @@ if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) 
 
 **Ожидаемый эффект:** Быстрее восстановление после переподключения, меньше сетевых round-trips.
 
+**Текущая реализация:**
+В текущей реализации переподписка выполняется в `resubscribe_all()`. Код делает snapshot имен каналов под lock и освобождает lock **перед** await сетевых отправок. Это избегает удержания lock через `.await` (ранее это было риском в старых вариантах).
+
+**Оставшаяся возможность оптимизации:**
+Отправлять переподписки батчами (например, подписаться на несколько каналов одним сообщением, когда API это поддерживает), чтобы уменьшить количество round-trips.
+
 **Пример кода:**
 ```rust
-// В run_single_connection, строки 257-266
-{
-    // Сначала делаем snapshot под lock
-    let channels: Vec<String> = {
-        let subs = subscriptions.lock().await;
-        subs.keys().map(|k| k.clone()).collect()  // Snapshot ключей
-    };
-    // Lock отпущен здесь
-    
-    // Теперь отправляем вне lock
-    if !channels.is_empty() {
-        let msg = serde_json::json!({
-            "method": "public/subscribe",
-            "params": { "channels": channels },
-        });
-        ws.send(Message::Text(msg.to_string().into())).await?;
-    }
+// В resubscribe_all()
+let public_channels: Vec<String> = {
+    let subs = self.public_subscriptions.lock().await;
+    subs.keys().cloned().collect()  // Snapshot ключей
+};
+// Lock отпущен здесь
+
+// ✅ Правильно: отправить все каналы одним запросом
+if !public_channels.is_empty() {
+    let _: RpcResponse = self.send_rpc(
+        "public/subscribe",
+        serde_json::json!({ "channels": public_channels }),
+    ).await?;
 }
 ```
 

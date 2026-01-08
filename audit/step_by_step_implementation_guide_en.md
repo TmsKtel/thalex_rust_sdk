@@ -1,5 +1,8 @@
 # Step-by-Step Implementation Guide
 
+> **Note:** The current `ws_client.rs` maintains **two** subscription maps: `public_subscriptions` and `private_subscriptions`.
+> Any example below that refers to a single `subscriptions` / `self.subscriptions` map is **illustrative** and must be adapted by selecting the appropriate map (public or private).
+
 This document contains detailed step-by-step instructions for implementing each optimization.
 
 ---
@@ -18,31 +21,46 @@ This document contains detailed step-by-step instructions for implementing each 
 
 ### Step 1: Find Places with Unnecessary Copies
 
-Open `src/ws_client.rs`, find function `run_single_connection`, lines 299 and 302.
+Open `src/ws_client.rs`, find function `resubscribe_all()` (re-subscription handler on reconnect).
 
 ### Step 2: Remove text.to_string()
 
-**Find (line 299):**
+**Find (line 592):**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text.to_string(), pending_requests, subscriptions).await;
+    handle_incoming(
+        text.to_string(),
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 ```
 
 **Replace with:**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text, pending_requests, subscriptions).await;  // text is already String
+    handle_incoming(
+        text,  // text is already String
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 ```
 
 ### Step 3: Remove bin.to_vec()
 
-**Find (line 302):**
+**Find (line 599):**
 ```rust
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin.to_vec()) {
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -51,7 +69,12 @@ Some(Ok(Message::Binary(bin))) => {
 ```rust
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin) {  // Without .to_vec()
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -72,7 +95,7 @@ Some(Ok(Message::Binary(bin))) => {
 
 ### Step 1: Find Re-subscription Code
 
-Open `src/ws_client.rs`, find function `run_single_connection`, lines 256-266.
+Open `src/ws_client.rs`, find function `resubscribe_all()` (re-subscription handler on reconnect).
 
 ### Step 2: Replace Code
 
@@ -284,32 +307,33 @@ let subscriptions = Arc::new(DashMap::new());
 
 ### Step 5: Change subscribe()
 
-**Find (lines 120-123):**
+**Find:**
 ```rust
+// Select the appropriate subscription map: public_subscriptions or private_subscriptions
 {
-    let mut subs = self.subscriptions.lock().await;
+    let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
     subs.insert(channel.clone(), tx);
 }
 ```
 
 **Replace with:**
 ```rust
-self.subscriptions.insert(channel.clone(), tx);
+self.public_subscriptions.insert(channel.clone(), tx); // or self.private_subscriptions
 ```
 
 ### Step 6: Change unsubscribe()
 
-**Find (lines 148-151):**
+**Find:**
 ```rust
 {
-    let mut subs = self.subscriptions.lock().await;
+    let mut subs = self.public_subscriptions.lock().await; // or self.private_subscriptions
     subs.remove(&channel);
 }
 ```
 
 **Replace with:**
 ```rust
-self.subscriptions.remove(&channel);
+self.public_subscriptions.remove(&channel); // or self.private_subscriptions
 ```
 
 ### Step 7: Change handle_incoming()
@@ -337,7 +361,7 @@ if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) 
 }
 ```
 
-### Step 8: Change run_single_connection() for Re-subscription
+### Step 8: Change resubscribe_all() for Re-subscription
 
 **Find (lines 257-266):**
 ```rust
@@ -505,21 +529,21 @@ backoff_secs = (backoff_secs * 2).min(MAX_BACKOFF);
 ### Step 1: Analyze Cloning Locations
 
 Find all places where `to_string()` or string cloning occurs:
-- `subscribe()` - line 115, 122
-- `handle_incoming()` - line 335 (accepts String)
-- `run_single_connection()` - line 264
-- `connection_supervisor()` - line 218
+- `subscribe_channel()` - line 309
+- `handle_incoming()` - line 643 (accepts String)
+- `resubscribe_all()` - re-subscription handler on reconnect
+- `connection_supervisor()` - line 503
 
 ### Step 2: Optimize subscribe()
 
-**Find (line 115):**
+**Find (line 309):**
 ```rust
 let channel = channel.to_string();
 ```
 
 **Check:** This cloning is necessary, as channel is needed for HashMap key.
 
-**Optimization:** Ensure that `channel.clone()` on line 122 is not needed if channel is already String.
+**Optimization:** Ensure that additional cloning is not needed if channel is already String.
 
 ### Step 3: Optimize handle_incoming (optional, complex)
 

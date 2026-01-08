@@ -1,5 +1,8 @@
 # Пошаговое руководство по внедрению оптимизаций
 
+**Важно:** Текущий код использует два subscription map'а: `public_subscriptions` и `private_subscriptions`.  
+Любой пример в этом руководстве, который ссылается на единый `subscriptions` map, является иллюстративным и должен быть адаптирован путем выбора соответствующего map'а.
+
 Этот документ содержит детальные пошаговые инструкции для внедрения каждой оптимизации.
 
 ---
@@ -18,31 +21,46 @@
 
 ### Шаг 1: Найти места лишних копирований
 
-Открыть `src/ws_client.rs`, найти функцию `run_single_connection`, строки 299 и 302.
+Открыть `src/ws_client.rs`, найти функцию `resubscribe_all()` (обработчик переподписок при реконнекте).
 
 ### Шаг 2: Убрать text.to_string()
 
-**Найти (строка 299):**
+**Найти (строка 592):**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text.to_string(), pending_requests, subscriptions).await;
+    handle_incoming(
+        text.to_string(),
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 ```
 
 **Заменить на:**
 ```rust
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text, pending_requests, subscriptions).await;  // text уже String
+    handle_incoming(
+        text,  // text уже String
+        pending_requests,
+        public_subscriptions,
+        private_subscriptions,
+    ).await;
 }
 ```
 
 ### Шаг 3: Убрать bin.to_vec()
 
-**Найти (строка 302):**
+**Найти (строка 599):**
 ```rust
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin.to_vec()) {
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -51,7 +69,12 @@ Some(Ok(Message::Binary(bin))) => {
 ```rust
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin) {  // Без .to_vec()
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(
+            text,
+            pending_requests,
+            public_subscriptions,
+            private_subscriptions,
+        ).await;
     }
 }
 ```
@@ -72,14 +95,15 @@ Some(Ok(Message::Binary(bin))) => {
 
 ### Шаг 1: Найти код переподписки
 
-Открыть `src/ws_client.rs`, найти функцию `run_single_connection`, строки 256-266.
+Открыть `src/ws_client.rs`, найти функцию `resubscribe_all`, строки 382-413.
 
 ### Шаг 2: Заменить код
 
 **Найти:**
 ```rust
+// Пример для public_subscriptions (аналогично для private_subscriptions)
 {
-    let subs = subscriptions.lock().await;
+    let subs = self.public_subscriptions.lock().await;
     for channel in subs.keys() {
         let msg = serde_json::json!({
             "method": "public/subscribe",
@@ -197,17 +221,27 @@ if text.contains("\"channel_name\":") {
     
     if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
         // Клонируем sender под lock, отправляем вне lock
+        // Проверяем оба map'а: public_subscriptions и private_subscriptions
         let sender_opt = {
-            let mut subs = subscriptions.lock().await;
-            subs.get_mut(channel_name).map(|s| s.clone())  // UnboundedSender клонируется дёшево
+            for route in [&private_subscriptions, &public_subscriptions] {
+                let mut subs = route.lock().await;
+                if let Some(sender) = subs.get_mut(channel_name) {
+                    return Some(sender.clone());  // UnboundedSender клонируется дёшево
+                }
+            }
+            None
         };
         // Lock отпущен здесь
         
         if let Some(mut sender) = sender_opt {
             if sender.send(text).is_err() {
                 // Если send failed, коротко взять lock и удалить entry
-                let mut subs = subscriptions.lock().await;
-                subs.remove(channel_name);
+                for route in [&private_subscriptions, &public_subscriptions] {
+                    let mut subs = route.lock().await;
+                    if subs.remove(channel_name).is_some() {
+                        break;
+                    }
+                }
             }
         } else {
             warn!("Received message for unsubscribed channel: {channel_name}");
@@ -284,51 +318,61 @@ let subscriptions = Arc::new(DashMap::new());
 
 ### Шаг 5: Изменить subscribe()
 
-**Найти (строки 120-123):**
+**Найти:**
 ```rust
+// Выберите нужную таблицу подписок: public_subscriptions или private_subscriptions
 {
-    let mut subs = self.subscriptions.lock().await;
+    let mut subs = self.public_subscriptions.lock().await; // или self.private_subscriptions
     subs.insert(channel.clone(), tx);
 }
 ```
 
 **Заменить на:**
 ```rust
-self.subscriptions.insert(channel.clone(), tx);
+self.public_subscriptions.insert(channel.clone(), tx);  // или self.private_subscriptions
 ```
 
 ### Шаг 6: Изменить unsubscribe()
 
-**Найти (строки 148-151):**
+**Найти:**
 ```rust
 {
-    let mut subs = self.subscriptions.lock().await;
+    let mut subs = self.public_subscriptions.lock().await; // или self.private_subscriptions
     subs.remove(&channel);
 }
 ```
 
 **Заменить на:**
 ```rust
-self.subscriptions.remove(&channel);
+self.public_subscriptions.remove(&channel);  // Или private_subscriptions, в зависимости от контекста
 ```
 
 ### Шаг 7: Изменить handle_incoming()
 
-**Найти (строки 359-369):**
+**Найти:**
 ```rust
 if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
-    // Clone sender under lock, send outside lock
+    // Проверяем оба map'а: public_subscriptions и private_subscriptions
     let sender_opt = {
-        let mut subs = subscriptions.lock().await;
-        subs.get_mut(channel_name).map(|s| s.clone())  // UnboundedSender клонируется дёшево
+        for route in [&private_subscriptions, &public_subscriptions] {
+            let mut subs = route.lock().await;
+            if let Some(sender) = subs.get_mut(channel_name) {
+                return Some(sender.clone());  // UnboundedSender клонируется дёшево
+            }
+        }
+        None
     };
     // Lock отпущен здесь
     
     if let Some(mut sender) = sender_opt {
         if sender.send(text).is_err() {
             // Если send failed, коротко взять lock и удалить entry
-            let mut subs = subscriptions.lock().await;
-            subs.remove(channel_name);
+            for route in [&private_subscriptions, &public_subscriptions] {
+                let mut subs = route.lock().await;
+                if subs.remove(channel_name).is_some() {
+                    break;
+                }
+            }
         }
     } else {
         warn!("Received message for unsubscribed channel: {channel_name}");
@@ -337,12 +381,12 @@ if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) 
 }
 ```
 
-### Шаг 8: Изменить run_single_connection() для переподписки
+### Шаг 8: Изменить resubscribe_all() для переподписки
 
-**Найти (строки 257-266):**
+**Найти (в resubscribe_all()):**
 ```rust
 {
-    let subs = subscriptions.lock().await;
+    let subs = self.public_subscriptions.lock().await;
     for channel in subs.keys() {
         let msg = serde_json::json!({
             "method": "public/subscribe",
@@ -505,21 +549,21 @@ backoff_secs = (backoff_secs * 2).min(MAX_BACKOFF);
 ### Шаг 1: Анализ мест клонирования
 
 Найти все места, где происходит `to_string()` или клонирование строк:
-- `subscribe()` - строка 115, 122
-- `handle_incoming()` - строка 335 (принимает String)
-- `run_single_connection()` - строка 264
-- `connection_supervisor()` - строка 218
+- `subscribe_channel()` - строка 309
+- `handle_incoming()` - строка 643 (принимает String)
+- `resubscribe_all()` - обработчик переподписок при реконнекте
+- `connection_supervisor()` - строка 503
 
-### Шаг 2: Оптимизировать subscribe()
+### Шаг 2: Оптимизировать subscribe_channel()
 
-**Найти (строка 115):**
+**Найти (строка 309):**
 ```rust
 let channel = channel.to_string();
 ```
 
 **Проверить:** Это клонирование необходимо, так как channel нужен для HashMap ключа.
 
-**Оптимизация:** Убедиться, что `channel.clone()` на строке 122 не нужен, если channel уже String.
+**Оптимизация:** Убедиться, что дополнительное клонирование не нужно, если channel уже String.
 
 ### Шаг 3: Оптимизировать handle_incoming (опционально, сложно)
 

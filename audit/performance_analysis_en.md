@@ -1,18 +1,26 @@
 # Performance Analysis and Bottlenecks
 
+**Last update:** January 2025  
+**See also:** 
+- [thalex_rust_sdk_performance_reaudit_2025.md](./thalex_rust_sdk_performance_reaudit_2025.md) - **current full reaudit report**
+- [FINAL_REPORT.md](./FINAL_REPORT.md) - final report with recommendations
+
+**Note:** This document describes general performance patterns. For current details and specific recommendations, see `thalex_rust_sdk_performance_reaudit_2025.md`. Files `*_recheck_report_*` and `*_perf_addendum_*` are historical documents.
+
 ## Identified Bottlenecks
 
 ### 1. Mutex Locks in Hot Paths
 
 **Problem:**
-- In `handle_incoming` function (lines 334-373), Mutex lock occurs for every incoming message
+- In `handle_incoming()` function, Mutex lock occurs for every incoming message
 - This is a critical path, as all messages pass through this function
 - At high message frequency (e.g., ticker with 100ms delay), locks can create queues
+- Code uses two separate subscription tables: `public_subscriptions` and `private_subscriptions`
 
 **Locations:**
-- `handle_incoming`: lines 349, 360 - locks for accessing `pending_requests` and `subscriptions`
-- `call_rpc`: lines 81, 98 - locks when adding/removing requests
-- `subscribe/unsubscribe`: lines 121, 149 - locks when managing subscriptions
+- `handle_incoming()`: locks for accessing `pending_requests` and `public_subscriptions`/`private_subscriptions` (two separate subscription tables)
+- `send_rpc()`: locks when adding/removing requests
+- `subscribe_channel()`: locks when managing subscriptions
 
 **Impact:**
 - Delay in processing each message due to lock waiting
@@ -22,10 +30,9 @@
 ### 2. Excessive String Cloning
 
 **Problem:**
-- In `subscribe` (line 115): `channel.to_string()` creates a new string
-- In `handle_incoming` (line 335): `text: String` is accepted by value but then passed further
-- In `run_single_connection` (line 264): `msg.to_string()` creates a string for each channel on reconnection
-- In `connection_supervisor` (line 218): new string is created for each failed request
+- In the WebSocket reader loop, `handle_incoming(text.to_string(), ...)` performs an unnecessary `String` clone.
+- In the binary branch, `String::from_utf8(bin.to_vec())` performs an unnecessary buffer copy.
+- In subscribe/unsubscribe handling, `channel.to_string()` may allocate when the input is already an owned `String` (verify actual call sites).
 
 **Impact:**
 - Unnecessary memory allocations
@@ -35,8 +42,10 @@
 ### 3. JSON Parsing for Every Message
 
 **Problem:**
-- In `handle_incoming` (line 339), every incoming text is parsed into `serde_json::Value`
+- In `handle_incoming()`, every incoming text is parsed into `serde_json::Value`
 - Even if message doesn't require full parsing (e.g., only need to check for "id" or "channel_name" field)
+- Benchmarks show: fast check `contains("\"id\":")` is 44 times faster than full parsing
+- Note: `id` in JSON-RPC is usually a number (or `null`), so we check for marker `"id":` and then use `as_u64()`
 
 **Impact:**
 - JSON parsing is CPU-intensive operation
@@ -57,7 +66,7 @@
 ### 5. No Batching on Re-subscription
 
 **Problem:**
-- In `run_single_connection` (lines 257-266), on reconnection, separate message is sent for each channel
+- In `resubscribe_all()`, on reconnection, separate message is sent for each channel
 - Could send one command with array of all channels
 
 **Impact:**
@@ -65,10 +74,12 @@
 - More JSON serialization
 - Slower subscription recovery
 
+**Note:** ✅ In current code, the "lock across await" issue is already fixed - snapshot of keys is taken under lock (for `public_subscriptions` and `private_subscriptions` separately), then await is performed without lock. The remaining issue is batching - sending one channel at a time instead of one request with all channels.
+
 ### 6. Fixed Reconnection Delay
 
 **Problem:**
-- In `connection_supervisor` (lines 232, 239), fixed 3-second delay is used
+- In `connection_supervisor()`, fixed 3-second delay is used
 - No exponential backoff
 - No jitter to prevent thundering herd
 
@@ -79,7 +90,7 @@
 ### 7. Separate Task Creation for Each Callback
 
 **Problem:**
-- In `subscribe` (line 135), separate tokio task is created for each subscription
+- In `subscribe_channel()`, separate tokio task is created for each subscription
 - With large number of subscriptions, this creates many tasks
 
 **Impact:**
@@ -95,6 +106,21 @@
 **Impact:**
 - More allocations
 - More pressure on allocator
+
+### 9. Mutex Locks for instruments_cache
+
+**Problem:**
+- `WsClient` now has `instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>`
+- Frequent access to `round_price_to_ticks()` or `cache_instruments()` can create contention
+- Lock is held during cache operations
+
+**Impact:**
+- Additional contention point with frequent use
+- May block other operations during cache updates
+
+**Locations:**
+- `cache_instruments()`: lock for clearing and populating cache
+- `round_price_to_ticks()`: lock for reading from cache
 
 ## Metrics for Measurement
 

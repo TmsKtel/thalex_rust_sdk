@@ -12,6 +12,10 @@ Thalex Rust SDK is a client library for working with the Thalex exchange WebSock
 Main library module, exports:
 - `models` - data models
 - `ws_client` - WebSocket client
+- `channels` - subscriptions module (namespaces: market_data, accounting, conditional, etc.)
+- `rpc` - RPC requests module (namespaces: market_data, trading, accounting, etc.)
+- `types` - data types
+- `utils` - utilities
 
 #### `src/ws_client.rs`
 Main module containing the WebSocket client implementation.
@@ -19,9 +23,12 @@ Main module containing the WebSocket client implementation.
 **Key Components:**
 
 - **`WsClient`** - public client API
-  - `connect_default()` / `connect()` - WebSocket connection
-  - `call_rpc()` - JSON-RPC request execution
-  - `subscribe()` / `unsubscribe()` - channel subscription/unsubscription
+  - `new()` / `new_public()` / `from_env()` - client creation
+  - `rpc()` - access to RPC methods (via `rpc` module)
+  - `subscriptions()` - access to subscriptions (via `channels` module)
+  - `send_rpc()` - JSON-RPC request execution (internal method)
+  - `subscribe_channel()` - channel subscription (internal method)
+  - `login()` - authentication
   - `shutdown()` - graceful shutdown
 
 - **`connection_supervisor`** - connection supervisor
@@ -29,10 +36,7 @@ Main module containing the WebSocket client implementation.
   - Re-subscription to active channels after reconnection
   - Connection error handling with exponential delay (3 seconds)
 
-- **`run_single_connection`** - single connection handling
-  - Incoming message processing (Text, Binary, Ping/Pong, Close)
-  - Command sending through channel
-  - Shutdown signal handling
+- **`resubscribe_all`** - re-subscription flow on reconnect (snapshots channels under lock, sends without holding lock)
 
 - **`handle_incoming`** - incoming message handling
   - JSON parsing
@@ -56,22 +60,24 @@ Data models generated from OpenAPI specification:
 ### 2. Data Flows
 
 #### RPC Requests (request-response)
-1. Client calls `call_rpc(method, params)`
-2. Unique ID is generated via `AtomicU64`
-3. `oneshot::channel` is created for response
-4. Request is added to `pending_requests` HashMap
-5. Message is sent via WebSocket
-6. When response with matching ID is received, response is sent through oneshot channel
-7. 30-second timeout for response waiting
+1. Client calls methods via `client.rpc().*()` (e.g., `client.rpc().market_data().instruments()`)
+2. Internally calls `send_rpc(method, params)`
+3. Unique ID is generated via `AtomicU64`
+4. `oneshot::channel` is created for response
+5. Request is added to `pending_requests` HashMap
+6. Message is sent via WebSocket
+7. When response with matching ID is received, response is sent through oneshot channel
+8. Timeout is determined by waiting for response through oneshot channel
 
 #### Subscriptions (pub-sub)
-1. Client calls `subscribe(channel, callback)`
-2. `mpsc::unbounded_channel` is created for channel
-3. Subscription is added to `subscriptions` HashMap
-4. Subscription command is sent to server
-5. Separate task is created for callback handling
-6. When message with `channel_name` is received, it's sent to corresponding channel
-7. Callback is invoked in separate task
+1. Client calls methods via `client.subscriptions().*()` (e.g., `client.subscriptions().market_data().ticker(...)`)
+2. Internally calls `subscribe_channel(scope, channel, callback)`
+3. `mpsc::unbounded_channel` is created for channel
+4. Subscription is added to `public_subscriptions` or `private_subscriptions` HashMap
+5. Subscription command is sent to server via RPC
+6. Separate task is created for callback handling
+7. When message with `channel_name` is received, it's sent to corresponding channel
+8. Callback is invoked in separate task
 
 ### 3. Connection Management
 
@@ -108,10 +114,18 @@ Data models generated from OpenAPI specification:
 
 ## Usage Examples
 
-See `examples/subscribe.rs`:
-- WebSocket connection
-- RPC request execution `public/instruments`
-- Subscription to channel `ticker.BTC-PERPETUAL.100ms`
-- Wait 60 seconds
-- Graceful shutdown
+See examples in `examples/` folder:
+- `subscribe_ticker.rs` - ticker subscription
+- `subscribe_account.rs` - account data subscription
+- `simple_quoter.rs` - simple usage example
+- `collect_all_trades.rs` - collect all trades
+- `ohlc_streamer.rs` - OHLC data stream
+
+Typical workflow:
+1. Create client: `WsClient::new()` or `WsClient::from_env()`
+2. Login: `client.login().await?`
+3. RPC requests: `client.rpc().market_data().instruments().await?`
+4. Subscriptions: `client.subscriptions().market_data().ticker(instrument, delay, callback).await?`
+5. Wait for events: `client.run_till_event().await`
+6. Graceful shutdown: `client.shutdown()`
 

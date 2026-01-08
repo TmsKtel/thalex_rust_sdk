@@ -3,21 +3,21 @@
 ## 1. Убрать лишние копирования входящих сообщений (самый дешёвый выигрыш)
 
 ### Проблема
-В `run_single_connection` (строки 299, 302) происходят лишние аллокации:
+В цикле чтения WebSocket (обработка `Message::Text` / `Message::Binary` перед вызовом `handle_incoming()`), есть лишние аллокации:
 - `Message::Text(text)` → `handle_incoming(text.to_string(), ...)` - `text` уже `String`
 - `Message::Binary(bin)` → `String::from_utf8(bin.to_vec())` - лишнее копирование буфера
 
 ### Решение
 ```rust
-// Строка 299: убрать .to_string()
+// Убрать .to_string() - text уже String
 Some(Ok(Message::Text(text))) => {
-    handle_incoming(text, pending_requests, subscriptions).await;  // text уже String
+    handle_incoming(text, pending_requests, public_subscriptions, private_subscriptions).await;  // text уже String
 }
 
-// Строка 302: убрать .to_vec()
+// Убрать .to_vec() - bin уже Vec<u8>
 Some(Ok(Message::Binary(bin))) => {
     if let Ok(text) = String::from_utf8(bin) {  // без .to_vec()
-        handle_incoming(text, pending_requests, subscriptions).await;
+        handle_incoming(text, pending_requests, public_subscriptions, private_subscriptions).await;
     }
 }
 ```
@@ -33,33 +33,46 @@ Mutex блокировки в `handle_incoming` создают узкое мес
 
 ### Решение A: Отправка вне lock (быстрая оптимизация)
 
-**Для subscriptions (строка 360-365):**
+**Для subscription maps (`public_subscriptions` / `private_subscriptions`):**
 ```rust
 // Сейчас: lock удерживается во время send
-let mut subs = subscriptions.lock().await;
-if let Some(sender) = subs.get_mut(channel_name) {
-    if sender.send(text).is_err() {
-        subs.remove(channel_name);
+// В коде есть два map'а: public_subscriptions и private_subscriptions
+for route in [&private_subscriptions, &public_subscriptions] {
+    let mut subs = route.lock().await;
+    if let Some(sender) = subs.get_mut(channel_name) {
+        if sender.send(text).is_err() {  // ❌ send под lock
+            subs.remove(channel_name);
+        }
+        return;
     }
 }
 
 // После оптимизации: клонируем sender под lock, отпускаем lock, отправляем вне lock
 let sender_opt = {
-    let mut subs = subscriptions.lock().await;
-    subs.get_mut(channel_name).map(|s| s.clone())  // UnboundedSender клонируется дёшево
+    for route in [&private_subscriptions, &public_subscriptions] {
+        let mut subs = route.lock().await;
+        if let Some(sender) = subs.get_mut(channel_name) {
+            return Some(sender.clone());  // UnboundedSender клонируется дёшево
+        }
+    }
+    None
 };
 // Lock отпущен здесь
 
 if let Some(mut sender) = sender_opt {
     if sender.send(text).is_err() {
         // Если send failed, коротко взять lock и удалить entry
-        let mut subs = subscriptions.lock().await;
-        subs.remove(channel_name);
+        for route in [&private_subscriptions, &public_subscriptions] {
+            let mut subs = route.lock().await;
+            if subs.remove(channel_name).is_some() {
+                break;
+            }
+        }
     }
 }
 ```
 
-**Для pending_requests (строка 349-351):**
+**Для `pending_requests`:**
 ```rust
 // Сейчас: lock удерживается во время send
 let mut pending = pending_requests.lock().await;
@@ -94,7 +107,9 @@ use dashmap::DashMap;
 pub struct WsClient {
     // ...
     pending_requests: Arc<DashMap<u64, ResponseSender>>,
-    subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    public_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Два map'а
+    private_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Два map'а
+    instruments_cache: Arc<DashMap<String, Instrument>>,  // ✅ Также можно оптимизировать
     // ...
 }
 ```
@@ -142,11 +157,12 @@ pending_requests: Arc<RwLock<HashMap<u64, ResponseSender>>>,
 async fn handle_incoming(
     text: String,
     pending_requests: &Arc<DashMap<u64, ResponseSender>>,
-    subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    public_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    private_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
 ) {
     // Быстрая проверка без полного парсинга
-    // Ищем "id": (для числового id) или "id": (может быть строка в некоторых случаях)
-    if text.contains("\"id\":") || text.find("\"id\":").is_some() {
+    // Ищем маркер "id": (id в JSON-RPC обычно число или null)
+    if text.contains("\"id\":") {
         // Парсим только если есть поле id
         if let Ok(parsed) = serde_json::from_str::<Value>(&text) {
             if let Some(id) = parsed.get("id").and_then(|v| v.as_u64()) {
@@ -183,7 +199,8 @@ struct Envelope<'a> {
 async fn handle_incoming(
     text: &str,  // Принимаем по ссылке
     pending_requests: &Arc<DashMap<u64, ResponseSender>>,
-    subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    public_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    private_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
 ) {
     // Быстрая проверка для отсева неинтересных сообщений
     if !text.contains("\"id\":") && !text.contains("\"channel_name\":") {
@@ -204,12 +221,15 @@ async fn handle_incoming(
             if let Some(channel_name) = envelope.channel_name {
                 // Subscription path
                 let channel_str = channel_name.as_ref();
-                if let Some(mut sender) = subscriptions.get_mut(channel_str) {
-                    if sender.send(text.to_string()).is_err() {
-                        subscriptions.remove(channel_str);
+                // Проверяем оба map'а: public_subscriptions и private_subscriptions
+                for route in [&private_subscriptions, &public_subscriptions] {
+                    if let Some(mut sender) = route.get_mut(channel_str) {
+                        if sender.send(text.to_string()).is_err() {
+                            route.remove(channel_str);
+                        }
+                        return;
                     }
                 }
-                return;
             }
         }
         Err(e) => {
@@ -233,6 +253,8 @@ async fn handle_incoming(
 
 ## 4. Батчинг переподписок
 
+**Примечание:** ✅ В текущем коде уже исправлена проблема "lock across await" в `resubscribe_all()` - делается snapshot ключей под lock, затем await выполняется без lock. Остается только проблема батчинга - отправка по одному каналу вместо одного запроса со всеми каналами.
+
 ### Проблема
 Отдельное сообщение для каждого канала при переподключении.
 
@@ -240,22 +262,32 @@ async fn handle_incoming(
 Отправить одну команду со всеми каналами. **Важно:** Не держать lock во время I/O.
 
 ```rust
-// В run_single_connection, строки 257-266
-// Сначала делаем snapshot под lock
-let channels: Vec<String> = {
-    let subs = subscriptions.lock().await;
-    subs.keys().map(|k| k.clone()).collect()  // Snapshot ключей
+// В `resubscribe_all()`: делаем snapshot каналов под lock, затем отправляем без удержания lock
+// Для public_subscriptions:
+let public_channels: Vec<String> = {
+    let subs = self.public_subscriptions.lock().await;
+    subs.keys().cloned().collect()  // Snapshot ключей
 };
 // Lock отпущен здесь
 
-// Теперь отправляем вне lock
-if !channels.is_empty() {
-    let msg = serde_json::json!({
-        "method": "public/subscribe",
-        "params": { "channels": channels },
-    });
-    ws.send(Message::Text(msg.to_string().into())).await?;
-    info!("Re-subscribed to {} channels", channels.len());
+if !public_channels.is_empty() {
+    let _: RpcResponse = self.send_rpc(
+        "public/subscribe",
+        serde_json::json!({ "channels": public_channels }),
+    ).await?;
+}
+
+// Аналогично для private_subscriptions
+let private_channels: Vec<String> = {
+    let subs = self.private_subscriptions.lock().await;
+    subs.keys().cloned().collect()
+};
+
+if !private_channels.is_empty() {
+    let _: RpcResponse = self.send_rpc(
+        "private/subscribe",
+        serde_json::json!({ "channels": private_channels }),
+    ).await?;
 }
 ```
 
@@ -268,7 +300,13 @@ if !channels.is_empty() {
 **Если используется DashMap:**
 ```rust
 // DashMap не требует lock для чтения
-let channels: Vec<String> = subscriptions.iter()
+// Для public_subscriptions:
+let public_channels: Vec<String> = public_subscriptions.iter()
+    .map(|entry| entry.key().clone())
+    .collect();
+
+// Аналогично для private_subscriptions
+let private_channels: Vec<String> = private_subscriptions.iter()
     .map(|entry| entry.key().clone())
     .collect();
 

@@ -18,6 +18,7 @@ All files with `_en.md` suffix:
 - `implementation_examples_en.md`
 - `step_by_step_implementation_guide_en.md`
 - `implementation_readiness_assessment_en.md`
+- `thalex_rust_sdk_performance_reaudit_2025_en.md`
 
 ### Russian Versions (Original)
 All files without suffix:
@@ -33,10 +34,11 @@ All files without suffix:
 - `implementation_examples.md`
 - `step_by_step_implementation_guide.md`
 - `implementation_readiness_assessment.md`
+- `thalex_rust_sdk_performance_reaudit_2025.md`
 
 ## Translation Status
 
-✅ **Complete** - All 12 reports have been translated to English.
+✅ **Complete** - All 13 reports have been translated to English (including the new reaudit report from January 2025).
 
 Both language versions contain:
 - Identical structure and content

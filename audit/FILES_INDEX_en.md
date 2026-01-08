@@ -2,6 +2,16 @@
 
 This document describes the structure of the Thalex Rust SDK code audit reports.
 
+## Most up-to-date (read first)
+- `FINAL_REPORT.md` / `FINAL_REPORT_en.md` — primary report
+- `performance_analysis.md` / `performance_analysis_en.md` — supporting analysis
+
+## Illustrative / examples (may require adaptation)
+- `implementation_examples.md` / `implementation_examples_en.md`
+- `step_by_step_implementation_guide.md` / `step_by_step_implementation_guide_en.md`
+
+---
+
 ## File Structure
 
 ### 📋 Main Reports
@@ -39,13 +49,15 @@ This document describes the structure of the Thalex Rust SDK code audit reports.
 #### 3. `performance_analysis_en.md`
 **Purpose:** Performance bottleneck analysis (theoretical analysis)  
 **Contents:**
-- 8 identified problem areas
-- Detailed description of each problem with code locations
+- 9 identified problem areas
+- Detailed description of each problem with function names (without specific line numbers)
 - Impact assessment on performance
 - Performance measurement metrics
 - Problem prioritization
 
 **Audience:** For understanding potential performance problems
+
+**⚠️ Note:** This document describes general patterns. For current details and specific recommendations, see `thalex_rust_sdk_performance_reaudit_2025.md` and `FINAL_REPORT.md`.
 
 **See also:** [performance_analysis.md](./performance_analysis.md) (Russian version)
 
@@ -196,6 +208,19 @@ This document describes the structure of the Thalex Rust SDK code audit reports.
 
 ---
 
+## ⭐ Most Up-to-Date Documents
+
+**Primary current reports:**
+- `FINAL_REPORT.md` / `FINAL_REPORT_en.md` (primary) - final report for client
+- `thalex_rust_sdk_performance_reaudit_2025.md` / `thalex_rust_sdk_performance_reaudit_2025_en.md` - current performance reaudit
+- `performance_analysis.md` / `performance_analysis_en.md` (supporting) - general pattern analysis
+
+**Illustrative / examples (may require adaptation):**
+- `implementation_examples*.md` - code examples (illustrative, require adaptation for two subscription maps)
+- `step_by_step_implementation_guide*.md` - step-by-step guides (illustrative, require adaptation)
+
+---
+
 ## File Relationships
 
 ```
@@ -293,6 +318,24 @@ README_en.md (navigation)
 **For:** Technical reviewers and client
 
 **Note:** This is the final review from ChatGPT-5, confirming readiness of reports for delivery to the client.
+
+---
+
+#### 15. `thalex_rust_sdk_performance_reaudit_2025.md` ⭐ **CURRENT**
+**Purpose:** Performance reaudit after merging main and updating rustc (January 2025)  
+**Content:**
+- Executive summary of reaudit
+- Comparison of benchmark results before and after changes
+- Analysis of new modules (channels, rpc)
+- Updated optimization recommendations with current line numbers
+- Implementation plan for optimizations
+- Detailed benchmark results
+
+**For:** Developers and technical reviewers
+
+**Note:** ⭐ **This report is current** and updates the previous analysis taking into account code changes after merging main (298 files changed) and updating rustc. Contains current line numbers and reflects current code structure (two subscription maps: `public_subscriptions` and `private_subscriptions`).
+
+**See also:** [thalex_rust_sdk_performance_reaudit_2025_en.md](./thalex_rust_sdk_performance_reaudit_2025_en.md) (English version)
 
 ---
 

@@ -1,8 +1,10 @@
 # Final Thalex Rust SDK Code Audit Report
 
-**Date:** December 2024  
-**Version:** 1.0  
+**Date:** December 2024 (updated: January 2025)  
+**Version:** 1.1  
 **Status:** Completed
+
+**See also:** [thalex_rust_sdk_performance_reaudit_2025_en.md](./thalex_rust_sdk_performance_reaudit_2025_en.md) - performance reaudit after merging main
 
 ---
 
@@ -90,10 +92,11 @@ The project uses modern design patterns:
 - This is a critical path - all messages pass through this function
 - At high message frequency (e.g., ticker with 100ms delay), locks create queues
 
-**Code Locations:**
-- `handle_incoming`: lines 349, 360 - locks for accessing `pending_requests` and `subscriptions`
-- `call_rpc`: lines 81, 98 - locks when adding/removing requests
-- `subscribe/unsubscribe`: lines 121, 149 - locks when managing subscriptions
+**Code Locations (stable identifiers):**
+- `handle_incoming()` — per-message hot path; touches `pending_requests` and the subscription maps (`public_subscriptions` / `private_subscriptions`)
+- `send_rpc()` — adds/removes entries in `pending_requests`
+- `subscribe_channel()` / `unsubscribe_channel()` — updates subscription maps
+- instrument cache access (e.g., `instruments_cache`) — used when parsing instrument-related payloads
 
 **Impact:**
 - Delay in processing each message due to lock waiting
@@ -123,6 +126,8 @@ The project uses modern design patterns:
 - More network round-trips
 - Slower subscription recovery
 
+**Note:** In the current code, `resubscribe_all()` snapshots channel names under a lock and releases the lock **before** awaiting network sends. This avoids holding a lock across `.await` during re-subscription.
+
 #### 🟡 Issue #4: Excessive String Cloning
 
 **Description:**
@@ -140,6 +145,8 @@ The project uses modern design patterns:
 
 - Separate task creation for each callback
 - No buffer pool for reuse
+- Mutex locks for `instruments_cache` with frequent use
+- `pending_requests.drain()` + `send()` under lock on connection loss (see connection error handling / cleanup path)
 
 ---
 
@@ -224,15 +231,20 @@ The `criterion` library was used for statistically significant results.
 async fn handle_incoming(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
 ) {
     // Fast check before full parsing
     if text.contains("\"id\":") {
         // This is RPC response - parse only if needed
         let parsed: Value = serde_json::from_str(&text)?;
         if let Some(id) = parsed.get("id").and_then(|v| v.as_u64()) {
-            let mut pending = pending_requests.lock().await;
-            if let Some(tx) = pending.remove(&id) {
+            // Clone sender under lock, send outside lock
+            let tx_opt = {
+                let mut pending = pending_requests.lock().await;
+                pending.remove(&id)
+            };
+            if let Some(tx) = tx_opt {
                 let _ = tx.send(text);
             }
         }
@@ -245,16 +257,25 @@ async fn handle_incoming(
         if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
             // Clone sender under lock, send outside lock
             let sender_opt = {
-                let mut subs = subscriptions.lock().await;
-                subs.get_mut(channel_name).map(|s| s.clone())  // UnboundedSender clones cheaply
+                for route in [private_subscriptions, public_subscriptions] {
+                    let mut subs = route.lock().await;
+                    if let Some(sender) = subs.get_mut(channel_name) {
+                        return Some(sender.clone());  // UnboundedSender clones cheaply
+                    }
+                }
+                None
             };
             // Lock released here
             
             if let Some(mut sender) = sender_opt {
                 if sender.send(text).is_err() {
                     // If send failed, briefly take lock and remove entry
-                    let mut subs = subscriptions.lock().await;
-                    subs.remove(channel_name);
+                    for route in [private_subscriptions, public_subscriptions] {
+                        let mut subs = route.lock().await;
+                        if subs.remove(channel_name).is_some() {
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -271,7 +292,7 @@ async fn handle_incoming(
 
 **Problem:** Mutex locks create bottleneck in concurrent processing of many channels.
 
-**Solution:** Replace `Arc<Mutex<HashMap>>` with `Arc<DashMap>` for subscriptions.
+**Solution:** Replace `Arc<Mutex<HashMap>>` with `Arc<DashMap>` for subscriptions and instruments_cache.
 
 **Expected Effect:** 50-80% improvement in concurrent processing, elimination of linear degradation.
 
@@ -281,14 +302,21 @@ use dashmap::DashMap;
 
 pub struct WsClient {
     // ...
-    subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    public_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Two maps
+    private_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,  // ✅ Two maps
+    instruments_cache: Arc<DashMap<String, Instrument>>,  // ✅ Can also be optimized
     // ...
 }
 
 // In handle_incoming
 if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
-    if let Some(mut sender) = subscriptions.get_mut(channel_name) {
-        let _ = sender.send(text);
+    for route in [&private_subscriptions, &public_subscriptions] {
+        if let Some(sender) = route.get(channel_name) {
+            if sender.send(text.clone()).is_err() {
+                route.remove(channel_name);
+            }
+            return;
+        }
     }
 }
 ```
@@ -312,25 +340,27 @@ if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) 
 
 **Expected Effect:** Faster recovery after reconnection, fewer network round-trips.
 
+**Current Implementation:**
+In the current implementation, re-subscription is performed in `resubscribe_all()`. Channel names are snapshotted under a lock and the lock is released **before** awaiting network sends, so the code avoids holding a lock across `.await` (a risk in older variants).
+
+**Remaining Opportunity:**
+**Batch** re-subscription requests (when the API supports it) to reduce round-trips.
+
 **Code Example:**
 ```rust
-// In run_single_connection, lines 257-266
-{
-    // First make snapshot under lock
-    let channels: Vec<String> = {
-        let subs = subscriptions.lock().await;
-        subs.keys().map(|k| k.clone()).collect()  // Snapshot keys
-    };
-    // Lock released here
-    
-    // Now send outside lock
-    if !channels.is_empty() {
-        let msg = serde_json::json!({
-            "method": "public/subscribe",
-            "params": { "channels": channels },
-        });
-        ws.send(Message::Text(msg.to_string().into())).await?;
-    }
+// In resubscribe_all()
+let public_channels: Vec<String> = {
+    let subs = self.public_subscriptions.lock().await;
+    subs.keys().cloned().collect()  // Snapshot keys
+};
+// Lock released here
+
+// ✅ Correctly: send all channels in one request
+if !public_channels.is_empty() {
+    let _: RpcResponse = self.send_rpc(
+        "public/subscribe",
+        serde_json::json!({ "channels": public_channels }),
+    ).await?;
 }
 ```
 

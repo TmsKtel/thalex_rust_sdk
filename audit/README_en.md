@@ -119,6 +119,16 @@ During the report preparation process, technical reviews were conducted:
 
 **Note:** These files contain internal reviews of the report preparation process and may be useful for understanding the evolution of recommendations. Available in Russian and English versions.
 
+## 🔄 Performance Reaudit (2025)
+
+After merging the latest main update and updating rustc, a performance reaudit was conducted:
+
+- **[thalex_rust_sdk_performance_reaudit_2025.md](./thalex_rust_sdk_performance_reaudit_2025.md)** - full performance reaudit report
+  - Comparison of benchmark results before and after changes
+  - Analysis of new modules (channels, rpc)
+  - Updated optimization recommendations
+  - Implementation plan for optimizations
+
 ## Language Versions
 
 All reports are available in two languages:
@@ -139,9 +149,11 @@ Both versions contain identical information and structure.
 
 See [benchmark_results_analysis_en.md](./benchmark_results_analysis_en.md) for detailed analysis of performance results.
 
-**Key findings:**
-- ✅ RPC processing: ~300 ns (excellent)
-- ⚠️ Ticker processing with subscription: ~792 ns (can be improved)
-- 🚨 Concurrent processing of 20 channels: ~1.1 ms (bottleneck)
-- 🚀 Fast JSON key checking: 44-220x faster than full parsing
+**Key findings (updated 2025):**
+- ✅ RPC processing: 335 ns (slight degradation +5.7%)
+- ⚠️ Ticker processing with subscription: 959 ns (degradation +21.1%)
+- 🚨 Concurrent processing of 20 channels: ~1.1 ms (bottleneck persists)
+- 🚀 Fast JSON key checking: 44-200x faster than full parsing
+
+**See [thalex_rust_sdk_performance_reaudit_2025.md](./thalex_rust_sdk_performance_reaudit_2025.md) for detailed analysis.**
 

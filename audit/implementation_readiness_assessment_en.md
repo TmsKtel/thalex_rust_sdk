@@ -45,13 +45,13 @@
 - ✅ Type replacement example exists
 - ✅ Advantages are described
 - ⚠️ No complete example of migration for all usage locations
-- ⚠️ No information on how to change `subscribe()` and `unsubscribe()`
-- ⚠️ No information on how to change `run_single_connection` for re-subscription
+- ⚠️ No information on how to change `subscribe_channel()` and subscription usage locations
+- ⚠️ No information on how to change `resubscribe_all()` for re-subscription
 
 **What needs to be added:**
-- Complete list of all places where `subscriptions` is used
+- Complete list of all places where `public_subscriptions` and `private_subscriptions` are used
 - Step-by-step replacement instructions
-- Examples of changes in `subscribe()`, `unsubscribe()`, `run_single_connection`
+- Examples of changes in `subscribe_channel()`, `unsubscribe()`, `resubscribe_all()`
 - Information about possible breaking changes
 
 **Readiness score: 6/10**

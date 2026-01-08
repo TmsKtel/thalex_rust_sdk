@@ -4,18 +4,22 @@
 
 Benchmarks have been successfully executed. Below is the analysis of results and conclusions for optimization.
 
+**Last update:** January 2025 (after merging main and updating rustc)
+
+**See also:** [thalex_rust_sdk_performance_reaudit_2025.md](./thalex_rust_sdk_performance_reaudit_2025.md) - full reaudit report
+
 ## Key Metrics
 
 ### 1. Incoming Message Processing (`handle_incoming`)
 
-| Scenario | Time | Conclusions |
-|----------|------|-------------|
-| RPC response (empty structures) | ~317 ns | Very fast |
-| RPC response (with pending request) | ~306 ns | Stable performance |
-| Ticker without subscription | ~459 ns | +50% to RPC due to larger JSON parsing |
-| Ticker with subscription | ~792 ns | **+156% to RPC** - lock and channel send |
-| Many subscriptions (1-100) | ~464-481 ns | ✅ **Good**: performance doesn't degrade |
-| Many pending (1-100) | ~307-314 ns | ✅ **Excellent**: stable performance |
+| Scenario | Time (2025) | Time (2024) | Change |
+|----------|-------------|-------------|--------|
+| RPC response (empty structures) | 335.01 ns | ~317 ns | ⚠️ +5.7% |
+| RPC response (with pending request) | 324.75 ns | ~306 ns | ⚠️ +6.1% |
+| Ticker without subscription | 466.09 ns | ~459 ns | ⚠️ +1.5% |
+| Ticker with subscription | 959.41 ns | ~792 ns | ⚠️ **+21.1%** |
+| Many subscriptions (1-100) | 490.98-502.25 ns | ~464-481 ns | ⚠️ +5-4% |
+| Many pending (1-100) | 324.98-333.38 ns | ~307-314 ns | ⚠️ +5-6% |
 
 **Conclusions:**
 - ✅ RPC response processing is very efficient (~300 ns)
@@ -24,14 +28,14 @@ Benchmarks have been successfully executed. Below is the analysis of results and
 
 ### 2. JSON Parsing (`json_parsing`)
 
-| Operation | Time | Comparison |
-|-----------|------|------------|
-| Full RPC parsing | ~355 ns | Baseline |
-| Full ticker parsing | ~2.2 µs | 6.2x slower than RPC |
-| Full large message parsing | ~45 µs | 127x slower than RPC |
-| **Key check "id"** | **~8 ns** | **44x faster than full parsing!** |
-| **Key check "channel_name"** | **~10 ns** | **220x faster than full ticker parsing!** |
-| Conditional parsing (after check) | ~337 ns | Slightly faster than full |
+| Operation | Time (2025) | Time (2024) | Comparison |
+|-----------|-------------|-------------|------------|
+| Full RPC parsing | 349.47 ns | ~355 ns | ✅ -1.6% |
+| Full ticker parsing | 2.1027 µs | ~2.2 µs | ✅ -4.4% |
+| Full large message parsing | 39.566 µs | ~45 µs | ✅ -12.1% |
+| **Key check "id"** | **7.7590 ns** | ~8 ns | ✅ **44x faster than full parsing!** |
+| **Key check "channel_name"** | **10.480 ns** | ~10 ns | ✅ **200x faster than full ticker parsing!** |
+| Conditional parsing (after check) | 339.75 ns | ~337 ns | ⚠️ +0.8% |
 
 **Critical Conclusion:**
 - 🚀 **Fast key checking is 44-220x faster than full parsing**
@@ -40,15 +44,15 @@ Benchmarks have been successfully executed. Below is the analysis of results and
 
 ### 3. Mutex Locks (`mutex_contention`)
 
-| Operation | Time | Scaling |
-|-----------|------|---------|
-| Insert/remove 100 | ~13.4 µs | Baseline |
-| Insert/remove 1000 | ~134 µs | ✅ Linear (10x) |
-| Read-heavy 10 keys | ~42.7 µs | - |
-| Read-heavy 100 keys | ~42.5 µs | ✅ Independent of size |
-| Write-heavy 100 | ~7.7 µs | - |
-| Write-heavy 1000 | ~77 µs | ✅ Linear (10x) |
-| Concurrent access (4 tasks) | ~61 µs | ⚠️ Contention adds overhead |
+| Operation | Time (2025) | Time (2024) | Scaling |
+|-----------|-------------|-------------|---------|
+| Insert/remove 100 | 13.443 µs | ~13.4 µs | ✅ Stable |
+| Insert/remove 1000 | 134.29 µs | ~134 µs | ✅ Linear (10x) |
+| Read-heavy 10 keys | 42.987 µs | ~42.7 µs | ⚠️ +0.7% |
+| Read-heavy 100 keys | 42.973 µs | ~42.5 µs | ✅ Independent of size |
+| Write-heavy 100 | 8.2289 µs | ~7.7 µs | ⚠️ +6.9% |
+| Write-heavy 1000 | 83.754 µs | ~77 µs | ✅ Linear (10x) |
+| Concurrent access (4 tasks) | 64.325 µs | ~61 µs | ⚠️ Contention adds overhead |
 
 **Conclusions:**
 - ✅ Mutex operations scale linearly
