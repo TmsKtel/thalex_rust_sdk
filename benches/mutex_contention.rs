@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -23,11 +23,7 @@ async fn mutex_insert_remove(
     }
 }
 
-async fn mutex_read_heavy(
-    map: Arc<Mutex<HashMap<u64, String>>>,
-    keys: Vec<u64>,
-    iterations: u64,
-) {
+async fn mutex_read_heavy(map: Arc<Mutex<HashMap<u64, String>>>, keys: Vec<u64>, iterations: u64) {
     for _ in 0..iterations {
         for &key in &keys {
             let guard = map.lock().await;
@@ -36,10 +32,7 @@ async fn mutex_read_heavy(
     }
 }
 
-async fn mutex_write_heavy(
-    map: Arc<Mutex<HashMap<u64, String>>>,
-    iterations: u64,
-) {
+async fn mutex_write_heavy(map: Arc<Mutex<HashMap<u64, String>>>, iterations: u64) {
     for i in 0..iterations {
         let mut guard = map.lock().await;
         guard.insert(i, format!("value_{}", i));
@@ -54,12 +47,14 @@ fn bench_mutex_contention(c: &mut Criterion) {
     // Бенчмарк: вставка и удаление (write-heavy)
     group.bench_function("insert_remove_100", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, oneshot::Sender<String>>::new()));
-        b.to_async(&rt).iter(|| mutex_insert_remove(map.clone(), 100));
+        b.to_async(&rt)
+            .iter(|| mutex_insert_remove(map.clone(), 100));
     });
 
     group.bench_function("insert_remove_1000", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, oneshot::Sender<String>>::new()));
-        b.to_async(&rt).iter(|| mutex_insert_remove(map.clone(), 1000));
+        b.to_async(&rt)
+            .iter(|| mutex_insert_remove(map.clone(), 1000));
     });
 
     // Бенчмарк: read-heavy workload
@@ -73,7 +68,8 @@ fn bench_mutex_contention(c: &mut Criterion) {
                 guard.insert(key, format!("value_{}", key));
             }
         });
-        b.to_async(&rt).iter(|| mutex_read_heavy(map.clone(), keys.clone(), 100));
+        b.to_async(&rt)
+            .iter(|| mutex_read_heavy(map.clone(), keys.clone(), 100));
     });
 
     group.bench_function("read_heavy_100_keys", |b| {
@@ -85,7 +81,8 @@ fn bench_mutex_contention(c: &mut Criterion) {
                 guard.insert(key, format!("value_{}", key));
             }
         });
-        b.to_async(&rt).iter(|| mutex_read_heavy(map.clone(), keys.clone(), 10));
+        b.to_async(&rt)
+            .iter(|| mutex_read_heavy(map.clone(), keys.clone(), 10));
     });
 
     // Бенчмарк: write-heavy workload
@@ -96,7 +93,8 @@ fn bench_mutex_contention(c: &mut Criterion) {
 
     group.bench_function("write_heavy_1000", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, String>::new()));
-        b.to_async(&rt).iter(|| mutex_write_heavy(map.clone(), 1000));
+        b.to_async(&rt)
+            .iter(|| mutex_write_heavy(map.clone(), 1000));
     });
 
     // Бенчмарк: конкурентный доступ (симуляция реального сценария)
@@ -132,4 +130,3 @@ fn bench_mutex_contention(c: &mut Criterion) {
 
 criterion_group!(benches, bench_mutex_contention);
 criterion_main!(benches);
-

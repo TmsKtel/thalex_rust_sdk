@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use serde_json::{json, Value};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc, oneshot};
@@ -43,7 +43,8 @@ fn bench_handle_incoming(c: &mut Criterion) {
         "jsonrpc": "2.0",
         "id": 12345,
         "result": {"status": "ok"}
-    }).to_string();
+    })
+    .to_string();
 
     let ticker_message = json!({
         "channel_name": "ticker.BTC-PERPETUAL.100ms",
@@ -53,19 +54,17 @@ fn bench_handle_incoming(c: &mut Criterion) {
             "best_bid_price": 50000.5,
             "best_ask_price": 50001.0
         }
-    }).to_string();
+    })
+    .to_string();
 
     // Бенчмарк: обработка RPC ответа с пустыми структурами
     group.bench_function("rpc_response_empty_structures", |b| {
         let pending = Arc::new(Mutex::new(HashMap::<u64, oneshot::Sender<String>>::new()));
-        let subs = Arc::new(Mutex::new(HashMap::<String, mpsc::UnboundedSender<String>>::new()));
-        b.to_async(&rt).iter(|| {
-            handle_incoming_bench(
-                black_box(rpc_response.clone()),
-                &pending,
-                &subs,
-            )
-        });
+        let subs = Arc::new(Mutex::new(
+            HashMap::<String, mpsc::UnboundedSender<String>>::new(),
+        ));
+        b.to_async(&rt)
+            .iter(|| handle_incoming_bench(black_box(rpc_response.clone()), &pending, &subs));
     });
 
     // Бенчмарк: обработка RPC ответа с pending запросом
@@ -83,26 +82,16 @@ fn bench_handle_incoming(c: &mut Criterion) {
                 let _ = rx.await;
             });
         });
-        b.to_async(&rt).iter(|| {
-            handle_incoming_bench(
-                black_box(rpc_response.clone()),
-                &pending,
-                &subs,
-            )
-        });
+        b.to_async(&rt)
+            .iter(|| handle_incoming_bench(black_box(rpc_response.clone()), &pending, &subs));
     });
 
     // Бенчмарк: обработка ticker сообщения без подписки
     group.bench_function("ticker_no_subscription", |b| {
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let subs = Arc::new(Mutex::new(HashMap::new()));
-        b.to_async(&rt).iter(|| {
-            handle_incoming_bench(
-                black_box(ticker_message.clone()),
-                &pending,
-                &subs,
-            )
-        });
+        b.to_async(&rt)
+            .iter(|| handle_incoming_bench(black_box(ticker_message.clone()), &pending, &subs));
     });
 
     // Бенчмарк: обработка ticker сообщения с подпиской
@@ -116,17 +105,10 @@ fn bench_handle_incoming(c: &mut Criterion) {
             guard.insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
             drop(guard);
             // Читаем сообщения в фоне
-            tokio::spawn(async move {
-                while let Some(_) = rx.recv().await {}
-            });
+            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
         });
-        b.to_async(&rt).iter(|| {
-            handle_incoming_bench(
-                black_box(ticker_message.clone()),
-                &pending,
-                &subs,
-            )
-        });
+        b.to_async(&rt)
+            .iter(|| handle_incoming_bench(black_box(ticker_message.clone()), &pending, &subs));
     });
 
     // Бенчмарк: обработка с множеством подписок (конкуренция за блокировку)
@@ -144,17 +126,11 @@ fn bench_handle_incoming(c: &mut Criterion) {
                         let (tx, mut rx) = mpsc::unbounded_channel();
                         guard.insert(format!("ticker.INSTR-{}.100ms", i), tx);
                         // Читаем в фоне
-                        tokio::spawn(async move {
-                            while let Some(_) = rx.recv().await {}
-                        });
+                        tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
                     }
                 });
                 b.to_async(&rt).iter(|| {
-                    handle_incoming_bench(
-                        black_box(ticker_message.clone()),
-                        &pending,
-                        &subs,
-                    )
+                    handle_incoming_bench(black_box(ticker_message.clone()), &pending, &subs)
                 });
             },
         );
@@ -185,14 +161,10 @@ fn bench_handle_incoming(c: &mut Criterion) {
                     "jsonrpc": "2.0",
                     "id": count + 1000,
                     "result": {"status": "ok"}
-                }).to_string();
-                b.to_async(&rt).iter(|| {
-                    handle_incoming_bench(
-                        black_box(response.clone()),
-                        &pending,
-                        &subs,
-                    )
-                });
+                })
+                .to_string();
+                b.to_async(&rt)
+                    .iter(|| handle_incoming_bench(black_box(response.clone()), &pending, &subs));
             },
         );
     }
@@ -202,4 +174,3 @@ fn bench_handle_incoming(c: &mut Criterion) {
 
 criterion_group!(benches, bench_handle_incoming);
 criterion_main!(benches);
-
