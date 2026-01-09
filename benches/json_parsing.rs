@@ -7,6 +7,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     let mut group = c.benchmark_group("json_parsing");
 
     // RPC ответ (маленькое сообщение)
+    // Eng: RPC response (small message)
     let rpc_response = json!({
         "jsonrpc": "2.0",
         "id": 12345,
@@ -17,6 +18,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     .to_string();
 
     // Ticker сообщение (среднее сообщение)
+    // Eng: Ticker message (medium message)
     let ticker_message = json!({
         "channel_name": "ticker.BTC-PERPETUAL.100ms",
         "notification": {
@@ -48,6 +50,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     .to_string();
 
     // Большое сообщение (множество инструментов)
+    // Eng: Large message (many instruments)
     let large_message = json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -63,6 +66,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     .to_string();
 
     // Бенчмарк: полный парсинг RPC ответа
+    // Eng: Benchmark: full parsing of RPC response
     group.bench_with_input(
         BenchmarkId::new("full_parse", "rpc_response"),
         &rpc_response,
@@ -75,6 +79,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     // Бенчмарк: полный парсинг ticker сообщения
+    // Eng: Benchmark: full parsing of ticker message
     group.bench_with_input(
         BenchmarkId::new("full_parse", "ticker_message"),
         &ticker_message,
@@ -87,6 +92,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     // Бенчмарк: полный парсинг большого сообщения
+    // Eng: Benchmark: full parsing of large message
     group.bench_with_input(
         BenchmarkId::new("full_parse", "large_message"),
         &large_message,
@@ -99,6 +105,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     // Бенчмарк: быстрая проверка наличия ключа "id" без полного парсинга
+    // Eng: Benchmark: quick check for "id" key presence without full parsing
     group.bench_with_input(
         BenchmarkId::new("check_key", "id_in_rpc"),
         &rpc_response,
@@ -111,6 +118,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     // Бенчмарк: быстрая проверка наличия ключа "channel_name"
+    // Eng: Benchmark: quick check for "channel_name" key presence
     group.bench_with_input(
         BenchmarkId::new("check_key", "channel_name_in_ticker"),
         &ticker_message,
@@ -123,6 +131,7 @@ fn bench_json_parsing(c: &mut Criterion) {
     );
 
     // Бенчмарк: парсинг только после проверки ключа
+    // Eng: Benchmark: parsing only after key check
     group.bench_with_input(
         BenchmarkId::new("conditional_parse", "rpc_after_check"),
         &rpc_response,

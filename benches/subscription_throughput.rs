@@ -6,6 +6,8 @@ use tokio::time::Instant;
 
 /// Бенчмарк для измерения throughput подписок
 /// Тестирует производительность при высокой частоте сообщений
+/// Eng: Benchmark to measure subscription throughput
+/// Tests performance under high message frequency
 async fn process_subscription_messages(
     subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
     channel_name: &str,
@@ -64,6 +66,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
             .to_string();
 
     // Бенчмарк: обработка одного сообщения
+    // Eng: Benchmark: processing a single message
     group.bench_function("single_message", |b| {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
@@ -84,6 +87,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка 100 сообщений подряд
+    // Eng: Benchmark: processing 100 messages sequentially
     group.bench_function("100_messages_sequential", |b| {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
@@ -104,6 +108,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка 1000 сообщений подряд
+    // Eng: Benchmark: processing 1000 messages sequentially
     group.bench_function("1000_messages_sequential", |b| {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         rt.block_on(async {
@@ -124,6 +129,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
     });
 
     // Бенчмарк: конкурентная обработка с разным количеством каналов
+    // Eng: Benchmark: concurrent processing with varying number of channels
     for channel_count in [1, 5, 10, 20].iter() {
         group.bench_with_input(
             BenchmarkId::new("concurrent_channels", channel_count),
@@ -156,6 +162,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
     }
 
     // Бенчмарк: измерение реального throughput (сообщений в секунду)
+    // Eng: Benchmark: measuring real throughput (messages per second)
     group.bench_function("throughput_measurement", |b| {
         let subs = Arc::new(Mutex::new(HashMap::new()));
         let msg = test_message.clone();

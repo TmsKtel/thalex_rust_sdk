@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, mpsc, oneshot};
 
 /// Симуляция функции handle_incoming для бенчмарков
+/// Eng: Simulation of handle_incoming function for benchmarks
 async fn handle_incoming_bench(
     text: String,
     pending_requests: &Arc<Mutex<HashMap<u64, oneshot::Sender<String>>>>,
@@ -39,6 +40,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     let mut group = c.benchmark_group("handle_incoming");
 
     // Создаем тестовые данные
+    // Eng: Create test data
     let rpc_response = json!({
         "jsonrpc": "2.0",
         "id": 12345,
@@ -58,6 +60,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     .to_string();
 
     // Бенчмарк: обработка RPC ответа с пустыми структурами
+    // Eng: Benchmark: processing RPC response with empty structures
     group.bench_function("rpc_response_empty_structures", |b| {
         let pending = Arc::new(Mutex::new(HashMap::<u64, oneshot::Sender<String>>::new()));
         let subs = Arc::new(Mutex::new(
@@ -68,6 +71,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка RPC ответа с pending запросом
+    // Eng: Benchmark: processing RPC response with pending request
     group.bench_function("rpc_response_with_pending", |b| {
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let subs = Arc::new(Mutex::new(HashMap::new()));
@@ -87,6 +91,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка ticker сообщения без подписки
+    // Eng: Benchmark: processing ticker message without subscription
     group.bench_function("ticker_no_subscription", |b| {
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let subs = Arc::new(Mutex::new(HashMap::new()));
@@ -95,6 +100,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка ticker сообщения с подпиской
+    // Eng: Benchmark: processing ticker message with subscription
     group.bench_function("ticker_with_subscription", |b| {
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let subs = Arc::new(Mutex::new(HashMap::new()));
@@ -112,6 +118,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     });
 
     // Бенчмарк: обработка с множеством подписок (конкуренция за блокировку)
+    // Eng: Benchmark: processing with many subscriptions (lock contention)
     for subscription_count in [1, 10, 50, 100].iter() {
         group.bench_with_input(
             BenchmarkId::new("ticker_many_subscriptions", subscription_count),
@@ -137,6 +144,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     }
 
     // Бенчмарк: обработка с множеством pending запросов
+    // Eng: Benchmark: processing with many pending requests
     for pending_count in [1, 10, 50, 100].iter() {
         group.bench_with_input(
             BenchmarkId::new("rpc_many_pending", pending_count),
@@ -157,6 +165,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
                     }
                 });
                 // Используем ID, которого нет в pending (worst case - поиск по всей map)
+                // Eng: Use an ID that is not in pending (worst case - search through the entire map)
                 let response = json!({
                     "jsonrpc": "2.0",
                     "id": count + 1000,

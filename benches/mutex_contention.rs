@@ -6,6 +6,8 @@ use tokio::sync::oneshot;
 
 /// Бенчмарк для измерения производительности блокировок Mutex
 /// Тестирует contention при разном количестве конкурентных операций
+/// Eng: Benchmark to measure Mutex lock performance
+/// Tests contention with varying numbers of concurrent operations
 async fn mutex_insert_remove(
     map: Arc<Mutex<HashMap<u64, oneshot::Sender<String>>>>,
     iterations: u64,
@@ -45,6 +47,7 @@ fn bench_mutex_contention(c: &mut Criterion) {
     let mut group = c.benchmark_group("mutex_contention");
 
     // Бенчмарк: вставка и удаление (write-heavy)
+    // Eng: Benchmark: insertion and removal (write-heavy)
     group.bench_function("insert_remove_100", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, oneshot::Sender<String>>::new()));
         b.to_async(&rt)
@@ -58,6 +61,7 @@ fn bench_mutex_contention(c: &mut Criterion) {
     });
 
     // Бенчмарк: read-heavy workload
+    // Eng: Benchmark: read-heavy workload
     group.bench_function("read_heavy_10_keys", |b| {
         let map = Arc::new(Mutex::new(HashMap::new()));
         let keys: Vec<u64> = (0..10).collect();
@@ -86,6 +90,7 @@ fn bench_mutex_contention(c: &mut Criterion) {
     });
 
     // Бенчмарк: write-heavy workload
+    // Eng: Benchmark: write-heavy workload
     group.bench_function("write_heavy_100", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, String>::new()));
         b.to_async(&rt).iter(|| mutex_write_heavy(map.clone(), 100));
@@ -98,6 +103,7 @@ fn bench_mutex_contention(c: &mut Criterion) {
     });
 
     // Бенчмарк: конкурентный доступ (симуляция реального сценария)
+    // Eng: Benchmark: concurrent access (simulation of real-world scenario)
     group.bench_function("concurrent_access_4_tasks", |b| {
         let map = Arc::new(Mutex::new(HashMap::<u64, String>::new()));
         b.to_async(&rt).iter(|| async {

@@ -1,4 +1,5 @@
-use serde::{Deserialize, de::DeserializeOwned};
+use dashmap::DashMap;
+use serde::de::DeserializeOwned;
 
 use tokio::{
     sync::oneshot,
@@ -8,13 +9,11 @@ use tokio::{
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
 use serde_json::Value;
-use std::collections::HashMap;
 use std::env::var;
 use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
 };
-use thiserror::Error;
 use tokio::sync::{Mutex, mpsc, watch};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 
@@ -22,32 +21,11 @@ use crate::{
     auth_utils::make_auth_token,
     models::{Instrument, RpcErrorResponse, RpcResponse},
     types::{
-        Error, ExternalEvent, InternalCommand, LoginState, RequestScope, ResponseSender, WsStream,
+        ClientError, Error, ExternalEvent, InternalCommand, LoginState, RequestScope,
+        ResponseSender, SubscribeResponse, WsStream,
     },
     utils::round_to_ticks,
 };
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-enum SubscribeResponse {
-    Ok { id: u64, result: Vec<String> },
-    Err { id: u64, error: RpcErrorResponse },
-}
-
-#[derive(Debug, Error)]
-pub enum ClientError {
-    #[error("RPC error: {0:?}")]
-    Rpc(RpcErrorResponse),
-
-    #[error("transport error")]
-    Transport(#[from] Box<dyn std::error::Error + Send + Sync>),
-
-    #[error("JSON parse error")]
-    Parse(#[from] serde_json::Error),
-
-    #[error("oneshot receive error")]
-    Recv(#[from] oneshot::error::RecvError),
-}
 
 use crate::channels::subscriptions::Subscriptions;
 use crate::rpc::Rpc;
@@ -58,12 +36,12 @@ const READ_TIMEOUT: Duration = Duration::from_secs(7);
 
 pub struct WsClient {
     write_tx: mpsc::UnboundedSender<InternalCommand>,
-    pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    pub public_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
-    pub private_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pending_requests: Arc<DashMap<u64, ResponseSender>>,
+    pub public_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    pub private_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
-    instruments_cache: Arc<Mutex<HashMap<String, Instrument>>>,
+    instruments_cache: Arc<DashMap<String, Instrument>>,
     login_state: LoginState,
     connection_state_rx: watch::Receiver<ExternalEvent>,
     current_connection_state: Arc<Mutex<ExternalEvent>>,
@@ -103,9 +81,9 @@ impl WsClient {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel::<InternalCommand>();
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
-        let pending_requests = Arc::new(Mutex::new(HashMap::new()));
-        let public_subscriptions = Arc::new(Mutex::new(HashMap::new()));
-        let private_subscriptions = Arc::new(Mutex::new(HashMap::new()));
+        let pending_requests = Arc::new(DashMap::new());
+        let public_subscriptions = Arc::new(DashMap::new());
+        let private_subscriptions = Arc::new(DashMap::new());
         let next_id = Arc::new(AtomicU64::new(1));
 
         let (connection_state_tx, connection_state_rx) =
@@ -126,7 +104,7 @@ impl WsClient {
             private_subscriptions: private_subscriptions.clone(),
             next_id: next_id.clone(),
             shutdown_tx: shutdown_tx.clone(),
-            instruments_cache: Arc::new(Mutex::new(HashMap::new())),
+            instruments_cache: Arc::new(DashMap::new()),
             login_state,
             connection_state_rx,
             current_connection_state: Arc::new(Mutex::new(ExternalEvent::Disconnected)),
@@ -147,10 +125,9 @@ impl WsClient {
 
     async fn cache_instruments(&self) -> Result<(), Error> {
         let instruments = self.get_instruments().await.unwrap();
-        let mut cache = self.instruments_cache.lock().await;
-        cache.clear();
+        self.instruments_cache.clear();
         for instrument in &instruments {
-            cache.insert(
+            self.instruments_cache.insert(
                 instrument.instrument_name.clone().unwrap(),
                 instrument.clone(),
             );
@@ -163,19 +140,13 @@ impl WsClient {
         price: f64,
         instrument_name: &str,
     ) -> Result<f64, Error> {
-        let instrument = self
-            .instruments_cache
-            .lock()
-            .await
-            .get(instrument_name)
-            .cloned();
+        let instrument = self.instruments_cache.get(instrument_name);
         // refresh cache if not found
         if let Some(instr) = instrument {
             Ok(round_to_ticks(price, instr.tick_size.unwrap()))
         } else {
             self.cache_instruments().await?;
-            let cache = self.instruments_cache.lock().await;
-            if let Some(instr) = cache.get(instrument_name).cloned() {
+            if let Some(instr) = self.instruments_cache.get(instrument_name) {
                 Ok(round_to_ticks(price, instr.tick_size.unwrap()))
             } else {
                 Err(Box::new(std::io::Error::new(
@@ -201,10 +172,7 @@ impl WsClient {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<String>();
-        {
-            let mut pending = self.pending_requests.lock().await;
-            pending.insert(id, tx);
-        }
+        self.pending_requests.insert(id, tx);
 
         let request = serde_json::json!({
             "jsonrpc": "2.0",
@@ -219,8 +187,7 @@ impl WsClient {
             .write_tx
             .send(InternalCommand::Send(Message::Text(text.into())))
         {
-            let mut pending = self.pending_requests.lock().await;
-            pending.remove(&id);
+            self.pending_requests.remove(&id);
             return Err(ClientError::Transport(Box::new(e)));
         }
 
@@ -271,13 +238,11 @@ impl WsClient {
                 {
                     match scope {
                         RequestScope::Public => {
-                            let mut subs = self.public_subscriptions.lock().await;
-                            subs.insert(channel.clone(), tx);
+                            self.public_subscriptions.insert(channel.clone(), tx);
                             info!("Subscribed to public channel: {channel}");
                         }
                         RequestScope::Private => {
-                            let mut subs = self.private_subscriptions.lock().await;
-                            subs.insert(channel.clone(), tx);
+                            self.private_subscriptions.insert(channel.clone(), tx);
                             info!("Subscribed to private channel: {channel}");
                         }
                     }
@@ -309,8 +274,7 @@ impl WsClient {
         let channel = channel.to_string();
 
         {
-            let mut subs = self.public_subscriptions.lock().await;
-            if subs.remove(&channel).is_some() {
+            if self.public_subscriptions.remove(&channel).is_some() {
                 let _: RpcResponse = self
                     .send_rpc(
                         "public/unsubscribe",
@@ -324,8 +288,7 @@ impl WsClient {
             }
         }
         {
-            let mut subs = self.private_subscriptions.lock().await;
-            if subs.remove(&channel).is_some() {
+            if self.private_subscriptions.remove(&channel).is_some() {
                 let _: RpcResponse = self
                     .send_rpc(
                         "private/unsubscribe",
@@ -381,35 +344,35 @@ impl WsClient {
 
     pub async fn resubscribe_all(&self) -> Result<(), Error> {
         let public_channels: Vec<String> = {
-            let subs = self.public_subscriptions.lock().await;
-            subs.keys().cloned().collect()
+            self.public_subscriptions
+                .iter()
+                .map(|e| e.key().clone())
+                .collect()
         };
-        for channel in public_channels {
-            let _: RpcResponse = self
-                .send_rpc(
-                    "public/subscribe",
-                    serde_json::json!({
-                        "channels": [channel.clone()]
-                    }),
-                )
-                .await?;
-            info!("Re-subscribed to channel: {channel}");
-        }
+        let _: RpcResponse = self
+            .send_rpc(
+                "public/subscribe",
+                serde_json::json!({
+                    "channels": public_channels
+                }),
+            )
+            .await?;
+        info!("Re-subscribed to public channels: {public_channels:?}");
         let private_channels: Vec<String> = {
-            let subs = self.private_subscriptions.lock().await;
-            subs.keys().cloned().collect()
+            self.private_subscriptions
+                .iter()
+                .map(|e| e.key().clone())
+                .collect()
         };
-        for channel in private_channels {
-            let _: RpcResponse = self
-                .send_rpc(
-                    "private/subscribe",
-                    serde_json::json!({
-                        "channels": [channel.clone()]
-                    }),
-                )
-                .await?;
-            info!("Re-subscribed to channel: {channel}");
-        }
+        let _: RpcResponse = self
+            .send_rpc(
+                "private/subscribe",
+                serde_json::json!({
+                    "channels": private_channels
+                }),
+            )
+            .await?;
+        info!("Re-subscribed to private channels: {private_channels:?}");
         Ok(())
     }
     pub async fn run_till_event(&self) -> ExternalEvent {
@@ -457,9 +420,9 @@ async fn connection_supervisor(
     url: String,
     mut cmd_rx: mpsc::UnboundedReceiver<InternalCommand>,
     mut shutdown_rx: watch::Receiver<bool>,
-    pending_requests: Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    public_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
-    private_subscriptions: Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pending_requests: Arc<DashMap<u64, ResponseSender>>,
+    public_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    private_subscriptions: Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
     connection_state_tx: watch::Sender<ExternalEvent>,
 ) {
     info!("Connection supervisor started for {url}");
@@ -497,10 +460,14 @@ async fn connection_supervisor(
                     error!("Connection error on {url}: {e}");
                 }
 
-                // Fail all pending RPCs on this connection.
-                let mut pending = pending_requests.lock().await;
-                for (_, tx) in pending.drain() {
-                    let _ = tx.send(r#"{"error":"connection closed"}"#.to_string());
+                for key in pending_requests
+                    .iter()
+                    .map(|e| *e.key())
+                    .collect::<Vec<u64>>()
+                {
+                    if let Some((_, tx)) = pending_requests.remove(&key) {
+                        let _ = tx.send(r#"{"error":"connection closed"}"#.to_string());
+                    }
                 }
 
                 if *shutdown_rx.borrow() {
@@ -537,9 +504,9 @@ async fn run_single_connection(
     mut ws: WsStream,
     cmd_rx: &mut mpsc::UnboundedReceiver<InternalCommand>,
     shutdown_rx: &mut watch::Receiver<bool>,
-    pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
-    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pending_requests: &Arc<DashMap<u64, ResponseSender>>,
+    public_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    private_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
 ) -> Result<(), Error> {
     // Set up ping interval
     let mut ping_interval = interval(PING_INTERVAL);
@@ -641,9 +608,9 @@ async fn run_single_connection(
 
 async fn handle_incoming(
     text: String,
-    pending_requests: &Arc<Mutex<HashMap<u64, ResponseSender>>>,
-    public_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
-    private_subscriptions: &Arc<Mutex<HashMap<String, mpsc::UnboundedSender<String>>>>,
+    pending_requests: &Arc<DashMap<u64, ResponseSender>>,
+    public_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
+    private_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
 ) {
     let parsed: Value = match serde_json::from_str(&text) {
         Ok(v) => v,
@@ -668,8 +635,7 @@ async fn handle_incoming(
 
         // Handle messages with numeric IDs
         if let Some(id) = id_value.as_u64() {
-            let mut pending = pending_requests.lock().await;
-            if let Some(tx) = pending.remove(&id) {
+            if let Some((_, tx)) = pending_requests.remove(&id) {
                 let _ = tx.send(text);
             }
             return;
@@ -679,11 +645,10 @@ async fn handle_incoming(
     // Subscription notification: has "channel_name"
     if let Some(channel_name) = parsed.get("channel_name").and_then(|v| v.as_str()) {
         for route in [&private_subscriptions, &public_subscriptions] {
-            let mut subs = route.lock().await;
-            if let Some(sender) = subs.get_mut(channel_name) {
+            if let Some(sender) = route.get_mut(channel_name) {
                 if sender.send(text).is_err() {
                     // Receiver dropped; cleanup this subscription entry.
-                    subs.remove(channel_name);
+                    route.remove(channel_name);
                 }
                 return;
             }

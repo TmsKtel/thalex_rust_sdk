@@ -1,10 +1,11 @@
 use serde::Deserialize;
 use serde_json::Value;
 use std::fmt;
+use thiserror::Error;
 use tokio::{net::TcpStream, sync::oneshot};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, tungstenite::Message};
 
-use crate::models::ErrorResponse;
+use crate::models::{ErrorResponse, RpcErrorResponse};
 
 pub type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 pub type ResponseSender = oneshot::Sender<String>;
@@ -50,4 +51,26 @@ impl fmt::Display for RequestScope {
             RequestScope::Private => write!(f, "private"),
         }
     }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum SubscribeResponse {
+    Ok { id: u64, result: Vec<String> },
+    Err { id: u64, error: RpcErrorResponse },
+}
+
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("RPC error: {0:?}")]
+    Rpc(RpcErrorResponse),
+
+    #[error("transport error")]
+    Transport(#[from] Box<dyn std::error::Error + Send + Sync>),
+
+    #[error("JSON parse error")]
+    Parse(#[from] serde_json::Error),
+
+    #[error("oneshot receive error")]
+    Recv(#[from] oneshot::error::RecvError),
 }
