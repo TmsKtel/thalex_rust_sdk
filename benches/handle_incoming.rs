@@ -17,7 +17,7 @@ fn bench_handle_incoming(c: &mut Criterion) {
     let private_subscriptions: Arc<DashMap<String, SubscriptionChannel>> = Arc::new(DashMap::new());
 
     // Sample RPC response message
-    let rpc_response = r#"{"jsonrpc":"2.0","id":42,"result":"ok"}"#.to_string();
+    let rpc_response = r#"{"id":"420","jsonrpc":42,"result":"ok"}"#.to_string();
 
     let rpc_response_str = &rpc_response;
     // Sample subscription message
