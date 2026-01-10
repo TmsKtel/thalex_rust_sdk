@@ -172,7 +172,7 @@ impl WsClient {
     {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
-        let (tx, rx) = oneshot::channel::<String>();
+        let (tx, rx) = oneshot::channel::<Arc<str>>();
         self.pending_requests.insert(id, tx);
 
         let request = serde_json::json!({
@@ -467,7 +467,7 @@ async fn connection_supervisor(
                     .collect::<Vec<u64>>()
                 {
                     if let Some((_, tx)) = pending_requests.remove(&key) {
-                        let _ = tx.send(r#"{"error":"connection closed"}"#.to_string());
+                        let _ = tx.send(r#"{"error":"connection closed"}"#.into());
                     }
                 }
 

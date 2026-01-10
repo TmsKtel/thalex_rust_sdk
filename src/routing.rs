@@ -38,7 +38,7 @@ impl<'de, 'a> Visitor<'de> for RoutingVisitor<'a> {
                         }
                         Some(id) => {
                             if let Some((_, tx)) = self.pending_requests.remove(&id) {
-                                let _ = tx.send(self.text.to_string());
+                                let _ = tx.send(self.text.into());
                             }
                             return Ok(());
                         }
