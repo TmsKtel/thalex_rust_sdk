@@ -9,8 +9,8 @@ macro_rules! with_private_client {
             "THALEX_ACCOUNT_ID"
         );
 
-        let $client = WsClient::from_env().await.unwrap();
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        let $client = WsClient::from_env().await.unwrap();
 
         let result = { $body };
 

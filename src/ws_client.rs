@@ -2,7 +2,9 @@ use dashmap::DashMap;
 use serde::de::DeserializeOwned;
 
 use tokio::{
-    sync::oneshot, task::JoinHandle, time::{Duration, Instant, MissedTickBehavior, interval, sleep}
+    sync::oneshot,
+    task::JoinHandle,
+    time::{Duration, Instant, MissedTickBehavior, interval, sleep},
 };
 
 use futures_util::{SinkExt, StreamExt};
@@ -47,15 +49,14 @@ pub struct WsClient {
     current_connection_state: Arc<Mutex<ExternalEvent>>,
     supervisor_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
     subscription_tasks: Arc<Mutex<Vec<JoinHandle<()>>>>,
-
 }
 
 impl WsClient {
-    pub fn subscriptions(&self) -> Subscriptions {
+    pub fn subscriptions(&self) -> Subscriptions<'_> {
         Subscriptions { client: self }
     }
 
-    pub fn rpc(&self) -> Rpc {
+    pub fn rpc(&self) -> Rpc<'_> {
         Rpc { client: self }
     }
 
@@ -222,7 +223,7 @@ impl WsClient {
                     info!("Supervisor task completed successfully");
                 }
                 Ok(Err(e)) => {
-                    error!("Supervisor task panicked: {:?}", e);
+                    error!("Supervisor task panicked: {e:?}");
                     return Err("Supervisor task panicked".into());
                 }
                 Err(_) => {
@@ -232,7 +233,7 @@ impl WsClient {
             }
         }
         for task in self.subscription_tasks.lock().await.drain(..) {
-            let _ = task.abort();
+            task.abort();
         }
         Ok(())
     }
