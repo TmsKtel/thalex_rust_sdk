@@ -10,6 +10,7 @@ macro_rules! with_private_client {
         );
 
         let $client = WsClient::from_env().await.unwrap();
+        $client.set_cancel_on_disconnect().await.unwrap();
         tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
 
         let result = { $body };
