@@ -13,6 +13,11 @@ const KNOWN_PERP: &str = "BTC-PERPETUAL";
 #[serial_test::serial(private_rpc)]
 async fn test_mm_flow() {
     dotenv::dotenv().ok();
+    let (_, _, _) = require_env!(
+        "THALEX_PRIVATE_KEY_PATH",
+        "THALEX_KEY_ID",
+        "THALEX_ACCOUNT_ID"
+    );
     let client = WsClient::from_env().await.unwrap();
     client.set_cancel_on_disconnect().await.unwrap();
     // Set MM protection
