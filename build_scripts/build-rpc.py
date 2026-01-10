@@ -31,6 +31,7 @@ TAGS_TO_PROCESS = [
     "rpc_accounting",
     "rpc_conditional",
     "rpc_mm",
+    "rpc_bot"
 ]
 
 
@@ -58,6 +59,8 @@ RPC_RESULT_IMPORT_ALIASES = {
     "MassQuoteRpcResult": "DoubleSidedQuoteResult",
     "CancelMassQuoteRpcResult": "Value",
     "SetMmProtectionRpcResult": "Value",
+    "BotsRpcResult": "Bot",
+    "CreateBotRpcResult": "Bot",
 }
 
 RETURN_MODEL_TO_VECTOR_ALIASES = {
@@ -73,6 +76,11 @@ RETURN_MODEL_TO_VECTOR_ALIASES = {
     "ConditionalOrdersRpcResult": "Vec<ConditionalOrder>",
     "CancelConditionalOrderRpcResult": "Value", 
     "CancelAllConditionalOrdersRpcResult": "Value",
+    # Bot
+    "CancelBotRpcResult": "Value",
+    "CancelAllBotsRpcResult": "Value",
+    "BotsRpcResult": "Vec<Bot>",
+    "CreateBotRpcResult": "Bot",
 
 }
 
@@ -103,6 +111,7 @@ MODELS_TO_LIFT = [
     # mm
     "DoubleSidedQuoteResult",
     "DoubleSidedQuote",
+    "Bot",
 
 ]
 
@@ -124,7 +133,10 @@ IMPORTS_TO_SKIP = [
     "CancelAllConditionalOrdersRpcResult",
     "CreateConditionalOrderRpcResult",
     "ConditionalOrdersRpcResult",
-    "CancelConditionalOrderRpcResult"
+    "CancelConditionalOrderRpcResult",
+    # Bot
+    "CancelAllBotsRpcResult",
+    "CancelBotRpcResult",
 ]
 base_imports = [
         "RpcErrorResponse",
@@ -221,6 +233,16 @@ def extract_params_from_path_spec(path_spec):
                 combine_params['required'].extend(ref_schema['required'])
             if "properties" in ref_schema:
                 combine_params['properties'].update(ref_schema['properties'])
+        elif "oneOf" in params:
+            # we build an enum like structure
+            del combine_params['properties']
+            del combine_params['required']
+            del combine_params['type']
+            # combine_params.update(params)
+            model_name = to_camel_case(path_spec['operationId'].split("/")[-1]) + "Params"
+            if model_name not in NEW_MODELS:
+                NEW_MODELS[model_name] = params
+            combine_params['$ref'] = f"#/components/schemas/{model_name}"
         else:
             raise ValueError(f"Unknown params schema structure: {params}")
     else:
@@ -398,17 +420,20 @@ def process_tag(spec, tag):
         param_schema_name = to_camel_case(method.split("/")[-1]) + "Params"
         if param_schema_name in NEW_MODELS:
             print(f"   Warning: Param schema {param_schema_name} already exists. Overwriting.")
-            actual_model = NEW_MODELS[param_schema_name]
-            new_model = params
-            pprint(new_model)
-            pprint(actual_model)
-            del new_model['properties']['channels']['example']
-            del actual_model['properties']['channels']['example']
-            if new_model != actual_model:
-                pprint(NEW_MODELS[param_schema_name])
-                pprint(params)
-                raise ValueError("Duplicate param schema name")
-            NEW_MODELS[param_schema_name] = new_model
+            if "$ref" in params:
+                pass
+            else:
+                actual_model = NEW_MODELS[param_schema_name]
+                new_model = params
+                pprint(new_model)
+                pprint(actual_model)
+                del new_model['properties']['channels']['example']
+                del actual_model['properties']['channels']['example']
+                if new_model != actual_model:
+                    pprint(NEW_MODELS[param_schema_name])
+                    pprint(params)
+                    raise ValueError("Duplicate param schema name")
+                NEW_MODELS[param_schema_name] = new_model
         else:
             NEW_MODELS[param_schema_name] = params
 
@@ -431,7 +456,7 @@ def process_tag(spec, tag):
             result_model=result_model_name,
             rpc_result_model="RpcResponse",
             return_model=result_model_name.replace("Result", "RpcResult"),
-            has_params = len(params['properties']) > 0,
+            has_params = params.get("$ref") or len(params['properties']) > 0,
         )
         functions.append(function_code)
     # generate_rpc_spec(spec)
