@@ -1,8 +1,11 @@
 use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
-use serde_json::{Value, json};
-use thalex_rust_sdk::{models::{InstrumentsNotification, InstrumentsResponse, RpcResponse, Ticker}, ws_client::deserialise_to_type};
+use serde_json::json;
+use thalex_rust_sdk::{
+    models::{InstrumentsResponse, RpcResponse, Ticker},
+    ws_client::deserialise_to_type,
+};
 
 /// Бенчмарк для измерения производительности JSON парсинга
 /// Тестирует различные размеры сообщений и типы данных
@@ -102,12 +105,11 @@ fn bench_json_parsing(c: &mut Criterion) {
         &large_message,
         |b, input| {
             b.iter(|| {
-                let parsed: InstrumentsResponse= deserialise_to_type(black_box(input)).unwrap();
+                let parsed: InstrumentsResponse = deserialise_to_type(black_box(input)).unwrap();
                 black_box(parsed)
             });
         },
     );
-
 }
 
 criterion_group!(benches, bench_json_parsing);
