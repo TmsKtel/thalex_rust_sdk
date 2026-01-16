@@ -256,11 +256,11 @@ impl WsClient {
             match scope {
                 RequestScope::Public => {
                     self.public_subscriptions.insert(channel.clone(), tx);
-                    info!("Subscribed to public channel: {channel}");
+                    info!("Subscribing to public channel: {channel}");
                 }
                 RequestScope::Private => {
                     self.private_subscriptions.insert(channel.clone(), tx);
-                    info!("Subscribed to private channel: {channel}");
+                    info!("Subscribing to private channel: {channel}");
                 }
             }
         }
