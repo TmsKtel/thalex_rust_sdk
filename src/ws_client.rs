@@ -51,6 +51,13 @@ pub struct WsClient {
     subscription_tasks: Arc<Mutex<Vec<JoinHandle<()>>>>,
 }
 
+pub fn deserialise_to_type<T>(s: &str) -> Result<T, serde_json::Error>
+where
+    T: DeserializeOwned,
+{
+    serde_json::from_str::<T>(s)
+}
+
 impl WsClient {
     pub fn subscriptions(&self) -> Subscriptions<'_> {
         Subscriptions { client: self }
@@ -201,13 +208,7 @@ impl WsClient {
 
         let response = rx.await?;
 
-        // let as_success = serde_json::from_str::<crate::models::OrderHistoryResult>(&response);
-        // let as_error = serde_json::from_str::<RpcErrorResponse>(&response);
-        // println!("Success parse: {as_success:?}");
-        // println!("Error parse:   {as_error:?}");
-        let envelope: T = serde_json::from_str(&response)?;
-        // .inspect_err(|e| println!("Failed to parse JSON: {}", e))?;
-        // println!("RPC Response: {:?}", envelope);
+        let envelope: T = deserialise_to_type(&response)?;
         Ok(envelope)
     }
 
@@ -278,7 +279,7 @@ impl WsClient {
 
                 let handle = tokio::spawn(async move {
                     while let Some(msg) = rx.recv().await {
-                        let parsed: P = match serde_json::from_str(&msg) {
+                        let parsed: P = match deserialise_to_type(&msg) {
                             Ok(m) => m,
                             Err(e) => {
                                 warn!("Failed to parse channel message: {e}; raw: {msg}");
@@ -591,7 +592,7 @@ async fn run_single_connection(
                             pending_requests,
                             public_subscriptions,
                             private_subscriptions,
-                        ).await;
+                        );
                     }
                     Some(Ok(Message::Binary(bin))) => {
                         if let Ok(text) = String::from_utf8(bin.to_vec()) {
@@ -600,7 +601,7 @@ async fn run_single_connection(
                                 pending_requests,
                                 public_subscriptions,
                                 private_subscriptions,
-                            ).await;
+                            );
                         } else {
                             warn!("Non-UTF8 binary message on {url}");
                         }
@@ -638,7 +639,7 @@ async fn run_single_connection(
 }
 
 #[inline(always)]
-pub async fn handle_incoming(
+pub fn handle_incoming(
     text: &str,
     pending_requests: &Arc<DashMap<u64, ResponseSender>>,
     public_subscriptions: &Arc<DashMap<String, mpsc::UnboundedSender<String>>>,
