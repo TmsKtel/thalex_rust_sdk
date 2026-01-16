@@ -278,7 +278,6 @@ impl WsClient {
                 callback(parsed);
             }
         });
-        self.subscription_tasks.lock().await.push(handle);
         let sub_result: SubscribeResponse = self
             .send_rpc(
                 &format!("{scope}/subscribe"),
@@ -291,7 +290,11 @@ impl WsClient {
             SubscribeResponse::Ok {
                 id: _id,
                 result: _result,
-            } => Ok(channel),
+            } => {
+                info!("Subscribed to channel: {channel}");
+                self.subscription_tasks.lock().await.push(handle);
+                Ok(channel)
+            }
             SubscribeResponse::Err { error, id: _id } => {
                 warn!("Subscription error: {error:?}");
                 match scope {
@@ -302,6 +305,7 @@ impl WsClient {
                         self.private_subscriptions.remove(&channel);
                     }
                 }
+                handle.abort();
                 Err(ClientError::Rpc(error))
             }
         }
