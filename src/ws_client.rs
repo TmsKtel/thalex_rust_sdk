@@ -249,6 +249,35 @@ impl WsClient {
         P: DeserializeOwned + Send + 'static,
         F: FnMut(P) + Send + 'static,
     {
+        let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+
+        {
+            match scope {
+                RequestScope::Public => {
+                    self.public_subscriptions.insert(channel.clone(), tx);
+                    info!("Subscribed to public channel: {channel}");
+                }
+                RequestScope::Private => {
+                    self.private_subscriptions.insert(channel.clone(), tx);
+                    info!("Subscribed to private channel: {channel}");
+                }
+            }
+        }
+
+        let handle = tokio::spawn(async move {
+            while let Some(msg) = rx.recv().await {
+                let parsed: P = match deserialise_to_type(&msg) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        warn!("Failed to parse channel message: {e}; raw: {msg}");
+                        continue;
+                    }
+                };
+
+                callback(parsed);
+            }
+        });
+        self.subscription_tasks.lock().await.push(handle);
         let sub_result: SubscribeResponse = self
             .send_rpc(
                 &format!("{scope}/subscribe"),
@@ -261,40 +290,17 @@ impl WsClient {
             SubscribeResponse::Ok {
                 id: _id,
                 result: _result,
-            } => {
-                let (tx, mut rx) = mpsc::unbounded_channel::<String>();
-
-                {
-                    match scope {
-                        RequestScope::Public => {
-                            self.public_subscriptions.insert(channel.clone(), tx);
-                            info!("Subscribed to public channel: {channel}");
-                        }
-                        RequestScope::Private => {
-                            self.private_subscriptions.insert(channel.clone(), tx);
-                            info!("Subscribed to private channel: {channel}");
-                        }
-                    }
-                }
-
-                let handle = tokio::spawn(async move {
-                    while let Some(msg) = rx.recv().await {
-                        let parsed: P = match deserialise_to_type(&msg) {
-                            Ok(m) => m,
-                            Err(e) => {
-                                warn!("Failed to parse channel message: {e}; raw: {msg}");
-                                continue;
-                            }
-                        };
-
-                        callback(parsed);
-                    }
-                });
-                self.subscription_tasks.lock().await.push(handle);
-                Ok(channel)
-            }
+            } => Ok(channel),
             SubscribeResponse::Err { error, id: _id } => {
                 warn!("Subscription error: {error:?}");
+                match scope {
+                    RequestScope::Public => {
+                        self.public_subscriptions.remove(&channel);
+                    }
+                    RequestScope::Private => {
+                        self.private_subscriptions.remove(&channel);
+                    }
+                }
                 Err(ClientError::Rpc(error))
             }
         }
