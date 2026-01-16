@@ -208,13 +208,7 @@ impl WsClient {
 
         let response = rx.await?;
 
-        // let as_success = serde_json::from_str::<crate::models::OrderHistoryResult>(&response);
-        // let as_error = serde_json::from_str::<RpcErrorResponse>(&response);
-        // println!("Success parse: {as_success:?}");
-        // println!("Error parse:   {as_error:?}");
         let envelope: T = deserialise_to_type(&response)?;
-        // .inspect_err(|e| println!("Failed to parse JSON: {}", e))?;
-        // println!("RPC Response: {:?}", envelope);
         Ok(envelope)
     }
 
@@ -285,7 +279,7 @@ impl WsClient {
 
                 let handle = tokio::spawn(async move {
                     while let Some(msg) = rx.recv().await {
-                        let parsed: P = match serde_json::from_str(&msg) {
+                        let parsed: P = match deserialise_to_type(&msg) {
                             Ok(m) => m,
                             Err(e) => {
                                 warn!("Failed to parse channel message: {e}; raw: {msg}");
