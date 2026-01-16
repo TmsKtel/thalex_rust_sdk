@@ -46,36 +46,8 @@ pkgs.mkShell {
     # Rust toolchain
     rustup default 1.88.0
     rustup component add rust-src
-
-    # Paths
-    export PATH=$HOME/.cargo/bin:$PATH
-
-    # Linker & optimizer
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="clang"
-
-    # sccache config (super fast in-RAM caching)
-    export RUSTC_WRAPPER="sccache"
-    export RUSTC_WRAPPER="${pkgs.sccache}/bin/sccache"
-
-    export SCCACHE_CACHE_SIZE="20G"
-    export SCCACHE_JOBS=$(nproc)
-    export SCCACHE_DIR=/dev/shm/sccache
-    export SCCACHE_LOCAL_CACHE_DIR=/dev/shm/sccache
-
-
-    # sscache --start-server
-
-    # Cargo parallelism
-    export CARGO_BUILD_JOBS=$(nproc)
-    export CARGO_INCREMENTAL=0
-
-    export RUSTFLAGS="-C incremental=/dev/shm/rust-incremental -C link-arg=-fuse-ld=mold -C opt-level=0"
-    mkdir -p /dev/shm/rust-incremental
-    export CARGO_HOME=/dev/shm/cargo
-
-    mkdir -p $CARGO_HOME
-    sccache --start-server | true
-
-	
+    # sources the shell.fish for fish users
+    export SHELL=${pkgs.fish}/bin/fish
+    exec ${pkgs.fish}/bin/fish -i -C 'source ./shell.fish; dev'
   '';
 }
