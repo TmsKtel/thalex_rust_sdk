@@ -6,6 +6,7 @@ use thalex_rust_sdk::{
     models::{InstrumentsResponse, RpcResponse, Ticker},
     ws_client::deserialise_to_type,
 };
+use tokio_tungstenite::tungstenite::Bytes;
 
 /// Бенчмарк для измерения производительности JSON парсинга
 /// Тестирует различные размеры сообщений и типы данных
@@ -23,6 +24,7 @@ fn bench_json_parsing(c: &mut Criterion) {
             "instruments": ["BTC-PERPETUAL", "ETH-PERPETUAL"]
         }
     })
+    .to_string()
     .into();
 
     // Ticker сообщение (среднее сообщение)
@@ -55,6 +57,7 @@ fn bench_json_parsing(c: &mut Criterion) {
             "average_funding_rate_24h": 0.0001
         }
     })
+    .to_string()
     .into();
 
     // Большое сообщение (множество инструментов)
@@ -70,6 +73,7 @@ fn bench_json_parsing(c: &mut Criterion) {
             })).collect::<Vec<_>>()
         }
     })
+    .to_string()
     .into();
 
     // Бенчмарк: полный парсинг RPC ответа
