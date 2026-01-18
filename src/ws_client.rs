@@ -653,7 +653,7 @@ pub fn handle_incoming(
 ) {
 
     // ---- fast path: id ----
-    if let Some(id) = extract_id(&bytes.clone()) {
+    if let Some(id) = extract_id(&bytes) {
         if let Some((_, tx)) = pending_requests.remove(&id) {
             let _ = tx.send(bytes);
         }
@@ -661,16 +661,19 @@ pub fn handle_incoming(
     }
 
     // ---- fast path: channel_name ----
-    if let Some(channel) = extract_channel(&bytes.clone()) {
-        for routes in [private_subscriptions, public_subscriptions] {
-            if let Some(sender) = routes.get(channel) {
-                if sender.send(bytes).is_err() {
-                    routes.remove(channel);
-                }
-                return;
+    if let Some(channel) = extract_channel(&bytes) {
+        if let Some(sender) = private_subscriptions.get(channel) {
+            if sender.send(bytes).is_err() {
+                private_subscriptions.remove(channel);
             }
+            return;
         }
-
+        if let Some(sender) = public_subscriptions.get(channel) {
+            if sender.send(bytes).is_err() {
+                public_subscriptions.remove(channel);
+            }
+            return;
+        }
         warn!("No subscription handler for channel: {channel}");
         return;
     }
