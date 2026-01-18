@@ -658,20 +658,19 @@ pub fn handle_incoming(
             let _ = tx.send(bytes);
         }
         return;
+    }
 
-    } else if let Some(channel) = extract_channel(&bytes.clone()) {
-        if let Some(sender) = private_subscriptions.get(channel) {
-            if sender.send(bytes).is_err() {
-                private_subscriptions.remove(channel);
+    // ---- fast path: channel_name ----
+    if let Some(channel) = extract_channel(&bytes) {
+        for routes in [private_subscriptions, public_subscriptions] {
+            if let Some(sender) = routes.get(channel) {
+                if sender.send(bytes).is_err() {
+                    routes.remove(channel);
+                }
+                return;
             }
-            return;
         }
-        if let Some(sender) = public_subscriptions.get(channel) {
-            if sender.send(bytes).is_err() {
-                public_subscriptions.remove(channel);
-            }
-            return;
-        }
+
         warn!("No subscription handler for channel: {channel}");
         return;
     }
