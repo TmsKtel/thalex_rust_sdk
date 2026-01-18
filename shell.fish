@@ -45,7 +45,7 @@ function bench
     set -gx SCCACHE_LOCAL_CACHE_DIR /dev/shm/sccache
     set -gx CARGO_BUILD_JOBS (nproc)
     set -gx CARGO_INCREMENTAL 0
-    set -gx RUSTFLAGS "-C link-arg=-fuse-ld=mold -C opt-level=3 -C target-cpu=native"
+    set -gx RUSTFLAGS "-C embed-bitcode=yes -C link-arg=-fuse-ld=mold -C opt-level=3 -C target-cpu=native -C lto=fat -C codegen-units=1 -C panic=abort -Z dylib-lto -C target-feature=+avx2,+fma,+bmi2,+adx"
     set -gx CARGO_HOME /dev/shm/cargo
     set -gx NIX_ENFORCE_PURITY 0
     mkdir -p $CARGO_HOME

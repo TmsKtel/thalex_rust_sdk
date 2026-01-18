@@ -44,7 +44,7 @@ pkgs.mkShell {
   
   shellHook = ''
     # Rust toolchain
-    rustup default 1.88.0
+    rustup default nightly
     rustup component add rust-src
     # sources the shell.fish for fish users
     export SHELL=${pkgs.fish}/bin/fish
