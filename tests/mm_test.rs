@@ -1,6 +1,6 @@
 use thalex_rust_sdk::models::{
     CancelMassQuoteParams, DoubleSidedQuote, DoubleSidedQuoteB, MassQuoteParams,
-    SetMmProtectionParams, SingleLevelQuote,
+    SetMmProtectionParams, SingleLevelQuote, StpActionEnum, StpLevelEnum,
 };
 use thalex_rust_sdk::ws_client::WsClient;
 
@@ -44,6 +44,8 @@ async fn test_mm_flow() {
             reject_post_only: Some(true),
             post_only: Some(true),
             label: Some("test_mass_quote_flow".to_string()),
+            stp_action: Some(StpActionEnum::CancelAggressiveNoFill),
+            stp_level: Some(StpLevelEnum::Customer),
             quotes: vec![DoubleSidedQuote {
                 i: KNOWN_PERP.to_string(),
                 b: Some(DoubleSidedQuoteB::SingleLevelQuote(SingleLevelQuote {
