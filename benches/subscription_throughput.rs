@@ -18,10 +18,10 @@ async fn process_subscription_messages(
     let mut processed = 0;
     for _ in 0..count {
         let mut subs = subscriptions.lock().await;
-        if let Some(sender) = subs.get_mut(channel_name) {
-            if sender.send(message.clone()).is_ok() {
-                processed += 1;
-            }
+        if let Some(sender) = subs.get_mut(channel_name)
+            && sender.send(message.clone()).is_ok()
+        {
+            processed += 1;
         }
     }
     processed
@@ -41,10 +41,10 @@ async fn process_subscription_messages_concurrent(
             let mut processed = 0;
             for _ in 0..messages_per_channel {
                 let mut guard = subs.lock().await;
-                if let Some(sender) = guard.get_mut(&channel_name) {
-                    if sender.send(msg.clone()).is_ok() {
-                        processed += 1;
-                    }
+                if let Some(sender) = guard.get_mut(&channel_name)
+                    && sender.send(msg.clone()).is_ok()
+                {
+                    processed += 1;
                 }
             }
             processed
@@ -75,7 +75,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
             subs.lock()
                 .await
                 .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
+            tokio::spawn(async move { while rx.recv().await.is_some() {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -96,7 +96,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
             subs.lock()
                 .await
                 .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
+            tokio::spawn(async move { while rx.recv().await.is_some() {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -117,7 +117,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
             subs.lock()
                 .await
                 .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
+            tokio::spawn(async move { while rx.recv().await.is_some() {} });
         });
         b.to_async(&rt).iter(|| {
             process_subscription_messages(
@@ -146,7 +146,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
                     for name in &channel_names {
                         let (tx, mut rx) = mpsc::unbounded_channel();
                         guard.insert(name.clone(), tx);
-                        tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
+                        tokio::spawn(async move { while rx.recv().await.is_some() {} });
                     }
                 });
 
@@ -172,7 +172,7 @@ fn bench_subscription_throughput(c: &mut Criterion) {
             subs.lock()
                 .await
                 .insert("ticker.BTC-PERPETUAL.100ms".to_string(), tx);
-            tokio::spawn(async move { while let Some(_) = rx.recv().await {} });
+            tokio::spawn(async move { while rx.recv().await.is_some() {} });
         });
         b.to_async(&rt).iter_custom(|iters| {
             let subs_clone = subs.clone();

@@ -7,7 +7,7 @@ use thalex_rust_sdk::{
     types::{ChannelSender, ResponseSender},
     ws_client::handle_incoming,
 };
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc::{self};
 use tokio_tungstenite::tungstenite::Bytes;
 
 fn bench_handle_incoming(c: &mut Criterion) {
