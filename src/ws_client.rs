@@ -422,7 +422,7 @@ impl WsClient {
     }
 
     pub async fn run_till_event(&self) -> ExternalEvent {
-        let mut rx = self.connection_state_rx.clone(); // watch receivers are cheap to clone
+        let mut rx = self.connection_state_rx.clone();
 
         loop {
             if rx.changed().await.is_ok() {
@@ -434,8 +434,7 @@ impl WsClient {
                     return state;
                 }
             } else {
-                // Channel closed, return current state
-                return *self.current_connection_state.lock().await;
+                return ExternalEvent::Exited;
             }
         }
     }
