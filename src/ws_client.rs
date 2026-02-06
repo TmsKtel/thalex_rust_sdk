@@ -296,7 +296,7 @@ impl WsClient {
                 id: _id,
                 result: _result,
             } => {
-                info!("Subscribed to channel: {channel}");
+                debug!("Subscribed to channel: {channel}");
                 self.subscription_tasks.lock().await.push(handle);
                 Ok(channel)
             }
