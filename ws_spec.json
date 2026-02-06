@@ -1293,35 +1293,10 @@
                     "index_delta": 1
                 }
             },
-            "InstrumentsPayloadNotification": {
-                "type": "object",
-                "required": [
-                    "channel_name",
-                    "notification"
-                ],
-                "properties": {
-                    "channel_name": {
-                        "type": "string",
-                        "description": "Channel name as in subscription."
-                    },
-                    "notification": {
-                        "$ref": "#/components/schemas/InstrumentsPayload"
-                    }
-                }
-            },
             "InstrumentsPayload": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                    "notification"
-                ],
-                "properties": {
-                    "notification": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/InstrumentDelta"
-                        }
-                    }
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/InstrumentDelta"
                 }
             },
             "InstrumentDelta": {
@@ -1329,6 +1304,7 @@
                     {
                         "type": "object",
                         "additionalProperties": false,
+                        "title": "Added",
                         "required": [
                             "added"
                         ],
@@ -1341,16 +1317,20 @@
                     {
                         "type": "object",
                         "additionalProperties": false,
+                        "title": "Removed",
                         "required": [
                             "removed"
                         ],
                         "properties": {
-                            "added": {
+                            "removed": {
                                 "$ref": "./rpc_spec_generated.json#/components/schemas/Instrument"
                             }
                         }
                     }
-                ]
+                ],
+                "x-rust-type": {
+                    "serde": "untagged"
+                }
             },
             "RfqsPayloadNotification": {
                 "type": "object",

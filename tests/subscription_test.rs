@@ -1,9 +1,6 @@
 use log::{Level::Info, info};
 use simple_logger::init_with_level;
-use thalex_rust_sdk::{
-    types::{Environment, ExternalEvent},
-    ws_client::WsClient,
-};
+use thalex_rust_sdk::{types::Environment, ws_client::WsClient};
 
 #[tokio::test]
 async fn instruments_sub() -> Result<(), Box<dyn std::error::Error>> {
@@ -17,7 +14,7 @@ async fn instruments_sub() -> Result<(), Box<dyn std::error::Error>> {
     let _ = client
         .subscriptions()
         .market_data()
-        .instruments(move |msg| {
+        .instruments(move |_msg| {
             // Parses into a json value initally
             let tx = tx_arc.clone();
             async move {
@@ -32,10 +29,10 @@ async fn instruments_sub() -> Result<(), Box<dyn std::error::Error>> {
         _ = rx => {
             info!("Received signal to exit after receiving the first update");
         }
-        _ = tokio::time::sleep(std::time::Duration::from_secs(20)) => {
+        _ = tokio::time::sleep(std::time::Duration::from_secs(5)) => {
             info!("Timeout reached without receiving an update");
+            panic!("Test failed: Did not receive an instruments update within the timeout period");
         }
     }
     Ok(())
 }
-

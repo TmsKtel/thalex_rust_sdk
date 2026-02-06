@@ -12,13 +12,13 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstrumentDeltaOneOf {
-    #[serde(rename = "added")]
-    pub added: models::Instrument,
+pub struct Removed {
+    #[serde(rename = "removed")]
+    pub removed: models::Instrument,
 }
 
-impl InstrumentDeltaOneOf {
-    pub fn new(added: models::Instrument) -> InstrumentDeltaOneOf {
-        InstrumentDeltaOneOf { added }
+impl Removed {
+    pub fn new(removed: models::Instrument) -> Removed {
+        Removed { removed }
     }
 }
