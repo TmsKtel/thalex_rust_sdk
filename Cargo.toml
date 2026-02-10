@@ -49,3 +49,7 @@ harness = false
 [profile.dev]
 opt-level = 0
 debug = 0
+
+[package.metadata.cargo-machete]
+ignored = ["rustls"]
+
