@@ -53,6 +53,7 @@ pub struct WsClient {
     current_connection_state: Arc<Mutex<ExternalEvent>>,
     supervisor_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
     subscription_tasks: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub environment: Environment,
 }
 
 #[inline(always)]
@@ -141,6 +142,7 @@ impl WsClient {
             current_connection_state: Arc::new(Mutex::new(ExternalEvent::Disconnected)),
             supervisor_handle: Arc::new(Mutex::new(Some(supervisor_handle))),
             subscription_tasks: Arc::new(Mutex::new(Vec::new())),
+            environment: env,
         };
 
         client.cache_instruments().await?;
