@@ -9167,7 +9167,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to 90 days ago."
+              "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9176,7 +9177,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to now."
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9268,11 +9270,13 @@
                           },
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to 90 days ago."
+                            "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -9484,7 +9488,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to 90 days ago."
+              "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9493,7 +9498,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to now."
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9585,11 +9591,13 @@
                           },
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to 90 days ago."
+                            "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -9841,7 +9849,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9850,7 +9859,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to now."
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9911,11 +9921,13 @@
                           },
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -10170,7 +10182,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10179,7 +10192,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to now."
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10240,11 +10254,13 @@
                           },
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -10459,7 +10475,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10468,7 +10485,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to now."
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10529,11 +10547,13 @@
                           },
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -13702,7 +13722,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days."
+              "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days.",
+              "format": "int64"
             },
             "required": false
           },
@@ -13711,7 +13732,8 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "description": "End time (Unix timestamp) defaults to `now`."
+              "description": "End time (Unix timestamp) defaults to `now`.",
+              "format": "int64"
             },
             "required": false
           }
@@ -13757,11 +13779,13 @@
                         "properties": {
                           "time_low": {
                             "type": "integer",
-                            "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days."
+                            "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days.",
+                            "format": "int64"
                           },
                           "time_high": {
                             "type": "integer",
-                            "description": "End time (Unix timestamp) defaults to `now`."
+                            "description": "End time (Unix timestamp) defaults to `now`.",
+                            "format": "int64"
                           }
                         }
                       }

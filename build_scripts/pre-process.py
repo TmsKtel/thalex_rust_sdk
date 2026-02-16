@@ -41,6 +41,7 @@ def convert_numbers_integers(spec: Dict[str, Any]) -> Dict[str, Any]:
             for parameter in operation.get("parameters", []):
                 if parameter.get("name") in vars_types_to_be_set_to_integer:
                     parameter["schema"]["type"] = "integer"
+                    parameter["schema"]["format"] = "int64"
                     print(f"Updated parameter '{parameter['name']}' in path '{path}' and method '{method}' to type 'integer'.")
 
         if "rpc" in path_item:
@@ -57,6 +58,7 @@ def convert_numbers_integers(spec: Dict[str, Any]) -> Dict[str, Any]:
                         for param_name, param_value in params.get("properties", {}).items():
                             if param_name in vars_types_to_be_set_to_integer:
                                 param_value["type"] = "integer"
+                                param_value["format"] = "int64"
                                 print(
                                     f"Updated parameter '{param_name}' in rpc request body of path '{path}' to type 'integer'."
                                 )
@@ -65,6 +67,7 @@ def convert_numbers_integers(spec: Dict[str, Any]) -> Dict[str, Any]:
         for property_name, property in component.get("properties", {}).items():
             if property_name in vars_types_to_be_set_to_integer:
                 property["type"] = "integer"
+                property["format"] = "int64"
                 print(f"Updated property '{property_name}' in component '{component_name}' to type 'integer'.")
 
     return updated_spec
