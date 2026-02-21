@@ -12,17 +12,16 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CancelAllResult {
-    /// The number of orders successfully deleted.
+pub struct TradeValueHistoryResult {
     #[serde(rename = "result")]
-    pub result: rust_decimal::Decimal,
+    pub result: models::TradeValueHistoryRpcResult,
     /// The request ID
     #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
 }
 
-impl CancelAllResult {
-    pub fn new(result: rust_decimal::Decimal) -> CancelAllResult {
-        CancelAllResult { result, id: None }
+impl TradeValueHistoryResult {
+    pub fn new(result: models::TradeValueHistoryRpcResult) -> TradeValueHistoryResult {
+        TradeValueHistoryResult { result, id: None }
     }
 }

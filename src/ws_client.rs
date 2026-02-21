@@ -1,4 +1,5 @@
 use dashmap::DashMap;
+use rust_decimal::Decimal;
 use serde::de::DeserializeOwned;
 
 use tokio::{
@@ -52,6 +53,7 @@ pub struct WsClient {
     current_connection_state: Arc<Mutex<ExternalEvent>>,
     supervisor_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
     subscription_tasks: Arc<Mutex<Vec<JoinHandle<()>>>>,
+    pub environment: Environment,
 }
 
 #[inline(always)]
@@ -59,7 +61,14 @@ pub fn deserialise_to_type<T>(s: &Bytes) -> Result<T, serde_json::Error>
 where
     T: DeserializeOwned,
 {
-    serde_json::from_slice::<T>(s)
+    match serde_json::from_slice::<T>(s) {
+        Ok(val) => Ok(val),
+        Err(e) => {
+            error!("Deserialization error: {e:?}");
+            error!("Raw response: {}", String::from_utf8_lossy(s));
+            Err(e)
+        }
+    }
 }
 
 impl WsClient {
@@ -149,7 +158,10 @@ impl WsClient {
             current_connection_state: Arc::new(Mutex::new(ExternalEvent::Disconnected)),
             supervisor_handle: Arc::new(Mutex::new(Some(supervisor_handle))),
             subscription_tasks: Arc::new(Mutex::new(Vec::new())),
+            environment: env,
         };
+
+        client.cache_instruments().await?;
         Ok(client)
     }
 
@@ -167,9 +179,9 @@ impl WsClient {
 
     pub async fn round_price_to_ticks(
         &self,
-        price: f64,
+        price: Decimal,
         instrument_name: &str,
-    ) -> Result<f64, Error> {
+    ) -> Result<Decimal, Error> {
         let instrument = self.instruments_cache.get(instrument_name);
         // refresh cache if not found
         if let Some(instr) = instrument {

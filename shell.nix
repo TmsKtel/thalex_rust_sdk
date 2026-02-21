@@ -13,11 +13,6 @@ pkgs.mkShell {
     openapi-generator-cli
     python312
     redocly
-    linuxPackages.perf
-    sccache
-    mold
-    clang
-
   ];
   nativeBuildInputs =
     with pkgs;
@@ -44,10 +39,7 @@ pkgs.mkShell {
   
   shellHook = ''
     # Rust toolchain
-    rustup default nightly
+    rustup default 1.93
     rustup component add rust-src
-    # sources the shell.fish for fish users
-    export SHELL=${pkgs.fish}/bin/fish
-    exec ${pkgs.fish}/bin/fish -i -C 'source ./shell.fish; dev'
   '';
 }

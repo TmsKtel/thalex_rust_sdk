@@ -8,6 +8,7 @@ use crate::{
         RequiredMarginBreakdownResponse, RequiredMarginForOrderParams,
         RequiredMarginForOrderResponse, RfqHistoryParams, RfqHistoryResponse, RfqHistoryRpcResult,
         RpcErrorResponse, TradeHistoryParams, TradeHistoryResponse, TradeHistoryRpcResult,
+        TradeValueHistoryParams, TradeValueHistoryResponse, TradeValueHistoryRpcResult,
         TransactionHistoryParams, TransactionHistoryResponse, TransactionHistoryRpcResult,
     },
     ws_client::WsClient,
@@ -88,6 +89,26 @@ impl<'a> AccountingRpc<'a> {
         match result {
             TradeHistoryResponse::TradeHistoryResult(res) => Ok(res.result),
             TradeHistoryResponse::RpcErrorResponse(err) => Err(err),
+        }
+    }
+
+    /// Trading volume historical data.
+    /// returns: TradeValueHistoryRpcResult
+    pub async fn trade_value_history(
+        &self,
+        params: TradeValueHistoryParams,
+    ) -> Result<TradeValueHistoryRpcResult, RpcErrorResponse> {
+        let result: TradeValueHistoryResponse = self
+            .client
+            .send_rpc(
+                "private/trade_value_history",
+                serde_json::to_value(params).expect("Failed to serialize params"),
+            )
+            .await
+            .expect("Failed to send RPC request");
+        match result {
+            TradeValueHistoryResponse::TradeValueHistoryResult(res) => Ok(res.result),
+            TradeValueHistoryResponse::RpcErrorResponse(err) => Err(err),
         }
     }
 

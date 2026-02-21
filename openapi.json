@@ -305,6 +305,51 @@
         "type": "object",
         "description": "Empty object."
       },
+      "TradeValue": {
+        "type": "object",
+        "description": "The aggregated trading volume per date time bucket, underlying and instrument category.",
+        "required": [
+          "underlying",
+          "trade_volume",
+          "trade_value",
+          "category",
+          "date_time_bucket"
+        ],
+        "properties": {
+          "underlying": {
+            "type": "string",
+            "description": "Underlying name."
+          },
+          "trade_volume": {
+            "type": "number",
+            "description": "Total trading volume for the underlying instrument category."
+          },
+          "trade_value": {
+            "type": "number",
+            "description": "The total value traded for the underlying instrument category."
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "options",
+              "futures",
+              "perpetual"
+            ],
+            "description": "Instrument category."
+          },
+          "date_time_bucket": {
+            "description": "Start time of the aggregation interval (day, week, or month)."
+          }
+        },
+        "example": {
+          "account_id": 861918865,
+          "underlying": "BTCUSD",
+          "trade_volume": 10,
+          "trade_value": 20,
+          "category": "options",
+          "date_time_bucket": "1704700800000000000"
+        }
+      },
       "OrderStatus": {
         "type": "object",
         "description": "Order status.",
@@ -9166,8 +9211,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to 90 days ago."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9175,8 +9221,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to now."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9267,12 +9314,14 @@
                             "default": 1000
                           },
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to 90 days ago."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -9483,8 +9532,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to 90 days ago."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9492,8 +9542,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to now."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9584,12 +9635,14 @@
                             "default": 1000
                           },
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to 90 days ago."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to 90 days ago.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -9737,6 +9790,265 @@
         ]
       }
     },
+    "/private/trade_value_history": {
+      "get": {
+        "operationId": "rest_private/trade_value_history",
+        "tags": [
+          "rest_accounting"
+        ],
+        "summary": "Trading volume historical data.",
+        "description": "Exchange: `https://thalex.com/api/v2/private/trade_value_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/trade_value_history`\n\nReturns historical trading volume in the specified interval and resolution.",
+        "required": true,
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Success",
+                      "type": "object",
+                      "properties": {
+                        "result": {
+                          "type": "object",
+                          "properties": {
+                            "trade_values": {
+                              "description": "Array of trade value objects.",
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/TradeValue"
+                              }
+                            },
+                            "bookmark": {
+                              "type": "string",
+                              "description": "Set when additional data exists within or before the requested time interval."
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "title": "Error",
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "time_low",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "description": "Start time (Unix timestamp) (inclusive).",
+              "format": "int64"
+            },
+            "required": true
+          },
+          {
+            "name": "time_high",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "description": "End time (Unix timestamp) (inclusive).",
+              "format": "int64"
+            },
+            "required": true
+          },
+          {
+            "name": "resolution",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1d",
+                "1w",
+                "1mo"
+              ],
+              "description": "Each trade value is aggregated per time resolution, underlying and category."
+            },
+            "required": true
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "default": 1000,
+              "max": 1000,
+              "description": "The maximum number of primary items to return per page. Due to resolution grouping rules, a page may include additional items beyond the limit to ensure that all items sharing the same date_time_bucket as the last item within the limit are included."
+            },
+            "required": false
+          },
+          {
+            "name": "bookmark",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Set to bookmark from previous call to get next page."
+            },
+            "required": false
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ascending",
+                "descending"
+              ]
+            },
+            "required": false
+          }
+        ]
+      }
+    },
+    "private/trade_value_history": {
+      "rpc": {
+        "operationId": "rpc_private/trade_value_history",
+        "tags": [
+          "rpc_accounting"
+        ],
+        "summary": "Trading volume historical data.",
+        "description": "Returns historical trading volume in the specified interval and resolution.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "method"
+                    ],
+                    "properties": {
+                      "method": {
+                        "type": "string",
+                        "const": "private/trade_value_history"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/RpcRequest"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "params"
+                    ],
+                    "properties": {
+                      "params": {
+                        "type": "object",
+                        "required": [
+                          "time_low",
+                          "time_high",
+                          "resolution"
+                        ],
+                        "properties": {
+                          "time_low": {
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) (inclusive).",
+                            "format": "int64"
+                          },
+                          "time_high": {
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) (inclusive).",
+                            "format": "int64"
+                          },
+                          "resolution": {
+                            "type": "string",
+                            "enum": [
+                              "1d",
+                              "1w",
+                              "1mo"
+                            ],
+                            "description": "Each trade value is aggregated per time resolution, underlying and category."
+                          },
+                          "limit": {
+                            "type": "number",
+                            "default": 1000,
+                            "max": 1000,
+                            "description": "The maximum number of primary items to return per page. Due to resolution grouping rules, a page may include additional items beyond the limit to ensure that all items sharing the same date_time_bucket as the last item within the limit are included."
+                          },
+                          "bookmark": {
+                            "type": "string",
+                            "description": "Set to bookmark from previous call to get next page."
+                          },
+                          "sort": {
+                            "type": "string",
+                            "enum": [
+                              "ascending",
+                              "descending"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Success",
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/RpcResponse"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "result"
+                          ],
+                          "properties": {
+                            "result": {
+                              "type": "object",
+                              "properties": {
+                                "trade_values": {
+                                  "description": "Array of trade value objects.",
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/components/schemas/TradeValue"
+                                  }
+                                },
+                                "bookmark": {
+                                  "type": "string",
+                                  "description": "Set when additional data exists within or before the requested time interval."
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "title": "Error",
+                      "$ref": "#/components/schemas/RpcErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "RPC: "
+          }
+        ]
+      }
+    },
     "/private/daily_mark_history": {
       "get": {
         "operationId": "rest_private/daily_mark_history",
@@ -9840,8 +10152,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9849,8 +10162,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to now."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -9910,12 +10224,14 @@
                             "default": 1000
                           },
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -10169,8 +10485,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10178,8 +10495,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to now."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10239,12 +10557,14 @@
                             "default": 1000
                           },
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -10458,8 +10778,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to zero."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to zero.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10467,8 +10788,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to now."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to now.",
+              "format": "int64"
             },
             "required": false
           },
@@ -10528,12 +10850,14 @@
                             "default": 1000
                           },
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to zero."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to zero.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to now."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to now.",
+                            "format": "int64"
                           },
                           "bookmark": {
                             "type": "string",
@@ -13701,8 +14025,9 @@
             "name": "time_low",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days."
+              "type": "integer",
+              "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days.",
+              "format": "int64"
             },
             "required": false
           },
@@ -13710,8 +14035,9 @@
             "name": "time_high",
             "in": "query",
             "schema": {
-              "type": "number",
-              "description": "End time (Unix timestamp) defaults to `now`."
+              "type": "integer",
+              "description": "End time (Unix timestamp) defaults to `now`.",
+              "format": "int64"
             },
             "required": false
           }
@@ -13756,12 +14082,14 @@
                         "type": "object",
                         "properties": {
                           "time_low": {
-                            "type": "number",
-                            "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days."
+                            "type": "integer",
+                            "description": "Start time (Unix timestamp) defaults to `time_high` - 3 days.",
+                            "format": "int64"
                           },
                           "time_high": {
-                            "type": "number",
-                            "description": "End time (Unix timestamp) defaults to `now`."
+                            "type": "integer",
+                            "description": "End time (Unix timestamp) defaults to `now`.",
+                            "format": "int64"
                           }
                         }
                       }
