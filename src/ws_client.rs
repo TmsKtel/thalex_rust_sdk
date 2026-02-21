@@ -101,7 +101,7 @@ impl WsClient {
     ) -> Result<Self, Error> {
         let url = env.get_url();
         let private_key_pem = tokio::fs::read_to_string(key_path).await?;
-        Self::new_with_key_and_url(url, key_id, account_id, private_key_pem).await
+        Self::new_with_key_and_url(url, key_id, account_id, private_key_pem, env.clone()).await
     }
 
     pub async fn new_with_key_and_url(
@@ -109,6 +109,7 @@ impl WsClient {
         key_id: String,
         account_id: String,
         private_key_pem: String,
+        env: Environment,
     ) -> Result<Self, Error> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel::<InternalCommand>();
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
