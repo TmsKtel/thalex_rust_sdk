@@ -84,22 +84,26 @@ pub enum ClientError {
 pub enum Environment {
     Mainnet,
     Testnet,
+    Custom(String), // Allows custom environment URL
 }
+
 impl Environment {
     pub fn get_url(&self) -> &str {
         match self {
             Environment::Mainnet => "wss://thalex.com/ws/api/v2",
             Environment::Testnet => "wss://testnet.thalex.com/ws/api/v2",
+            Environment::Custom(url) => url.as_str(),
         }
     }
 }
+
 impl FromStr for Environment {
     type Err = ();
     fn from_str(env: &str) -> core::result::Result<Self, Self::Err> {
         match env.to_lowercase().as_str() {
             "mainnet" => Ok(Environment::Mainnet),
             "testnet" => Ok(Environment::Testnet),
-            _ => Err(()),
+            url => Ok(Environment::Custom(url.to_string())), // Accepts any other string as custom URL
         }
     }
 }

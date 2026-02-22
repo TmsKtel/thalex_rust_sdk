@@ -61,7 +61,14 @@ pub fn deserialise_to_type<T>(s: &Bytes) -> Result<T, serde_json::Error>
 where
     T: DeserializeOwned,
 {
-    serde_json::from_slice::<T>(s)
+    match serde_json::from_slice::<T>(s) {
+        Ok(val) => Ok(val),
+        Err(e) => {
+            error!("Deserialization error: {e:?}");
+            error!("Raw response: {}", String::from_utf8_lossy(s));
+            Err(e)
+        }
+    }
 }
 
 impl WsClient {
@@ -80,7 +87,10 @@ impl WsClient {
         let env_str = var("THALEX_ENVIRONMENT")
             .expect("THALEX_ENVIRONMENT not set. Must be 'Mainnet' or 'Testnet'");
         let env = Environment::from_str(&env_str).expect("Invalid THALEX_ENVIRONMENT value");
-        let client = WsClient::new(env, key_id, account_id, key_path).await?;
+
+        let private_key_pem = std::fs::read_to_string(&key_path)
+            .expect("Failed to read private key file. Check THALEX_PRIVATE_KEY_PATH");
+        let client = WsClient::new(env, key_id, account_id, private_key_pem).await?;
         client.wait_for_connection().await;
         info!("WsClient created from environment variables Logging in...");
         client.login().await.expect("Login failed");
@@ -97,20 +107,10 @@ impl WsClient {
         env: Environment,
         key_id: String,
         account_id: String,
-        key_path: String,
+        private_key_pem: String,
     ) -> Result<Self, Error> {
         let url = env.get_url();
-        let private_key_pem = tokio::fs::read_to_string(key_path).await?;
-        Self::new_with_key_and_url(url, key_id, account_id, private_key_pem, env.clone()).await
-    }
 
-    pub async fn new_with_key_and_url(
-        url: &str,
-        key_id: String,
-        account_id: String,
-        private_key_pem: String,
-        env: Environment,
-    ) -> Result<Self, Error> {
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel::<InternalCommand>();
         let (shutdown_tx, shutdown_rx) = watch::channel(false);
 
