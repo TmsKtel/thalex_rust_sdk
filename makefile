@@ -52,6 +52,7 @@ build:
 	cargo build --all-features
 test:
 	cargo test -- --nocapture
+	python build_scripts/readme_builder.py
 run:
 	cargo run --all-features
 

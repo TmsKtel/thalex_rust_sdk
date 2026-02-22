@@ -87,7 +87,10 @@ impl WsClient {
         let env_str = var("THALEX_ENVIRONMENT")
             .expect("THALEX_ENVIRONMENT not set. Must be 'Mainnet' or 'Testnet'");
         let env = Environment::from_str(&env_str).expect("Invalid THALEX_ENVIRONMENT value");
-        let client = WsClient::new(env, key_id, account_id, key_path).await?;
+
+        let private_key_pem = std::fs::read_to_string(&key_path)
+            .expect("Failed to read private key file. Check THALEX_PRIVATE_KEY_PATH");
+        let client = WsClient::new(env, key_id, account_id, private_key_pem).await?;
         client.wait_for_connection().await;
         info!("WsClient created from environment variables Logging in...");
         client.login().await.expect("Login failed");
@@ -104,7 +107,7 @@ impl WsClient {
         env: Environment,
         key_id: String,
         account_id: String,
-        key_path: String,
+        private_key_pem: String,
     ) -> Result<Self, Error> {
         let url = env.get_url();
 
@@ -123,7 +126,7 @@ impl WsClient {
         let login_state = LoginState {
             key_id,
             account_id,
-            key_path,
+            private_key_pem,
         };
 
         let supervisor_handle = tokio::spawn(connection_supervisor(
@@ -369,8 +372,7 @@ impl WsClient {
     }
 
     pub async fn login(&self) -> Result<(), Error> {
-        let private_key_pem = tokio::fs::read_to_string(&self.login_state.key_path).await?;
-        let token = make_auth_token(&self.login_state.key_id, private_key_pem)?;
+        let token = make_auth_token(&self.login_state.key_id, &self.login_state.private_key_pem)?;
         let result: Value = self
             .send_rpc(
                 "public/login",
