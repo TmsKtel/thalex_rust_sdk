@@ -10725,6 +10725,28 @@
               "description": "Set to bookmark from previous call to get next page."
             },
             "required": false
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "description": "Sort direction by order time. Defaults to `descending` (i.e. newest items first)."
+            },
+            "required": false
+          },
+          {
+            "name": "instrument_names",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned."
+            },
+            "required": false
           }
         ]
       }
@@ -10785,6 +10807,18 @@
                           "bookmark": {
                             "type": "string",
                             "description": "Set to bookmark from previous call to get next page."
+                          },
+                          "sort": {
+                            "type": "string",
+                            "enum": [
+                              "ascending",
+                              "descending"
+                            ],
+                            "description": "Sort direction by order time. Defaults to `descending` (i.e. newest items first)."
+                          },
+                          "instrument_names": {
+                            "type": "string",
+                            "description": "Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned."
                           }
                         }
                       }

@@ -25,6 +25,11 @@ pub struct TransactionHistoryParams {
     /// Set to bookmark from previous call to get next page.
     #[serde(rename = "bookmark", skip_serializing_if = "Option::is_none")]
     pub bookmark: Option<String>,
+    #[serde(rename = "sort", skip_serializing_if = "Option::is_none")]
+    pub sort: Option<models::SortEnum>,
+    /// Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned.
+    #[serde(rename = "instrument_names", skip_serializing_if = "Option::is_none")]
+    pub instrument_names: Option<String>,
 }
 
 impl TransactionHistoryParams {
@@ -34,6 +39,8 @@ impl TransactionHistoryParams {
             time_low: None,
             time_high: None,
             bookmark: None,
+            sort: None,
+            instrument_names: None,
         }
     }
 }
