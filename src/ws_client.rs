@@ -376,7 +376,9 @@ impl WsClient {
         loop {
             if attempts == 0 {
                 warn!("Login attempts exhausted");
-                return Err(Box::new(std::io::Error::other("Login error: exhausted all attempts".to_string())));
+                return Err(Box::new(std::io::Error::other(
+                    "Login error: exhausted all attempts".to_string(),
+                )));
             }
             attempts -= 1;
             let token =
