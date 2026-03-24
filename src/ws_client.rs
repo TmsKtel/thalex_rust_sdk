@@ -193,6 +193,28 @@ impl WsClient {
         }
     }
 
+    pub async fn round_amount_to_lot_size(
+        &self,
+        amount: Decimal,
+        instrument_name: &str,
+    ) -> Result<Decimal, Error> {
+        let instrument = self.instruments_cache.get(instrument_name);
+        // refresh cache if not found
+        if let Some(instr) = instrument {
+            Ok(round_to_ticks(amount, instr.volume_tick_size.unwrap()))
+        } else {
+            self.cache_instruments().await?;
+            if let Some(instr) = self.instruments_cache.get(instrument_name) {
+                Ok(round_to_ticks(amount, instr.volume_tick_size.unwrap()))
+            } else {
+                Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("Instrument not found: {instrument_name}"),
+                )))
+            }
+        }
+    }
+
     async fn get_instruments(&self) -> Result<Vec<Instrument>, ClientError> {
         self.rpc().market_data().instruments().await
     }
