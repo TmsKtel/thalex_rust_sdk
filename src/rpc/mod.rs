@@ -2,7 +2,7 @@ use crate::{
     rpc::{
         accounting::AccountingRpc, bot::BotRpc, conditional::ConditionalRpc,
         historical_data::HistoricalDataRpc, market_data::MarketDataRpc, mm::MmRpc,
-        session_management::SessionManagementRpc, trading::TradingRpc,
+        session_management::SessionManagementRpc, trading::TradingRpc, wallet::WalletRpc,
     },
     ws_client::WsClient,
 };
@@ -15,6 +15,7 @@ pub mod market_data;
 pub mod mm;
 pub mod session_management;
 pub mod trading;
+pub mod wallet;
 
 pub struct Rpc<'a> {
     pub client: &'a WsClient,
@@ -63,6 +64,12 @@ impl<'a> Rpc<'a> {
     }
     pub fn bot(&self) -> BotRpc<'a> {
         BotRpc {
+            client: self.client,
+        }
+    }
+
+    pub fn wallet(&self) -> WalletRpc<'a> {
+        WalletRpc {
             client: self.client,
         }
     }

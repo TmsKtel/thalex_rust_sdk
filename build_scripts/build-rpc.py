@@ -62,6 +62,12 @@ RPC_RESULT_IMPORT_ALIASES = {
     "SetMmProtectionRpcResult": "Value",
     "BotsRpcResult": "Bot",
     "CreateBotRpcResult": "Bot",
+    # withdrawals
+    "EthDepositAddressRpcResult": "EthDepositAddressResult",
+    "BtcDepositAddressRpcResult": "BtcDepositAddressResult",
+    "CryptoWithdrawalsRpcResult": "CryptoWithdrawalsRpcResultInner",
+    "WithdrawRpcResult": "Value",
+    "InternalTransferRpcResult": "Value",
 }
 
 RETURN_MODEL_TO_VECTOR_ALIASES = {
@@ -83,7 +89,11 @@ RETURN_MODEL_TO_VECTOR_ALIASES = {
     "CancelAllBotsRpcResult": "Value",
     "BotsRpcResult": "Vec<Bot>",
     "CreateBotRpcResult": "Bot",
-
+    "EthDepositAddressRpcResult": "String",
+    "BtcDepositAddressRpcResult": "String",
+    "CryptoWithdrawalsRpcResult": "Vec<CryptoWithdrawalsRpcResultInner>",
+    "WithdrawRpcResult": "Value",
+    "InternalTransferRpcResult": "Value",
 }
 
 MODELS_TO_LIFT = [
@@ -143,6 +153,8 @@ IMPORTS_TO_SKIP = [
     # Bot
     "CancelAllBotsRpcResult",
     "CancelBotRpcResult",
+    # wallet
+    "CryptoWithdrawalsResult"
 ]
 base_imports = [
         "RpcErrorResponse",
