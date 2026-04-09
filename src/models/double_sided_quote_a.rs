@@ -9,6 +9,7 @@
  */
 
 use crate::models;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 /// DoubleSidedQuoteA : Ask quote(s)
@@ -16,7 +17,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DoubleSidedQuoteA {
-    SingleSidedMultiLevelQuote(models::SingleSidedMultiLevelQuote),
+    SingleSidedMultiLevelQuote(Vec<[Decimal; 2]>), // [price, amount],
     SingleSidedSingleLevelQuote(models::SingleSidedSingleLevelQuote),
 }
 
