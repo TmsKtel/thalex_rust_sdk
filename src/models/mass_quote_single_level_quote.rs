@@ -9,13 +9,14 @@
  */
 
 use crate::models;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum MassQuoteSingleLevelQuote {
-    /// an array of ask quotes
-    Array(Vec<Vec<serde_json::Value>>),
+    /// an array of quotes
+    Array(Vec<[Decimal; 2]>), // [price, amount]
     SingleLevelQuote(models::SingleLevelQuote),
 }
 
