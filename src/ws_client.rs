@@ -1,5 +1,4 @@
 use dashmap::DashMap;
-use rust_decimal::Decimal;
 use serde::de::DeserializeOwned;
 
 use tokio::{
@@ -24,13 +23,12 @@ use tokio_tungstenite::{
 
 use crate::{
     auth_utils::make_auth_token,
-    models::{Instrument, RpcResponse},
+    models::RpcResponse,
     routing::{extract_channel, extract_id},
     types::{
         ChannelSender, ClientError, Environment, Error, ExternalEvent, InternalCommand, LoginState,
         RequestScope, ResponseSender, SubscribeResponse, WsStream,
     },
-    utils::round_to_ticks,
 };
 
 use crate::channels::subscriptions::Subscriptions;
@@ -47,7 +45,6 @@ pub struct WsClient {
     pub private_subscriptions: Arc<DashMap<String, ChannelSender>>,
     next_id: Arc<AtomicU64>,
     shutdown_tx: watch::Sender<bool>,
-    pub instruments_cache: Arc<DashMap<String, Instrument>>,
     login_state: LoginState,
     connection_state_rx: watch::Receiver<ExternalEvent>,
     current_connection_state: Arc<Mutex<ExternalEvent>>,
@@ -146,7 +143,6 @@ impl WsClient {
             private_subscriptions: private_subscriptions.clone(),
             next_id: next_id.clone(),
             shutdown_tx: shutdown_tx.clone(),
-            instruments_cache: Arc::new(DashMap::new()),
             login_state,
             connection_state_rx,
             current_connection_state: Arc::new(Mutex::new(ExternalEvent::Disconnected)),
@@ -154,47 +150,7 @@ impl WsClient {
             subscription_tasks: Arc::new(Mutex::new(Vec::new())),
             environment: env,
         };
-
-        client.cache_instruments().await?;
         Ok(client)
-    }
-
-    async fn cache_instruments(&self) -> Result<(), Error> {
-        let instruments = self.get_instruments().await.unwrap();
-        self.instruments_cache.clear();
-        for instrument in &instruments {
-            self.instruments_cache.insert(
-                instrument.instrument_name.clone().unwrap(),
-                instrument.clone(),
-            );
-        }
-        Ok(())
-    }
-
-    pub async fn round_price_to_ticks(
-        &self,
-        price: Decimal,
-        instrument_name: &str,
-    ) -> Result<Decimal, Error> {
-        let instrument = self.instruments_cache.get(instrument_name);
-        // refresh cache if not found
-        if let Some(instr) = instrument {
-            Ok(round_to_ticks(price, instr.tick_size.unwrap()))
-        } else {
-            self.cache_instruments().await?;
-            if let Some(instr) = self.instruments_cache.get(instrument_name) {
-                Ok(round_to_ticks(price, instr.tick_size.unwrap()))
-            } else {
-                Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("Instrument not found: {instrument_name}"),
-                )))
-            }
-        }
-    }
-
-    async fn get_instruments(&self) -> Result<Vec<Instrument>, ClientError> {
-        self.rpc().market_data().instruments().await
     }
 
     pub async fn send_rpc<T>(
