@@ -9,16 +9,17 @@
  */
 
 use crate::models;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Lwt {
     /// Best bid (if any).
     #[serde(rename = "b", skip_serializing_if = "Option::is_none")]
-    pub b: Option<Vec<serde_json::Value>>,
+    pub b: Option<[Decimal; 3]>,
     /// Best ask (if any).
     #[serde(rename = "a", skip_serializing_if = "Option::is_none")]
-    pub a: Option<Vec<serde_json::Value>>,
+    pub a: Option<[Decimal; 3]>,
     /// Mark price.
     #[serde(rename = "m", skip_serializing_if = "Option::is_none")]
     pub m: Option<rust_decimal::Decimal>,
