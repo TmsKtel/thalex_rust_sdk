@@ -4405,6 +4405,7 @@
         ],
         "summary": "Login",
         "description": "See 'Authentication'",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -4524,6 +4525,7 @@
         ],
         "summary": "Set cancel on disconnect",
         "description": "Sets the session to \"non-persistent\" mode. All subsequently inserted orders will\nbe non-persistent orders. Furthermore, the session should make sure to send a\nmessage at least every `timeout_secs` seconds or the connection will be\nconsidered dead. A WebSocket ping suffices.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -4639,6 +4641,7 @@
         ],
         "summary": "Insert order",
         "description": "Exchange: `https://thalex.com/api/v2/private/insert`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/insert`\n\nInsert an order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -4735,6 +4738,7 @@
         ],
         "summary": "Insert order",
         "description": "Insert an order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -4872,6 +4876,7 @@
         ],
         "summary": "Insert buy order",
         "description": "Exchange: `https://thalex.com/api/v2/private/buy`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/buy`\n\nInsert buy order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -4949,6 +4954,7 @@
         ],
         "summary": "Insert buy order",
         "description": "Insert buy order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5067,6 +5073,7 @@
         ],
         "summary": "Insert sell order",
         "description": "Exchange: `https://thalex.com/api/v2/private/sell`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/sell`\n\nInsert sell order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5144,6 +5151,7 @@
         ],
         "summary": "Insert sell order",
         "description": "Insert sell order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5262,6 +5270,7 @@
         ],
         "summary": "Amend order",
         "description": "Exchange: `https://thalex.com/api/v2/private/amend`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/amend`\n\nNote that `amount` designates the new \"original\" amount, i.e. the amend is\nvolume-safe. If the specified amount is lower than the already executed amount,\nthe order is deleted.\n\nIf the price of the order is the same as the previous price, and the amount is\nless than the previous amount, book priority is preserved.\n\nIf the `amount` is amended to a value at or below the executed amount, the order is cancelled.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5373,6 +5382,7 @@
         ],
         "summary": "Amend order",
         "description": "Note that `amount` designates the new \"original\" amount, i.e. the amend is\nvolume-safe. If the specified amount is lower than the already executed amount,\nthe order is deleted.\n\nIf the price of the order is the same as the previous price, and the amount is\nless than the previous amount, book priority is preserved.\n\nIf the `amount` is amended to a value at or below the executed amount, the order is cancelled.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5525,6 +5535,7 @@
         ],
         "summary": "Cancel order",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel`\n\nCancel order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5619,6 +5630,7 @@
         ],
         "summary": "Cancel order",
         "description": "Cancel order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5754,6 +5766,7 @@
         ],
         "summary": "Bulk cancel all orders",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_all`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_all`\n\nCancels all orders for the account. This may *not* match new orders in flight\n(see `private/cancel_session`).\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5804,6 +5817,7 @@
         ],
         "summary": "Bulk cancel all orders",
         "description": "Cancels all orders for the account. This may *not* match new orders in flight\n(see `private/cancel_session`).\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5895,6 +5909,7 @@
         ],
         "summary": "Bulk cancel all orders in session",
         "description": "Cancels all non-persistent orders in the session. This method is allowed only on\nsessions that were set to `cancel_on_disconnect`, and has the same result as\nclosing the connection:\n\n- all non-persistent orders are deleted, including those still in flight, with\n  delete reason `session_end`.\n- market maker protection groups are reset and must be re-initialised.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -5980,7 +5995,8 @@
           "rest_conditional"
         ],
         "summary": "Conditional orders",
-        "description": "Exchange: `https://thalex.com/api/v2/private/conditional_orders`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/conditional_orders`\n\nGet conditional orders",
+        "description": "Exchange: `https://thalex.com/api/v2/private/conditional_orders`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/conditional_orders`\n\nDeprecated. Use `open_conditional_orders` instead. This endpoint will be removed after 2026-09-30.\n",
+        "deprecated": true,
         "required": true,
         "responses": {
           "200": {
@@ -6055,7 +6071,8 @@
           "rpc_conditional"
         ],
         "summary": "Conditional orders",
-        "description": "Get conditional orders",
+        "description": "Deprecated. Use `open_conditional_orders` instead. This endpoint will be removed after 2026-09-30.\n",
+        "deprecated": true,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6172,6 +6189,207 @@
         ]
       }
     },
+    "/private/open_conditional_orders": {
+      "get": {
+        "operationId": "rest_private/open_conditional_orders",
+        "tags": [
+          "rest_conditional"
+        ],
+        "summary": "Active conditional orders",
+        "description": "Exchange: `https://thalex.com/api/v2/private/open_conditional_orders`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/open_conditional_orders`\n\nGet active conditional orders",
+        "deprecated": false,
+        "required": true,
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Success",
+                      "type": "object",
+                      "properties": {
+                        "result": {
+                          "type": "array",
+                          "description": "List of active conditional orders.\n",
+                          "items": {
+                            "$ref": "#/components/schemas/ConditionalOrder"
+                          },
+                          "example": {
+                            "result": [
+                              {
+                                "order_id": "00011E570000004B",
+                                "instrument_name": "BTC-PERPETUAL",
+                                "direction": "buy",
+                                "amount": 1,
+                                "stop_price": 50000,
+                                "limit_price": 45000,
+                                "status": "active",
+                                "create_time": 1630062311.3324597,
+                                "update_time": 1630062311.3324597,
+                                "reduce_only": false
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "example": {
+                        "result": {
+                          "result": [
+                            {
+                              "order_id": "00011E570000004B",
+                              "instrument_name": "BTC-PERPETUAL",
+                              "direction": "buy",
+                              "amount": 1,
+                              "stop_price": 50000,
+                              "limit_price": 45000,
+                              "status": "active",
+                              "create_time": 1630062311.3324597,
+                              "update_time": 1630062311.3324597,
+                              "reduce_only": false
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "title": "Error",
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": []
+      }
+    },
+    "private/open_conditional_orders": {
+      "rpc": {
+        "operationId": "rpc_private/open_conditional_orders",
+        "tags": [
+          "rpc_conditional"
+        ],
+        "summary": "Active conditional orders",
+        "description": "Get active conditional orders",
+        "deprecated": false,
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "method"
+                    ],
+                    "properties": {
+                      "method": {
+                        "type": "string",
+                        "const": "private/open_conditional_orders"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/RpcRequest"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "params"
+                    ],
+                    "properties": {
+                      "params": {
+                        "$ref": "#/components/schemas/EmptyObject"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "title": "Success",
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/RpcResponse"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "result"
+                          ],
+                          "properties": {
+                            "result": {
+                              "type": "array",
+                              "description": "List of active conditional orders.\n",
+                              "items": {
+                                "$ref": "#/components/schemas/ConditionalOrder"
+                              },
+                              "example": {
+                                "result": [
+                                  {
+                                    "order_id": "00011E570000004B",
+                                    "instrument_name": "BTC-PERPETUAL",
+                                    "direction": "buy",
+                                    "amount": 1,
+                                    "stop_price": 50000,
+                                    "limit_price": 45000,
+                                    "status": "active",
+                                    "create_time": 1630062311.3324597,
+                                    "update_time": 1630062311.3324597,
+                                    "reduce_only": false
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "example": {
+                            "result": {
+                              "result": [
+                                {
+                                  "order_id": "00011E570000004B",
+                                  "instrument_name": "BTC-PERPETUAL",
+                                  "direction": "buy",
+                                  "amount": 1,
+                                  "stop_price": 50000,
+                                  "limit_price": 45000,
+                                  "status": "active",
+                                  "create_time": 1630062311.3324597,
+                                  "update_time": 1630062311.3324597,
+                                  "reduce_only": false
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "title": "Error",
+                      "$ref": "#/components/schemas/RpcErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "servers": [
+          {
+            "url": "RPC: "
+          }
+        ]
+      }
+    },
     "/private/create_conditional_order": {
       "post": {
         "operationId": "rest_private/create_conditional_order",
@@ -6180,6 +6398,7 @@
         ],
         "summary": "Create conditional order",
         "description": "Exchange: `https://thalex.com/api/v2/private/create_conditional_order`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/create_conditional_order`\n\nA buy order will activate when a trade/mark/index happens at a price at or higher than the stop price, or at or lower than the\nbracket price (if set). A sell order will activate when a trigger happens at a price at or lower than the stop price, or\nat or higher than the bracket price (if set).\n\nWhen a callback rate is set, the stop price for a buy order will trail down at (trade price * (1 + callback rate)), and\nfor a sell order the stop price will trail up at (trade price * (1 - callback rate)).\n\nA stop limit order will activate to a good-till-cancelled limit order, all other types will activate to a market order.\n\nThe `last` trigger target tracks aggressive trades in the instrument. The `mark` target tracks the mark price of\nthe instrument, as calculated every second by the Thalex pricing engine. The `index` trigger target is allowed\nonly for futures (instrument type `perpetual` or `future`), and tracks the index price of the respective\nunderlying, as calculated every second by the Thalex pricing engine.\n\nOnly the following combinations are possible:\n\n* stop order: set only stop price\n* stop limit order: set stop price and limit price\n* bracket order: set stop price and bracket price. For a buy order, the bracket price must be under the stop price, and\n  for a sell order the other way around.\n* trailing stop loss order: set stop price and callback rate.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6324,6 +6543,7 @@
         ],
         "summary": "Create conditional order",
         "description": "A buy order will activate when a trade/mark/index happens at a price at or higher than the stop price, or at or lower than the\nbracket price (if set). A sell order will activate when a trigger happens at a price at or lower than the stop price, or\nat or higher than the bracket price (if set).\n\nWhen a callback rate is set, the stop price for a buy order will trail down at (trade price * (1 + callback rate)), and\nfor a sell order the stop price will trail up at (trade price * (1 - callback rate)).\n\nA stop limit order will activate to a good-till-cancelled limit order, all other types will activate to a market order.\n\nThe `last` trigger target tracks aggressive trades in the instrument. The `mark` target tracks the mark price of\nthe instrument, as calculated every second by the Thalex pricing engine. The `index` trigger target is allowed\nonly for futures (instrument type `perpetual` or `future`), and tracks the index price of the respective\nunderlying, as calculated every second by the Thalex pricing engine.\n\nOnly the following combinations are possible:\n\n* stop order: set only stop price\n* stop limit order: set stop price and limit price\n* bracket order: set stop price and bracket price. For a buy order, the bracket price must be under the stop price, and\n  for a sell order the other way around.\n* trailing stop loss order: set stop price and callback rate.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6509,6 +6729,7 @@
         ],
         "summary": "Cancel conditional order",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_conditional_order`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_conditional_order`\n\nCancel conditional order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6565,6 +6786,7 @@
         ],
         "summary": "Cancel conditional order",
         "description": "Cancel conditional order",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6662,6 +6884,7 @@
         ],
         "summary": "Bulk cancel conditional orders",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_all_conditional_orders`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_all_conditional_orders`\n\nCancel all conditional orders of this subaccount",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6707,6 +6930,7 @@
         ],
         "summary": "Bulk cancel conditional orders",
         "description": "Cancel all conditional orders of this subaccount",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -6793,6 +7017,7 @@
         ],
         "summary": "Get bots",
         "description": "Exchange: `https://thalex.com/api/v2/private/bots`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/bots`\n\nGet bots",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -6900,6 +7125,7 @@
         ],
         "summary": "Get bots",
         "description": "Get bots",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -7056,6 +7282,7 @@
         ],
         "summary": "Create a bot",
         "description": "Exchange: `https://thalex.com/api/v2/private/create_bot`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/create_bot`\n\nInstantiate a bot that keeps continually trading in your name according to a predefined strategy.\nSee [the bot strategies section](#tag/bot_strategies) for more info on bots.\nFor risk fencing reasons and because of the complex ways manual trades can interact with bot strategies,\nyou might want to consider running bots on a separate/dedicated sub account.\nAlso be aware that you can set up bots with different strategies in a way that they would end up trading with each other.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -7580,6 +7807,7 @@
         ],
         "summary": "Create a bot",
         "description": "Instantiate a bot that keeps continually trading in your name according to a predefined strategy.\nSee [the bot strategies section](#tag/bot_strategies) for more info on bots.\nFor risk fencing reasons and because of the complex ways manual trades can interact with bot strategies,\nyou might want to consider running bots on a separate/dedicated sub account.\nAlso be aware that you can set up bots with different strategies in a way that they would end up trading with each other.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8145,6 +8373,7 @@
         ],
         "summary": "Cancel a bot",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_bot`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_bot`\n\nCancel a specific bot instance.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8199,6 +8428,7 @@
         ],
         "summary": "Cancel a bot",
         "description": "Cancel a specific bot instance.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8294,6 +8524,7 @@
         ],
         "summary": "Cancel all bots",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_all_bots`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_all_bots`\n\nCancel all bots of this subaccount\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8339,6 +8570,7 @@
         ],
         "summary": "Cancel all bots",
         "description": "Cancel all bots of this subaccount\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8425,6 +8657,7 @@
         ],
         "summary": "Send a mass quote",
         "description": "Send multiple quotes, where quotes will replace earlier quotes on the same instrument.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8584,6 +8817,7 @@
         ],
         "summary": "Bulk cancel mass quotes across all sessions",
         "description": "Cancel mass quotes across all sessions. If a product is set, only the quotes\non that product will be cancelled. Otherwise all quotes are cancelled.\n\nNote that market maker protection groups are reset and must be re-initialised.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8679,6 +8913,7 @@
         ],
         "summary": "Market maker protection configuration",
         "description": "Set the maximum trading amount for mass quote orders on a particular product\nin this session. After this amount is executed, the remaining mass quotes on the product\nin this session are cancelled.\n\nThese settings affect only a particular protection group (protection set for a product group within a session).\n\nNote that the amount can be overshot under certain conditions.\n\nSee [Mass quoting and market maker protection](#section/API-description/Mass-quoting-and-market-maker-protection)\nsection for more information.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8792,6 +9027,7 @@
         ],
         "summary": "Portfolio",
         "description": "Exchange: `https://thalex.com/api/v2/private/portfolio`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/portfolio`\n\nGet account portfolio",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -8833,6 +9069,7 @@
         ],
         "summary": "Portfolio",
         "description": "Get account portfolio",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -8923,6 +9160,7 @@
         ],
         "summary": "Open orders",
         "description": "Exchange: `https://thalex.com/api/v2/private/open_orders`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/open_orders`\n\nGet open orders",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -9000,6 +9238,7 @@
         ],
         "summary": "Open orders",
         "description": "Get open orders",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -9126,6 +9365,7 @@
         ],
         "summary": "Order history",
         "description": "Exchange: `https://thalex.com/api/v2/private/order_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/order_history`\n\nRetrieves a list of past orders (i.e. orders that are not active anymore) since the last 90 days.\nAllows sorting and filtering by instrument name.\n\nUnfilled market maker orders are not included.\n\nOrders are like order status updates, without the `remaining_amount` field\n(always 0), and with a `close_time` timestamp. Note that, for technical reasons,\nthe 'fills' field in the order is limited to a length of 8. For a full list of\ntrades, refer to trade history.\n\nNote that it is not real-time, data might appear with a slight delay.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -9248,6 +9488,7 @@
         ],
         "summary": "Order history",
         "description": "Retrieves a list of past orders (i.e. orders that are not active anymore) since the last 90 days.\nAllows sorting and filtering by instrument name.\n\nUnfilled market maker orders are not included.\n\nOrders are like order status updates, without the `remaining_amount` field\n(always 0), and with a `close_time` timestamp. Note that, for technical reasons,\nthe 'fills' field in the order is limited to a length of 8. For a full list of\ntrades, refer to trade history.\n\nNote that it is not real-time, data might appear with a slight delay.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -9385,6 +9626,7 @@
         ],
         "summary": "Conditional order history",
         "description": "Exchange: `https://thalex.com/api/v2/private/conditional_order_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/conditional_order_history`\n\nRetrieves a list of past conditional orders (i.e. orders that are not active anymore).\nAllows sorting and filtering by instrument name.\n\nNote that it is not real-time, data might appear with a slight delay.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -9498,6 +9740,7 @@
         ],
         "summary": "Conditional order history",
         "description": "Retrieves a list of past conditional orders (i.e. orders that are not active anymore).\nAllows sorting and filtering by instrument name.\n\nNote that it is not real-time, data might appear with a slight delay.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -9631,6 +9874,7 @@
         ],
         "summary": "Trade history",
         "description": "Exchange: `https://thalex.com/api/v2/private/trade_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/trade_history`\n\nRetrieves trades for the last 90 days. Allows sorting and filtering by instrument name. Note that it is not real-time, trades might appear with a slight delay.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -9815,6 +10059,7 @@
         ],
         "summary": "Trade history",
         "description": "Retrieves trades for the last 90 days. Allows sorting and filtering by instrument name. Note that it is not real-time, trades might appear with a slight delay.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -10014,6 +10259,7 @@
         ],
         "summary": "Trading volume historical data.",
         "description": "Exchange: `https://thalex.com/api/v2/private/trade_value_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/trade_value_history`\n\nReturns historical trading volume in the specified interval and resolution.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -10131,6 +10377,7 @@
         ],
         "summary": "Trading volume historical data.",
         "description": "Returns historical trading volume in the specified interval and resolution.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -10273,6 +10520,7 @@
         ],
         "summary": "Daily mark history",
         "description": "Exchange: `https://thalex.com/api/v2/private/daily_mark_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/daily_mark_history`\n\nFor instruments that are subject to futures-style settlement we perform daily settlement at the mark price.\nThe settlement procedure realizes the positional and perpetual funding profits/losses accumulated\nduring the session, and resets the start price of the position to the mark price.\n\nThis API endpoint returns a historical log of settled profits/losses (daily marks).\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -10404,6 +10652,7 @@
         ],
         "summary": "Daily mark history",
         "description": "For instruments that are subject to futures-style settlement we perform daily settlement at the mark price.\nThe settlement procedure realizes the positional and perpetual funding profits/losses accumulated\nduring the session, and resets the start price of the position to the mark price.\n\nThis API endpoint returns a historical log of settled profits/losses (daily marks).\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -10565,6 +10814,7 @@
         ],
         "summary": "Transaction history",
         "description": "Exchange: `https://thalex.com/api/v2/private/transaction_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/transaction_history`\n\nGet transaction history",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -10891,6 +11141,7 @@
         ],
         "summary": "Transaction history",
         "description": "Get transaction history",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -11237,6 +11488,7 @@
         ],
         "summary": "RFQ history",
         "description": "Exchange: `https://thalex.com/api/v2/private/rfq_history`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/rfq_history`\n\nRetrieves a list of past RFQs for the account. Open RFQs are not incuded.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -11328,6 +11580,7 @@
         ],
         "summary": "RFQ history",
         "description": "Retrieves a list of past RFQs for the account. Open RFQs are not incuded.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -11449,6 +11702,7 @@
         ],
         "summary": "Account breakdown",
         "description": "Exchange: `https://thalex.com/api/v2/private/account_breakdown`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/account_breakdown`\n\nGet account breakdown",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -11727,6 +11981,7 @@
         ],
         "summary": "Account breakdown",
         "description": "Get account breakdown",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12054,6 +12309,7 @@
         ],
         "summary": "Account summary",
         "description": "Exchange: `https://thalex.com/api/v2/private/account_summary`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/account_summary`\n\nGet account summary",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -12091,6 +12347,7 @@
         ],
         "summary": "Account summary",
         "description": "Get account summary",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12177,6 +12434,7 @@
         ],
         "summary": "Margin breakdown",
         "description": "Exchange: `https://thalex.com/api/v2/private/required_margin_breakdown`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/required_margin_breakdown`\n\nGet margin breakdown",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -12214,6 +12472,7 @@
         ],
         "summary": "Margin breakdown",
         "description": "Get margin breakdown",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12300,6 +12559,7 @@
         ],
         "summary": "Margin breakdown with order",
         "description": "Exchange: `https://thalex.com/api/v2/private/required_margin_for_order`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/required_margin_for_order`\n\nThis method returns a lightweight breakdown of the account as it is, and also as if a hypothetical order of a given price and amount would be inserted on either side of the book.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -12390,6 +12650,7 @@
         ],
         "summary": "Margin breakdown with order",
         "description": "This method returns a lightweight breakdown of the account as it is, and also as if a hypothetical order of a given price and amount would be inserted on either side of the book.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12514,6 +12775,7 @@
         ],
         "summary": "Notifications inbox",
         "description": "Exchange: `https://thalex.com/api/v2/private/notifications_inbox`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/notifications_inbox`\n\nThis method returns a list of latest notifications that were sent to the current user.\nThe list only contains items for which the `inbox` preference is set` (either in user\npreferences, or by default).\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -12562,6 +12824,7 @@
         ],
         "summary": "Notifications inbox",
         "description": "This method returns a list of latest notifications that were sent to the current user.\nThe list only contains items for which the `inbox` preference is set` (either in user\npreferences, or by default).\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12655,6 +12918,7 @@
         ],
         "summary": "Marking notification as read",
         "description": "Exchange: `https://thalex.com/api/v2/private/mark_inbox_notification_as_read`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mark_inbox_notification_as_read`\n\nMark a notification as read",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12717,6 +12981,7 @@
         ],
         "summary": "Marking notification as read",
         "description": "Mark a notification as read",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12820,6 +13085,7 @@
         ],
         "summary": "Create a request for quote",
         "description": "Exchange: `https://thalex.com/api/v2/private/create_rfq`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/create_rfq`\n\nCreates a new RFQ. You do not have to indicate upfront whether you want to buy or sell this package. Indicate\nthe full size of the package.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -12895,6 +13161,7 @@
         ],
         "summary": "Create a request for quote",
         "description": "Creates a new RFQ. You do not have to indicate upfront whether you want to buy or sell this package. Indicate\nthe full size of the package.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13011,6 +13278,7 @@
         ],
         "summary": "Cancel an RFQ",
         "description": "Exchange: `https://thalex.com/api/v2/private/cancel_rfq`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/cancel_rfq`\n\nCancels the indicated RFQ.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13065,6 +13333,7 @@
         ],
         "summary": "Cancel an RFQ",
         "description": "Cancels the indicated RFQ.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13160,6 +13429,7 @@
         ],
         "summary": "Trade an RFQ",
         "description": "Exchange: `https://thalex.com/api/v2/private/trade_rfq`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/trade_rfq`\n\nTrade on the quotes given. The requested amount is that of the original request.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13286,6 +13556,7 @@
         ],
         "summary": "Trade an RFQ",
         "description": "Trade on the quotes given. The requested amount is that of the original request.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13453,6 +13724,7 @@
         ],
         "summary": "Open RFQs",
         "description": "Exchange: `https://thalex.com/api/v2/private/open_rfqs`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/open_rfqs`\n\nRetrieves a list of open RFQs created by this account.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -13494,6 +13766,7 @@
         ],
         "summary": "Open RFQs",
         "description": "Retrieves a list of open RFQs created by this account.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13584,6 +13857,7 @@
         ],
         "summary": "Open RFQs",
         "description": "Exchange: `https://thalex.com/api/v2/private/mm_rfqs`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mm_rfqs`\n\nRetrieves a list of open RFQs that this account has access to.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -13625,6 +13899,7 @@
         ],
         "summary": "Open RFQs",
         "description": "Retrieves a list of open RFQs that this account has access to.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13715,6 +13990,7 @@
         ],
         "summary": "Quote on an RFQ",
         "description": "Exchange: `https://thalex.com/api/v2/private/mm_rfq_insert_quote`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mm_rfq_insert_quote`\n\nSends a new quote on the indicated RFQ. This does *not* remove any previous quote: any number of quotes may\nbe active on either side. Note that if the session was set to non-persistent (cancel-on-disconnect), then\nthis quote will also be non-persistent.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13796,6 +14072,7 @@
         ],
         "summary": "Quote on an RFQ",
         "description": "Sends a new quote on the indicated RFQ. This does *not* remove any previous quote: any number of quotes may\nbe active on either side. Note that if the session was set to non-persistent (cancel-on-disconnect), then\nthis quote will also be non-persistent.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13918,6 +14195,7 @@
         ],
         "summary": "Amend quote",
         "description": "Exchange: `https://thalex.com/api/v2/private/mm_rfq_amend_quote`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mm_rfq_amend_quote`\n\nChange the amount and price of an existing quote.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -13985,6 +14263,7 @@
         ],
         "summary": "Amend quote",
         "description": "Change the amount and price of an existing quote.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14093,6 +14372,7 @@
         ],
         "summary": "Delete quote",
         "description": "Exchange: `https://thalex.com/api/v2/private/mm_rfq_delete_quote`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mm_rfq_delete_quote`\n\nDeletes the indicated RFQ quote.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14148,6 +14428,7 @@
         ],
         "summary": "Delete quote",
         "description": "Deletes the indicated RFQ quote.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14244,6 +14525,7 @@
         ],
         "summary": "List of active quotes",
         "description": "Exchange: `https://thalex.com/api/v2/private/mm_rfq_quotes`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/mm_rfq_quotes`\n\nRetrieves a list of open RFQ quotes across all RFQs.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14284,6 +14566,7 @@
         ],
         "summary": "List of active quotes",
         "description": "Retrieves a list of open RFQ quotes across all RFQs.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14373,6 +14656,7 @@
         ],
         "summary": "Active instruments",
         "description": "Exchange: `https://thalex.com/api/v2/public/instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/instruments`\n\nRetrieves the list of currently active instruments.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14414,6 +14698,7 @@
         ],
         "summary": "Active instruments",
         "description": "Retrieves the list of currently active instruments.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14504,6 +14789,7 @@
         ],
         "summary": "All instruments",
         "description": "Exchange: `https://thalex.com/api/v2/public/all_instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/all_instruments`\n\nRetrieves the list of all instruments that were active in the specified time interval.\n\nNote that the time interval cannot be larger than 3 days.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14566,6 +14852,7 @@
         ],
         "summary": "All instruments",
         "description": "Retrieves the list of all instruments that were active in the specified time interval.\n\nNote that the time interval cannot be larger than 3 days.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14668,6 +14955,7 @@
         ],
         "summary": "Single instrument",
         "description": "Exchange: `https://thalex.com/api/v2/public/instrument`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/instrument`\n\nRetrieves a singe instrument.\n\nUnlike `public/all_instruments`, this API endpoint allows retrieving information about instruments\nthat have expired long time ago.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14715,6 +15003,7 @@
         ],
         "summary": "Single instrument",
         "description": "Retrieves a singe instrument.\n\nUnlike `public/all_instruments`, this API endpoint allows retrieving information about instruments\nthat have expired long time ago.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14810,6 +15099,7 @@
         ],
         "summary": "Single ticker value",
         "description": "Exchange: `https://thalex.com/api/v2/public/ticker`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/ticker`\n\nRetrieves a single ticker for a single instrument. Please do *not* use this to repeatedly poll for data -- a websocket\nsubscription is much more useful.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14857,6 +15147,7 @@
         ],
         "summary": "Single ticker value",
         "description": "Retrieves a single ticker for a single instrument. Please do *not* use this to repeatedly poll for data -- a websocket\nsubscription is much more useful.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -14952,6 +15243,7 @@
         ],
         "summary": "Single index value",
         "description": "Exchange: `https://thalex.com/api/v2/public/index`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/index`\n\nRetrieves the index price for a single underlying. If needed repeatedly, please use the `price_index.<underlying>`\nwebsocket subscription.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -14999,6 +15291,7 @@
         ],
         "summary": "Single index value",
         "description": "Retrieves the index price for a single underlying. If needed repeatedly, please use the `price_index.<underlying>`\nwebsocket subscription.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15094,6 +15387,7 @@
         ],
         "summary": "Single order book",
         "description": "Exchange: `https://thalex.com/api/v2/public/book`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/book`\n\nRetrieves aggregated price depth for a single instrument, with a maximum of 5 levels. Please do *not* use this to\npoll for data -- a websocket subscription is more flexible and more useful.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -15206,6 +15500,7 @@
         ],
         "summary": "Single order book",
         "description": "Retrieves aggregated price depth for a single instrument, with a maximum of 5 levels. Please do *not* use this to\npoll for data -- a websocket subscription is more flexible and more useful.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15366,6 +15661,7 @@
         ],
         "summary": "Subscribe to private channels",
         "description": "Subscribe to private channels",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15479,6 +15775,7 @@
         ],
         "summary": "Subscribe to public channels",
         "description": "Subscribe to public channels",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15592,6 +15889,7 @@
         ],
         "summary": "Unsubscribe",
         "description": "Unsubscribe from a set of channels",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15708,6 +16006,7 @@
         ],
         "summary": "Verify if withdrawal is possible",
         "description": "Exchange: `https://thalex.com/api/v2/private/verify_withdrawal`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/verify_withdrawal`\n\nThis method is subject to withdrawal permissions.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -15825,6 +16124,7 @@
         ],
         "summary": "Verify if withdrawal is possible",
         "description": "This method is subject to withdrawal permissions.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -15987,6 +16287,7 @@
         ],
         "summary": "Withdraw assets",
         "description": "Exchange: `https://thalex.com/api/v2/private/withdraw`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/withdraw`\n\nThis method is subject to withdrawal permissions.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16061,6 +16362,7 @@
         ],
         "summary": "Withdraw assets",
         "description": "This method is subject to withdrawal permissions.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16176,6 +16478,7 @@
         ],
         "summary": "Withdrawals",
         "description": "Exchange: `https://thalex.com/api/v2/private/crypto_withdrawals`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/crypto_withdrawals`\n\nList of withdrawals from the selected account. Includes all withdrawals: pending, executed, rejected etc.\n",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -16291,6 +16594,7 @@
         ],
         "summary": "Withdrawals",
         "description": "List of withdrawals from the selected account. Includes all withdrawals: pending, executed, rejected etc.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16455,6 +16759,7 @@
         ],
         "summary": "Deposits",
         "description": "Exchange: `https://thalex.com/api/v2/private/crypto_deposits`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/crypto_deposits`\n\nPending and confirmed deposits for the selected account.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -16542,6 +16847,7 @@
         ],
         "summary": "Deposits",
         "description": "Pending and confirmed deposits for the selected account.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16678,6 +16984,7 @@
         ],
         "summary": "Bitcoin deposit address",
         "description": "Exchange: `https://thalex.com/api/v2/private/btc_deposit_address`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/btc_deposit_address`\n\nGet Bitcoin deposit address",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -16720,6 +17027,7 @@
         ],
         "summary": "Bitcoin deposit address",
         "description": "Get Bitcoin deposit address",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16811,6 +17119,7 @@
         ],
         "summary": "Ethereum deposit address",
         "description": "Exchange: `https://thalex.com/api/v2/private/eth_deposit_address`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/eth_deposit_address`\n\nGet Ethereum deposit address",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -16853,6 +17162,7 @@
         ],
         "summary": "Ethereum deposit address",
         "description": "Get Ethereum deposit address",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -16944,6 +17254,7 @@
         ],
         "summary": "Verify internal transfer",
         "description": "Exchange: `https://thalex.com/api/v2/private/verify_internal_transfer`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/verify_internal_transfer`\n\nVerify if internal transfer of assets and/or positions from source (currently selected) to destination\naccount is possible. Does not perform the transfer itself.\n\nTransfers are subject to margin checks.\n\nA transfer cannot result in an account breaching margin requirements. This applies to both source\nand destination accounts.\n\nIf either of the accounts is already in margin breach state, the transfer is only allowed if it results\nin an increase of available margin on that account. The other account must not breach margin requirement\nas a result of the transfer. This allows transferring assets and/or positions\nfrom an account with enough extra margin to an account that was margin called.\n\nEach transfer can contain multiple asset and position transfers. It is checked for margin requirements as a\nsingle transaction. It is possible to specify negative amounts for transferred assets and positions,\nwhich results in a reverse direction of transfer (i.e. from destination account to the source one).\nThis allows performing asset/position exchange operations, and is helpful when a leg of such operation\nalone would result in a margin requirements breach.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -17111,6 +17422,7 @@
         ],
         "summary": "Verify internal transfer",
         "description": "Verify if internal transfer of assets and/or positions from source (currently selected) to destination\naccount is possible. Does not perform the transfer itself.\n\nTransfers are subject to margin checks.\n\nA transfer cannot result in an account breaching margin requirements. This applies to both source\nand destination accounts.\n\nIf either of the accounts is already in margin breach state, the transfer is only allowed if it results\nin an increase of available margin on that account. The other account must not breach margin requirement\nas a result of the transfer. This allows transferring assets and/or positions\nfrom an account with enough extra margin to an account that was margin called.\n\nEach transfer can contain multiple asset and position transfers. It is checked for margin requirements as a\nsingle transaction. It is possible to specify negative amounts for transferred assets and positions,\nwhich results in a reverse direction of transfer (i.e. from destination account to the source one).\nThis allows performing asset/position exchange operations, and is helpful when a leg of such operation\nalone would result in a margin requirements breach.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -17319,6 +17631,7 @@
         ],
         "summary": "Internal transfer",
         "description": "Exchange: `https://thalex.com/api/v2/private/internal_transfer`\n\nTestnet: `https://testnet.thalex.com/api/v2/private/internal_transfer`\n\nTransfer assets and/or positions from source (currently selected) to destination account.\n\nTransfers are subject to margin checks. Please see `private/verify_internal_transfer` method\ndescription for more information.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -17426,6 +17739,7 @@
         ],
         "summary": "Internal transfer",
         "description": "Transfer assets and/or positions from source (currently selected) to destination account.\n\nTransfers are subject to margin checks. Please see `private/verify_internal_transfer` method\ndescription for more information.\n",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -17574,6 +17888,7 @@
         ],
         "summary": "System info",
         "description": "Exchange: `https://thalex.com/api/v2/public/system_info`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/system_info`\n\nGet system info",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -17663,6 +17978,7 @@
         ],
         "summary": "System info",
         "description": "Get system info",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -17801,6 +18117,7 @@
         ],
         "summary": "Mark price historical data.",
         "description": "Exchange: `https://thalex.com/api/v2/public/mark_price_historical_data`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/mark_price_historical_data`\n\nReturns mark price historical data in the specified interval and resolution in OHLC format.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -18141,6 +18458,7 @@
         ],
         "summary": "Mark price historical data.",
         "description": "Returns mark price historical data in the specified interval and resolution in OHLC format.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {
@@ -18517,6 +18835,7 @@
         ],
         "summary": "Index price historical data.",
         "description": "Exchange: `https://thalex.com/api/v2/public/index_price_historical_data`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/index_price_historical_data`\n\nReturns index price historical data in the specified interval and resolution in OHLC format.",
+        "deprecated": false,
         "required": true,
         "responses": {
           "200": {
@@ -18678,6 +18997,7 @@
         ],
         "summary": "Index price historical data.",
         "description": "Returns index price historical data in the specified interval and resolution in OHLC format.",
+        "deprecated": false,
         "requestBody": {
           "content": {
             "application/json": {

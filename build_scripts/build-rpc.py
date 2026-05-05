@@ -31,7 +31,8 @@ TAGS_TO_PROCESS = [
     "rpc_accounting",
     "rpc_conditional",
     "rpc_mm",
-    "rpc_bot"
+    "rpc_bot",
+    "rpc_wallet"
 ]
 
 
@@ -61,6 +62,12 @@ RPC_RESULT_IMPORT_ALIASES = {
     "SetMmProtectionRpcResult": "Value",
     "BotsRpcResult": "Bot",
     "CreateBotRpcResult": "Bot",
+    # withdrawals
+    "EthDepositAddressRpcResult": "EthDepositAddressResult",
+    "BtcDepositAddressRpcResult": "BtcDepositAddressResult",
+    "CryptoWithdrawalsRpcResult": "CryptoWithdrawalsRpcResultInner",
+    "WithdrawRpcResult": "Value",
+    "InternalTransferRpcResult": "Value",
 }
 
 RETURN_MODEL_TO_VECTOR_ALIASES = {
@@ -74,6 +81,7 @@ RETURN_MODEL_TO_VECTOR_ALIASES = {
     # conditional order
     "CreateConditionalOrderRpcResult": "ConditionalOrder",
     "ConditionalOrdersRpcResult": "Vec<ConditionalOrder>",
+    "OpenConditionalOrdersRpcResult": "Vec<ConditionalOrder>",
     "CancelConditionalOrderRpcResult": "Value", 
     "CancelAllConditionalOrdersRpcResult": "Value",
     # Bot
@@ -81,7 +89,11 @@ RETURN_MODEL_TO_VECTOR_ALIASES = {
     "CancelAllBotsRpcResult": "Value",
     "BotsRpcResult": "Vec<Bot>",
     "CreateBotRpcResult": "Bot",
-
+    "EthDepositAddressRpcResult": "String",
+    "BtcDepositAddressRpcResult": "String",
+    "CryptoWithdrawalsRpcResult": "Vec<CryptoWithdrawalsRpcResultInner>",
+    "WithdrawRpcResult": "Value",
+    "InternalTransferRpcResult": "Value",
 }
 
 MODELS_TO_LIFT = [
@@ -114,6 +126,7 @@ MODELS_TO_LIFT = [
     "Bot",
     "TradeValue",
     "MassQuoteSingleLevelQuote",
+    "Deposit"
 ]
 
 
@@ -136,9 +149,12 @@ IMPORTS_TO_SKIP = [
     "CreateConditionalOrderRpcResult",
     "ConditionalOrdersRpcResult",
     "CancelConditionalOrderRpcResult",
+    "OpenConditionalOrdersRpcResult",
     # Bot
     "CancelAllBotsRpcResult",
     "CancelBotRpcResult",
+    # wallet
+    "CryptoWithdrawalsResult"
 ]
 base_imports = [
         "RpcErrorResponse",
