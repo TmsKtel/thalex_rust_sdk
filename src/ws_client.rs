@@ -646,7 +646,7 @@ async fn run_single_connection(
                 read_deadline.as_mut().reset(Instant::now() + READ_TIMEOUT);
                 let Some(frame) = msg else {
                     warn!("WebSocket stream ended for {url}");
-                    return Ok(());
+                    return Err("websocket stream ended".into());
                 };
 
                 match frame.opcode() {
