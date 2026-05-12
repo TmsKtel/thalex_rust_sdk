@@ -10185,6 +10185,37 @@
               "description": "Optional comma-separated list of bot IDs to request order history history for."
             },
             "required": false
+          },
+          {
+            "name": "conditional_order_ids",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Optional comma-separated list of conditional orders IDs to request order history history for."
+            },
+            "required": false
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "buy",
+                "sell"
+              ],
+              "description": "The conditional order's side."
+            },
+            "required": false
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Label supplied with insert."
+            },
+            "required": false
           }
         ]
       }
@@ -10262,6 +10293,22 @@
                           "bot_ids": {
                             "type": "string",
                             "description": "Optional comma-separated list of bot IDs to request order history history for."
+                          },
+                          "conditional_order_ids": {
+                            "type": "string",
+                            "description": "Optional comma-separated list of conditional orders IDs to request order history history for."
+                          },
+                          "direction": {
+                            "type": "string",
+                            "enum": [
+                              "buy",
+                              "sell"
+                            ],
+                            "description": "The conditional order's side."
+                          },
+                          "label": {
+                            "type": "string",
+                            "description": "Label supplied with insert."
                           }
                         }
                       }
@@ -10408,6 +10455,24 @@
             "required": false
           },
           {
+            "name": "update_time_low",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "description": "Start of the update time."
+            },
+            "required": false
+          },
+          {
+            "name": "update_time_high",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "description": "End of the update time."
+            },
+            "required": false
+          },
+          {
             "name": "bookmark",
             "in": "query",
             "schema": {
@@ -10435,6 +10500,28 @@
             "schema": {
               "type": "string",
               "description": "Comma-separated list of instrument names to request order history for. If omitted, order history for all instruments is returned."
+            },
+            "required": false
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "buy",
+                "sell"
+              ],
+              "description": "The conditional order's side."
+            },
+            "required": false
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "User label."
             },
             "required": false
           }
@@ -10495,6 +10582,14 @@
                             "description": "End time (Unix timestamp) defaults to now.",
                             "format": "int64"
                           },
+                          "update_time_low": {
+                            "type": "number",
+                            "description": "Start of the update time."
+                          },
+                          "update_time_high": {
+                            "type": "number",
+                            "description": "End of the update time."
+                          },
                           "bookmark": {
                             "type": "string",
                             "description": "Set to bookmark from previous call to get next page."
@@ -10510,6 +10605,18 @@
                           "instrument_names": {
                             "type": "string",
                             "description": "Comma-separated list of instrument names to request order history for. If omitted, order history for all instruments is returned."
+                          },
+                          "direction": {
+                            "type": "string",
+                            "enum": [
+                              "buy",
+                              "sell"
+                            ],
+                            "description": "The conditional order's side."
+                          },
+                          "label": {
+                            "type": "string",
+                            "description": "User label."
                           }
                         }
                       }
@@ -10756,6 +10863,37 @@
               "description": "Optional comma-separated list of bot IDs to request trade history for."
             },
             "required": false
+          },
+          {
+            "name": "order_ids",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Optional comma-separated list of order IDs to request trade history for."
+            },
+            "required": false
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "buy",
+                "sell"
+              ],
+              "description": "The trade's side."
+            },
+            "required": false
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "User label for this trade."
+            },
+            "required": false
           }
         ]
       }
@@ -10833,6 +10971,22 @@
                           "bot_ids": {
                             "type": "string",
                             "description": "Optional comma-separated list of bot IDs to request trade history for."
+                          },
+                          "order_ids": {
+                            "type": "string",
+                            "description": "Optional comma-separated list of order IDs to request trade history for."
+                          },
+                          "direction": {
+                            "type": "string",
+                            "enum": [
+                              "buy",
+                              "sell"
+                            ],
+                            "description": "The trade's side."
+                          },
+                          "label": {
+                            "type": "string",
+                            "description": "User label for this trade."
                           }
                         }
                       }
@@ -11872,6 +12026,38 @@
               "description": "Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned."
             },
             "required": false
+          },
+          {
+            "name": "assets",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Optional comma-separated list of asset names to request transaction history for."
+            },
+            "required": false
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "credit",
+                "deposit",
+                "withdrawal",
+                "withdrawal_fee",
+                "session_settlement",
+                "perpetual_funding",
+                "internal_transfer",
+                "asset_swap",
+                "referral_program_payment",
+                "market_quality_program_payment",
+                "daily_interest",
+                "balance_sweep"
+              ],
+              "description": "Optional comma-separated list of type names to request transaction history for. Each can be one of the following values:\n  - `credit` - Asset credits or debits.\n  - `deposit` - Deposits.\n  - `withdrawal` - Withdrawals.\n  - `withdrawal_fee` - Withdrawal fees.\n  - `session_settlement` - Settled session PNL.\n  - `perpetual_funding` - Settled perpetual funding.\n  - `internal_transfer` - Transfer of assets between sub-accounts. One transaction in each sub-account per asset per transfer.\n  - `asset_swap` - Swap between assets. One transaction for each side of the asset pair per swap.\n  - `referral_program_payment` - Referral program rewards.\n  - `market_quality_program_payment` - MQP program rewards.\n  - `daily_interest` - Daily penalty charge for negative balance. Not applied anymore, but can be found in historical transactions.\n  - `balance_sweep` - Balance sweep between two accounts.\n"
+            },
+            "required": false
           }
         ]
       }
@@ -11945,6 +12131,28 @@
                           "instrument_names": {
                             "type": "string",
                             "description": "Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned."
+                          },
+                          "assets": {
+                            "type": "string",
+                            "description": "Optional comma-separated list of asset names to request transaction history for."
+                          },
+                          "types": {
+                            "type": "string",
+                            "enum": [
+                              "credit",
+                              "deposit",
+                              "withdrawal",
+                              "withdrawal_fee",
+                              "session_settlement",
+                              "perpetual_funding",
+                              "internal_transfer",
+                              "asset_swap",
+                              "referral_program_payment",
+                              "market_quality_program_payment",
+                              "daily_interest",
+                              "balance_sweep"
+                            ],
+                            "description": "Optional comma-separated list of type names to request transaction history for. Each can be one of the following values:\n  - `credit` - Asset credits or debits.\n  - `deposit` - Deposits.\n  - `withdrawal` - Withdrawals.\n  - `withdrawal_fee` - Withdrawal fees.\n  - `session_settlement` - Settled session PNL.\n  - `perpetual_funding` - Settled perpetual funding.\n  - `internal_transfer` - Transfer of assets between sub-accounts. One transaction in each sub-account per asset per transfer.\n  - `asset_swap` - Swap between assets. One transaction for each side of the asset pair per swap.\n  - `referral_program_payment` - Referral program rewards.\n  - `market_quality_program_payment` - MQP program rewards.\n  - `daily_interest` - Daily penalty charge for negative balance. Not applied anymore, but can be found in historical transactions.\n  - `balance_sweep` - Balance sweep between two accounts.\n"
                           }
                         }
                       }
@@ -15398,7 +15606,7 @@
           "rest_market_data"
         ],
         "summary": "Active instruments",
-        "description": "Exchange: `https://thalex.com/api/v2/public/instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/instruments`\n\nRetrieves the list of currently active instruments.\n",
+        "description": "Exchange: `https://thalex.com/api/v2/public/instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/instruments`\n\nRetrieves a list of currently active instruments, with optional filtering by expiry date, underlying asset, and instrument type.\nNote that the expiry date can not be in the past.\n",
         "deprecated": false,
         "required": true,
         "responses": {
@@ -15430,7 +15638,40 @@
             }
           }
         },
-        "parameters": []
+        "parameters": [
+          {
+            "name": "expiry_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Expiry date time in `YYYY-MM-DD` format. It cannot be earlier than today."
+            },
+            "required": false
+          },
+          {
+            "name": "underlying",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Underlying of the instrument."
+            },
+            "required": false
+          },
+          {
+            "name": "instrument_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "futures",
+                "options",
+                "future_rolls"
+              ],
+              "description": "The type of the instrument."
+            },
+            "required": false
+          }
+        ]
       }
     },
     "public/instruments": {
@@ -15440,7 +15681,7 @@
           "rpc_market_data"
         ],
         "summary": "Active instruments",
-        "description": "Retrieves the list of currently active instruments.\n",
+        "description": "Retrieves a list of currently active instruments, with optional filtering by expiry date, underlying asset, and instrument type.\nNote that the expiry date can not be in the past.\n",
         "deprecated": false,
         "requestBody": {
           "content": {
@@ -15469,7 +15710,26 @@
                     ],
                     "properties": {
                       "params": {
-                        "$ref": "#/components/schemas/EmptyObject"
+                        "type": "object",
+                        "properties": {
+                          "expiry_date": {
+                            "type": "string",
+                            "description": "Expiry date time in `YYYY-MM-DD` format. It cannot be earlier than today."
+                          },
+                          "underlying": {
+                            "type": "string",
+                            "description": "Underlying of the instrument."
+                          },
+                          "instrument_type": {
+                            "type": "string",
+                            "enum": [
+                              "futures",
+                              "options",
+                              "future_rolls"
+                            ],
+                            "description": "The type of the instrument."
+                          }
+                        }
                       }
                     }
                   }
@@ -15531,7 +15791,7 @@
           "rest_market_data"
         ],
         "summary": "All instruments",
-        "description": "Exchange: `https://thalex.com/api/v2/public/all_instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/all_instruments`\n\nRetrieves the list of all instruments that were active in the specified time interval.\n\nNote that the time interval cannot be larger than 3 days.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
+        "description": "Exchange: `https://thalex.com/api/v2/public/all_instruments`\n\nTestnet: `https://testnet.thalex.com/api/v2/public/all_instruments`\n\nRetrieves a list of all instruments that were active during the specified time interval, with optional filtering by expiry date, type, and underlying asset.\n\nNote that the time interval cannot be larger than 3 days and can not be used when expiry date is specified.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
         "deprecated": false,
         "required": true,
         "responses": {
@@ -15583,6 +15843,38 @@
               "format": "int64"
             },
             "required": false
+          },
+          {
+            "name": "expiry_date",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Expiry date time in `YYYY-MM-DD` format. When provided, it is not possible to provide `time_low` or `time_high` and the defaults are ignored."
+            },
+            "required": false
+          },
+          {
+            "name": "underlying",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Underlying of the instrument."
+            },
+            "required": false
+          },
+          {
+            "name": "instrument_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "futures",
+                "options",
+                "future_rolls"
+              ],
+              "description": "The type of the instrument."
+            },
+            "required": false
           }
         ]
       }
@@ -15594,7 +15886,7 @@
           "rpc_market_data"
         ],
         "summary": "All instruments",
-        "description": "Retrieves the list of all instruments that were active in the specified time interval.\n\nNote that the time interval cannot be larger than 3 days.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
+        "description": "Retrieves a list of all instruments that were active during the specified time interval, with optional filtering by expiry date, type, and underlying asset.\n\nNote that the time interval cannot be larger than 3 days and can not be used when expiry date is specified.\n\nYou can also use `public/instrument` call to retrieve information about a specific instrument.\n",
         "deprecated": false,
         "requestBody": {
           "content": {
@@ -15634,6 +15926,23 @@
                             "type": "integer",
                             "description": "End time (Unix timestamp) defaults to `now`.",
                             "format": "int64"
+                          },
+                          "expiry_date": {
+                            "type": "string",
+                            "description": "Expiry date time in `YYYY-MM-DD` format. When provided, it is not possible to provide `time_low` or `time_high` and the defaults are ignored."
+                          },
+                          "underlying": {
+                            "type": "string",
+                            "description": "Underlying of the instrument."
+                          },
+                          "instrument_type": {
+                            "type": "string",
+                            "enum": [
+                              "futures",
+                              "options",
+                              "future_rolls"
+                            ],
+                            "description": "The type of the instrument."
                           }
                         }
                       }

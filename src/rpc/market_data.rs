@@ -2,7 +2,7 @@ use crate::{
     models::{
         AllInstrumentsParams, AllInstrumentsResponse, BookParams, BookResponse, BookRpcResult,
         Index, IndexParams, IndexResponse, Instrument, InstrumentParams, InstrumentResponse,
-        InstrumentsResponse, Ticker, TickerParams, TickerResponse,
+        InstrumentsParams, InstrumentsResponse, Ticker, TickerParams, TickerResponse,
     },
     types::ClientError,
     ws_client::WsClient,
@@ -14,12 +14,15 @@ pub struct MarketDataRpc<'a> {
 impl<'a> MarketDataRpc<'a> {
     /// Active instruments
     /// returns: Vec<Instrument>
-    pub async fn instruments(&self) -> Result<Vec<Instrument>, ClientError> {
+    pub async fn instruments(
+        &self,
+        params: InstrumentsParams,
+    ) -> Result<Vec<Instrument>, ClientError> {
         let result: Result<InstrumentsResponse, ClientError> = self
             .client
             .send_rpc(
                 "public/instruments",
-                serde_json::to_value(()).expect("Failed to serialize params"),
+                serde_json::to_value(params).expect("Failed to serialize params"),
             )
             .await;
         match result {

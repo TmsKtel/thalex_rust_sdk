@@ -1,6 +1,9 @@
 mod common;
 use thalex_rust_sdk::{
-    models::{AllInstrumentsParams, BookParams, IndexParams, InstrumentParams, TickerParams},
+    models::{
+        AllInstrumentsParams, BookParams, IndexParams, InstrumentParams, InstrumentsParams,
+        TickerParams,
+    },
     ws_client::WsClient,
 };
 
@@ -8,8 +11,9 @@ const KNOWN_INSTRUMENT: &str = "BTC-PERPETUAL";
 const KNOWN_UNDERLYING: &str = "BTCUSD";
 const UNKNOWN_INSTRUMENT: &str = "NOT_EXISTING";
 
-no_params_rpc_test!(
+params_rpc_test!(
     test_instruments,
+    InstrumentsParams::default(),
     instruments,
     "Market data instruments",
     market_data,

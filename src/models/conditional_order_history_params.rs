@@ -22,6 +22,12 @@ pub struct ConditionalOrderHistoryParams {
     /// End time (Unix timestamp) defaults to now.
     #[serde(rename = "time_high", skip_serializing_if = "Option::is_none")]
     pub time_high: Option<i64>,
+    /// Start of the update time.
+    #[serde(rename = "update_time_low", skip_serializing_if = "Option::is_none")]
+    pub update_time_low: Option<rust_decimal::Decimal>,
+    /// End of the update time.
+    #[serde(rename = "update_time_high", skip_serializing_if = "Option::is_none")]
+    pub update_time_high: Option<rust_decimal::Decimal>,
     /// Set to bookmark from previous call to get next page.
     #[serde(rename = "bookmark", skip_serializing_if = "Option::is_none")]
     pub bookmark: Option<String>,
@@ -30,6 +36,11 @@ pub struct ConditionalOrderHistoryParams {
     /// Comma-separated list of instrument names to request order history for. If omitted, order history for all instruments is returned.
     #[serde(rename = "instrument_names", skip_serializing_if = "Option::is_none")]
     pub instrument_names: Option<String>,
+    #[serde(rename = "direction", skip_serializing_if = "Option::is_none")]
+    pub direction: Option<models::DirectionEnum>,
+    /// User label.
+    #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 impl ConditionalOrderHistoryParams {
@@ -38,9 +49,13 @@ impl ConditionalOrderHistoryParams {
             limit: None,
             time_low: None,
             time_high: None,
+            update_time_low: None,
+            update_time_high: None,
             bookmark: None,
             sort: None,
             instrument_names: None,
+            direction: None,
+            label: None,
         }
     }
 }

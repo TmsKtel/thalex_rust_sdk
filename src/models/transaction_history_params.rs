@@ -30,6 +30,11 @@ pub struct TransactionHistoryParams {
     /// Comma-separated list of instrument names to request transaction history for. If omitted, transaction history for all instruments is returned.
     #[serde(rename = "instrument_names", skip_serializing_if = "Option::is_none")]
     pub instrument_names: Option<String>,
+    /// Optional comma-separated list of asset names to request transaction history for.
+    #[serde(rename = "assets", skip_serializing_if = "Option::is_none")]
+    pub assets: Option<String>,
+    #[serde(rename = "types", skip_serializing_if = "Option::is_none")]
+    pub types: Option<models::TypesEnum>,
 }
 
 impl TransactionHistoryParams {
@@ -41,6 +46,8 @@ impl TransactionHistoryParams {
             bookmark: None,
             sort: None,
             instrument_names: None,
+            assets: None,
+            types: None,
         }
     }
 }

@@ -22,7 +22,7 @@ use yawc::{Frame, OpCode};
 
 use crate::{
     auth_utils::make_auth_token,
-    models::{Instrument, RpcResponse},
+    models::{Instrument, InstrumentsParams, RpcResponse},
     routing::{extract_channel, extract_id},
     types::{
         ChannelSender, ClientError, Environment, Error, ExternalEvent, InternalCommand, LoginState,
@@ -214,7 +214,14 @@ impl WsClient {
     }
 
     async fn get_instruments(&self) -> Result<Vec<Instrument>, ClientError> {
-        self.rpc().market_data().instruments().await
+        self.rpc()
+            .market_data()
+            .instruments(InstrumentsParams {
+                expiry_date: None,
+                underlying: None,
+                instrument_type: None,
+            })
+            .await
     }
 
     pub async fn send_rpc<T>(

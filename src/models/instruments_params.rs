@@ -12,14 +12,8 @@ use crate::models;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AllInstrumentsParams {
-    /// Start time (Unix timestamp) defaults to `time_high` - 3 days.
-    #[serde(rename = "time_low", skip_serializing_if = "Option::is_none")]
-    pub time_low: Option<i64>,
-    /// End time (Unix timestamp) defaults to `now`.
-    #[serde(rename = "time_high", skip_serializing_if = "Option::is_none")]
-    pub time_high: Option<i64>,
-    /// Expiry date time in `YYYY-MM-DD` format. When provided, it is not possible to provide `time_low` or `time_high` and the defaults are ignored.
+pub struct InstrumentsParams {
+    /// Expiry date time in `YYYY-MM-DD` format. It cannot be earlier than today.
     #[serde(rename = "expiry_date", skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
     /// Underlying of the instrument.
@@ -29,11 +23,9 @@ pub struct AllInstrumentsParams {
     pub instrument_type: Option<models::InstrumentTypeEnum>,
 }
 
-impl AllInstrumentsParams {
-    pub fn new() -> AllInstrumentsParams {
-        AllInstrumentsParams {
-            time_low: None,
-            time_high: None,
+impl InstrumentsParams {
+    pub fn new() -> InstrumentsParams {
+        InstrumentsParams {
             expiry_date: None,
             underlying: None,
             instrument_type: None,

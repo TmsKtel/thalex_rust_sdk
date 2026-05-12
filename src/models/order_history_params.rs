@@ -33,6 +33,17 @@ pub struct OrderHistoryParams {
     /// Optional comma-separated list of bot IDs to request order history history for.
     #[serde(rename = "bot_ids", skip_serializing_if = "Option::is_none")]
     pub bot_ids: Option<String>,
+    /// Optional comma-separated list of conditional orders IDs to request order history history for.
+    #[serde(
+        rename = "conditional_order_ids",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub conditional_order_ids: Option<String>,
+    #[serde(rename = "direction", skip_serializing_if = "Option::is_none")]
+    pub direction: Option<models::DirectionEnum>,
+    /// Label supplied with insert.
+    #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 impl OrderHistoryParams {
@@ -45,6 +56,9 @@ impl OrderHistoryParams {
             sort: None,
             instrument_names: None,
             bot_ids: None,
+            conditional_order_ids: None,
+            direction: None,
+            label: None,
         }
     }
 }

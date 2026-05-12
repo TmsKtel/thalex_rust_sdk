@@ -33,6 +33,14 @@ pub struct TradeHistoryParams {
     /// Optional comma-separated list of bot IDs to request trade history for.
     #[serde(rename = "bot_ids", skip_serializing_if = "Option::is_none")]
     pub bot_ids: Option<String>,
+    /// Optional comma-separated list of order IDs to request trade history for.
+    #[serde(rename = "order_ids", skip_serializing_if = "Option::is_none")]
+    pub order_ids: Option<String>,
+    #[serde(rename = "direction", skip_serializing_if = "Option::is_none")]
+    pub direction: Option<models::DirectionEnum>,
+    /// User label for this trade.
+    #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 impl TradeHistoryParams {
@@ -45,6 +53,9 @@ impl TradeHistoryParams {
             sort: None,
             instrument_names: None,
             bot_ids: None,
+            order_ids: None,
+            direction: None,
+            label: None,
         }
     }
 }
