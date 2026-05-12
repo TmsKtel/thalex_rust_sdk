@@ -135,7 +135,7 @@ MODELS_TO_LIFT = [
 IMPORTS_TO_SKIP = [
     "CancelAllParams",
     "CancelSessionParams",
-    "InstrumentsParams",
+    # "InstrumentsParams",
     "CancelSessionRpcResult",
     "CancelAllRpcResult",
     "f64",

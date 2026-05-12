@@ -3,7 +3,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use simple_logger::init_with_level;
 use thalex_rust_sdk::{
-    models::Delay,
+    models::{Delay, InstrumentsParams},
     types::{Environment, ExternalEvent},
     ws_client::WsClient,
 };
@@ -14,7 +14,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = WsClient::new_public(Environment::Mainnet).await.unwrap();
 
-    let instruments = client.rpc().market_data().instruments().await.unwrap();
+    let instruments = client
+        .rpc()
+        .market_data()
+        .instruments(InstrumentsParams::default())
+        .await
+        .unwrap();
     info!("Total Instruments: {}", instruments.len());
 
     let _ = client
