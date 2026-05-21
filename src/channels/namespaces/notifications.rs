@@ -19,8 +19,8 @@ impl<'a> NotificationsSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: UserInboxNotificationsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;

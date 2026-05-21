@@ -19,8 +19,8 @@ impl<'a> BotSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountBotsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;

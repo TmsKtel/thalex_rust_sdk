@@ -19,8 +19,8 @@ impl<'a> SystemSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: SystemNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -38,8 +38,8 @@ impl<'a> SystemSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: BannersNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;

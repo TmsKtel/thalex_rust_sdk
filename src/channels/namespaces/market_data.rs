@@ -30,8 +30,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: TickerNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -56,8 +56,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: BookNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -80,8 +80,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: LwtNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -104,8 +104,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: RecentTradesNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -127,8 +127,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: PriceIndexNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -150,8 +150,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: UnderlyingStatisticsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -174,8 +174,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: BasePriceNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -193,8 +193,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: InstrumentsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -212,8 +212,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: RfqsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -235,8 +235,8 @@ impl<'a> MarketDataSubscriptions<'a> {
                 RequestScope::Public,
                 channel.clone(),
                 move |msg: IndexComponentsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;

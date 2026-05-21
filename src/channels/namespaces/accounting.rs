@@ -26,8 +26,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountOrdersNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -45,8 +45,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountPersistentOrdersNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -64,8 +64,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: SessionOrdersNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -83,8 +83,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountTradeHistoryNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -102,8 +102,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountOrderHistoryNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -121,8 +121,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountPortfolioNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -140,8 +140,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountSummaryNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -159,8 +159,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountRfqsNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
@@ -178,8 +178,8 @@ impl<'a> AccountingSubscriptions<'a> {
                 RequestScope::Private,
                 channel.clone(),
                 move |msg: AccountRfqHistoryNotification| {
-                    let fut = callback(msg.notification);
-                    tokio::spawn(fut);
+                    callback(msg.notification)
+                    
                 },
             )
             .await?;
