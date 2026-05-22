@@ -1,9 +1,9 @@
 from string import Template
 func_template = Template("""
-    pub async fn $channel<F, Fut>(&self, $func_args mut callback: F) -> Result<String, Error>
+    pub async fn $channel<F>(&self, $func_args mut callback: F) -> Result<String, Error>
     where
         F: FnMut($notification_model) -> Fut+ Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        
 
     {
         let channel = format!("$channel_with_args");

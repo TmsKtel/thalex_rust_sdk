@@ -8,20 +8,16 @@ pub struct ConditionalSubscriptions<'a> {
     pub client: &'a WsClient,
 }
 impl<'a> ConditionalSubscriptions<'a> {
-    pub async fn account_conditional_orders<F, Fut>(&self, mut callback: F) -> Result<String, Error>
+    pub async fn account_conditional_orders<F>(&self, mut callback: F) -> Result<String, Error>
     where
-        F: FnMut(AccountConditionalOrdersPayload) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(AccountConditionalOrdersPayload) + Send + 'static,
     {
         let channel = "account.conditional_orders".to_string();
         self.client
             .subscribe_channel(
                 RequestScope::Private,
                 channel.clone(),
-                move |msg: AccountConditionalOrdersNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: AccountConditionalOrdersNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)

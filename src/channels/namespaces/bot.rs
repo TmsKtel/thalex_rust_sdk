@@ -8,20 +8,16 @@ pub struct BotSubscriptions<'a> {
     pub client: &'a WsClient,
 }
 impl<'a> BotSubscriptions<'a> {
-    pub async fn account_bots<F, Fut>(&self, mut callback: F) -> Result<String, Error>
+    pub async fn account_bots<F>(&self, mut callback: F) -> Result<String, Error>
     where
-        F: FnMut(AccountBotsPayload) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(AccountBotsPayload) + Send + 'static,
     {
         let channel = "account.bots".to_string();
         self.client
             .subscribe_channel(
                 RequestScope::Private,
                 channel.clone(),
-                move |msg: AccountBotsNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: AccountBotsNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)

@@ -14,31 +14,27 @@ pub struct MarketDataSubscriptions<'a> {
     pub client: &'a WsClient,
 }
 impl<'a> MarketDataSubscriptions<'a> {
-    pub async fn ticker<F, Fut>(
+    pub async fn ticker<F>(
         &self,
         instrument: &str,
         delay: Delay,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(Ticker) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(Ticker) + Send + 'static,
     {
         let channel = format!("ticker.{instrument}.{delay}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: TickerNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: TickerNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn book<F, Fut>(
+    pub async fn book<F>(
         &self,
         instrument: &str,
         grouping: &str,
@@ -47,197 +43,157 @@ impl<'a> MarketDataSubscriptions<'a> {
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(Book) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(Book) + Send + 'static,
     {
         let channel = format!("book.{instrument}.{grouping}.{nlevels}.{delay}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: BookNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: BookNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn lwt<F, Fut>(
+    pub async fn lwt<F>(
         &self,
         instrument: &str,
         delay: Delay,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(Lwt) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(Lwt) + Send + 'static,
     {
         let channel = format!("lwt.{instrument}.{delay}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: LwtNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: LwtNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn recent_trades<F, Fut>(
+    pub async fn recent_trades<F>(
         &self,
         target: &str,
         category: &str,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(RecentTrades) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(RecentTrades) + Send + 'static,
     {
         let channel = format!("recent_trades.{target}.{category}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: RecentTradesNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: RecentTradesNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn price_index<F, Fut>(
-        &self,
-        underlying: &str,
-        mut callback: F,
-    ) -> Result<String, Error>
+    pub async fn price_index<F>(&self, underlying: &str, mut callback: F) -> Result<String, Error>
     where
-        F: FnMut(Index) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(Index) + Send + 'static,
     {
         let channel = format!("price_index.{underlying}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: PriceIndexNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: PriceIndexNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn underlying_statistics<F, Fut>(
+    pub async fn underlying_statistics<F>(
         &self,
         underlying: &str,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(UnderlyingStatistics) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(UnderlyingStatistics) + Send + 'static,
     {
         let channel = format!("underlying_statistics.{underlying}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: UnderlyingStatisticsNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: UnderlyingStatisticsNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn base_price<F, Fut>(
+    pub async fn base_price<F>(
         &self,
         underlying: &str,
         expiration: &str,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(BasePrice) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(BasePrice) + Send + 'static,
     {
         let channel = format!("base_price.{underlying}.{expiration}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: BasePriceNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: BasePriceNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn instruments<F, Fut>(&self, mut callback: F) -> Result<String, Error>
+    pub async fn instruments<F>(&self, mut callback: F) -> Result<String, Error>
     where
-        F: FnMut(InstrumentsPayload) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(InstrumentsPayload) + Send + 'static,
     {
         let channel = "instruments".to_string();
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: InstrumentsNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: InstrumentsNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn rfqs<F, Fut>(&self, mut callback: F) -> Result<String, Error>
+    pub async fn rfqs<F>(&self, mut callback: F) -> Result<String, Error>
     where
-        F: FnMut(RfqsPayload) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(RfqsPayload) + Send + 'static,
     {
         let channel = "rfqs".to_string();
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: RfqsNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: RfqsNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
     }
 
-    pub async fn index_components<F, Fut>(
+    pub async fn index_components<F>(
         &self,
         underlying: &str,
         mut callback: F,
     ) -> Result<String, Error>
     where
-        F: FnMut(IndexComponents) -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        F: FnMut(IndexComponents) + Send + 'static,
     {
         let channel = format!("index_components.{underlying}");
         self.client
             .subscribe_channel(
                 RequestScope::Public,
                 channel.clone(),
-                move |msg: IndexComponentsNotification| {
-                    callback(msg.notification)
-                    
-                },
+                move |msg: IndexComponentsNotification| callback(msg.notification),
             )
             .await?;
         Ok(channel)
