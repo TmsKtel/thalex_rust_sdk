@@ -18,13 +18,8 @@ impl<'a> MarketDataRpc<'a> {
         &self,
         params: InstrumentsParams,
     ) -> Result<Vec<Instrument>, ClientError> {
-        let result: Result<InstrumentsResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/instruments",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<InstrumentsResponse, ClientError> =
+            self.client.send_rpc("public/instruments", &params).await;
         match result {
             Ok(res) => match res {
                 InstrumentsResponse::InstrumentsResult(res) => Ok(res.result),
@@ -42,10 +37,7 @@ impl<'a> MarketDataRpc<'a> {
     ) -> Result<Vec<Instrument>, ClientError> {
         let result: Result<AllInstrumentsResponse, ClientError> = self
             .client
-            .send_rpc(
-                "public/all_instruments",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("public/all_instruments", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -59,13 +51,8 @@ impl<'a> MarketDataRpc<'a> {
     /// Single instrument
     /// returns: Instrument
     pub async fn instrument(&self, params: InstrumentParams) -> Result<Instrument, ClientError> {
-        let result: Result<InstrumentResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/instrument",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<InstrumentResponse, ClientError> =
+            self.client.send_rpc("public/instrument", &params).await;
         match result {
             Ok(res) => match res {
                 InstrumentResponse::InstrumentResult(res) => Ok(res.result),
@@ -78,13 +65,8 @@ impl<'a> MarketDataRpc<'a> {
     /// Single ticker value
     /// returns: Ticker
     pub async fn ticker(&self, params: TickerParams) -> Result<Ticker, ClientError> {
-        let result: Result<TickerResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/ticker",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<TickerResponse, ClientError> =
+            self.client.send_rpc("public/ticker", &params).await;
         match result {
             Ok(res) => match res {
                 TickerResponse::TickerResult(res) => Ok(res.result),
@@ -97,13 +79,8 @@ impl<'a> MarketDataRpc<'a> {
     /// Single index value
     /// returns: Index
     pub async fn index(&self, params: IndexParams) -> Result<Index, ClientError> {
-        let result: Result<IndexResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/index",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<IndexResponse, ClientError> =
+            self.client.send_rpc("public/index", &params).await;
         match result {
             Ok(res) => match res {
                 IndexResponse::IndexResult(res) => Ok(res.result),
@@ -116,13 +93,8 @@ impl<'a> MarketDataRpc<'a> {
     /// Single order book
     /// returns: BookRpcResult
     pub async fn book(&self, params: BookParams) -> Result<BookRpcResult, ClientError> {
-        let result: Result<BookResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/book",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<BookResponse, ClientError> =
+            self.client.send_rpc("public/book", &params).await;
         match result {
             Ok(res) => match res {
                 BookResponse::BookResult(res) => Ok(res.result),

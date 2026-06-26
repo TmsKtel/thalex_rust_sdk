@@ -17,13 +17,8 @@ impl<'a> TradingRpc<'a> {
     /// Insert order
     /// returns: OrderStatus
     pub async fn insert(&self, params: InsertParams) -> Result<OrderStatus, ClientError> {
-        let result: Result<InsertResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/insert",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<InsertResponse, ClientError> =
+            self.client.send_rpc("private/insert", &params).await;
         match result {
             Ok(res) => match res {
                 InsertResponse::InsertResult(res) => Ok(res.result),
@@ -36,13 +31,8 @@ impl<'a> TradingRpc<'a> {
     /// Insert buy order
     /// returns: OrderStatus
     pub async fn buy(&self, params: BuyParams) -> Result<OrderStatus, ClientError> {
-        let result: Result<BuyResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/buy",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<BuyResponse, ClientError> =
+            self.client.send_rpc("private/buy", &params).await;
         match result {
             Ok(res) => match res {
                 BuyResponse::BuyResult(res) => Ok(res.result),
@@ -55,13 +45,8 @@ impl<'a> TradingRpc<'a> {
     /// Insert sell order
     /// returns: OrderStatus
     pub async fn sell(&self, params: SellParams) -> Result<OrderStatus, ClientError> {
-        let result: Result<SellResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/sell",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<SellResponse, ClientError> =
+            self.client.send_rpc("private/sell", &params).await;
         match result {
             Ok(res) => match res {
                 SellResponse::SellResult(res) => Ok(res.result),
@@ -74,13 +59,8 @@ impl<'a> TradingRpc<'a> {
     /// Amend order
     /// returns: OrderStatus
     pub async fn amend(&self, params: AmendParams) -> Result<OrderStatus, ClientError> {
-        let result: Result<AmendResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/amend",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<AmendResponse, ClientError> =
+            self.client.send_rpc("private/amend", &params).await;
         match result {
             Ok(res) => match res {
                 AmendResponse::AmendResult(res) => Ok(res.result),
@@ -93,13 +73,8 @@ impl<'a> TradingRpc<'a> {
     /// Cancel order
     /// returns: OrderStatus
     pub async fn cancel(&self, params: CancelParams) -> Result<OrderStatus, ClientError> {
-        let result: Result<CancelResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/cancel",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<CancelResponse, ClientError> =
+            self.client.send_rpc("private/cancel", &params).await;
         match result {
             Ok(res) => match res {
                 CancelResponse::CancelResult(res) => Ok(res.result),
@@ -112,13 +87,8 @@ impl<'a> TradingRpc<'a> {
     /// Bulk cancel all orders
     /// returns: Decimal
     pub async fn cancel_all(&self) -> Result<Decimal, ClientError> {
-        let result: Result<CancelAllResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/cancel_all",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<CancelAllResponse, ClientError> =
+            self.client.send_rpc("private/cancel_all", &()).await;
         match result {
             Ok(res) => match res {
                 CancelAllResponse::CancelAllResult(res) => Ok(res.result),
@@ -131,13 +101,8 @@ impl<'a> TradingRpc<'a> {
     /// Bulk cancel all orders in session
     /// returns: Value
     pub async fn cancel_session(&self) -> Result<Value, ClientError> {
-        let result: Result<CancelSessionResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/cancel_session",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<CancelSessionResponse, ClientError> =
+            self.client.send_rpc("private/cancel_session", &()).await;
         match result {
             Ok(res) => match res {
                 CancelSessionResponse::CancelSessionResult(res) => Ok(res.result),

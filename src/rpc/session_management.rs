@@ -14,13 +14,8 @@ impl<'a> SessionManagementRpc<'a> {
     /// Login
     /// returns: LoginRpcResult
     pub async fn login(&self, params: LoginParams) -> Result<LoginRpcResult, ClientError> {
-        let result: Result<LoginResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "public/login",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<LoginResponse, ClientError> =
+            self.client.send_rpc("public/login", &params).await;
         match result {
             Ok(res) => match res {
                 LoginResponse::LoginResult(res) => Ok(res.result),
@@ -38,10 +33,7 @@ impl<'a> SessionManagementRpc<'a> {
     ) -> Result<SetCancelOnDisconnectRpcResult, ClientError> {
         let result: Result<SetCancelOnDisconnectResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/set_cancel_on_disconnect",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/set_cancel_on_disconnect", &params)
             .await;
         match result {
             Ok(res) => match res {

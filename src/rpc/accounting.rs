@@ -23,13 +23,8 @@ impl<'a> AccountingRpc<'a> {
     /// Portfolio
     /// returns: Vec<PortfolioEntry>
     pub async fn portfolio(&self) -> Result<Vec<PortfolioEntry>, ClientError> {
-        let result: Result<PortfolioResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/portfolio",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<PortfolioResponse, ClientError> =
+            self.client.send_rpc("private/portfolio", &()).await;
         match result {
             Ok(res) => match res {
                 PortfolioResponse::PortfolioResult(res) => Ok(res.result),
@@ -42,13 +37,8 @@ impl<'a> AccountingRpc<'a> {
     /// Open orders
     /// returns: Vec<OrderStatus>
     pub async fn open_orders(&self) -> Result<Vec<OrderStatus>, ClientError> {
-        let result: Result<OpenOrdersResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/open_orders",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<OpenOrdersResponse, ClientError> =
+            self.client.send_rpc("private/open_orders", &()).await;
         match result {
             Ok(res) => match res {
                 OpenOrdersResponse::OpenOrdersResult(res) => Ok(res.result),
@@ -64,13 +54,8 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: OrderHistoryParams,
     ) -> Result<OrderHistoryRpcResult, ClientError> {
-        let result: Result<OrderHistoryResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/order_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<OrderHistoryResponse, ClientError> =
+            self.client.send_rpc("private/order_history", &params).await;
         match result {
             Ok(res) => match res {
                 OrderHistoryResponse::OrderHistoryResult(res) => Ok(res.result),
@@ -88,10 +73,7 @@ impl<'a> AccountingRpc<'a> {
     ) -> Result<ConditionalOrderHistoryRpcResult, ClientError> {
         let result: Result<ConditionalOrderHistoryResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/conditional_order_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/conditional_order_history", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -112,13 +94,8 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: TradeHistoryParams,
     ) -> Result<TradeHistoryRpcResult, ClientError> {
-        let result: Result<TradeHistoryResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/trade_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<TradeHistoryResponse, ClientError> =
+            self.client.send_rpc("private/trade_history", &params).await;
         match result {
             Ok(res) => match res {
                 TradeHistoryResponse::TradeHistoryResult(res) => Ok(res.result),
@@ -136,10 +113,7 @@ impl<'a> AccountingRpc<'a> {
     ) -> Result<TradeValueHistoryRpcResult, ClientError> {
         let result: Result<TradeValueHistoryResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/trade_value_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/trade_value_history", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -158,10 +132,7 @@ impl<'a> AccountingRpc<'a> {
     ) -> Result<DailyMarkHistoryRpcResult, ClientError> {
         let result: Result<DailyMarkHistoryResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/daily_mark_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/daily_mark_history", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -180,10 +151,7 @@ impl<'a> AccountingRpc<'a> {
     ) -> Result<TransactionHistoryRpcResult, ClientError> {
         let result: Result<TransactionHistoryResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/transaction_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/transaction_history", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -200,13 +168,8 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: RfqHistoryParams,
     ) -> Result<RfqHistoryRpcResult, ClientError> {
-        let result: Result<RfqHistoryResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/rfq_history",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<RfqHistoryResponse, ClientError> =
+            self.client.send_rpc("private/rfq_history", &params).await;
         match result {
             Ok(res) => match res {
                 RfqHistoryResponse::RfqHistoryResult(res) => Ok(res.result),
@@ -219,13 +182,8 @@ impl<'a> AccountingRpc<'a> {
     /// Account breakdown
     /// returns: AccountBreakdownRpcResult
     pub async fn account_breakdown(&self) -> Result<AccountBreakdownRpcResult, ClientError> {
-        let result: Result<AccountBreakdownResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/account_breakdown",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<AccountBreakdownResponse, ClientError> =
+            self.client.send_rpc("private/account_breakdown", &()).await;
         match result {
             Ok(res) => match res {
                 AccountBreakdownResponse::AccountBreakdownResult(res) => Ok(res.result),
@@ -238,13 +196,8 @@ impl<'a> AccountingRpc<'a> {
     /// Account summary
     /// returns: AccountSummary
     pub async fn account_summary(&self) -> Result<AccountSummary, ClientError> {
-        let result: Result<AccountSummaryResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/account_summary",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<AccountSummaryResponse, ClientError> =
+            self.client.send_rpc("private/account_summary", &()).await;
         match result {
             Ok(res) => match res {
                 AccountSummaryResponse::AccountSummaryResult(res) => Ok(res.result),
@@ -259,10 +212,7 @@ impl<'a> AccountingRpc<'a> {
     pub async fn required_margin_breakdown(&self) -> Result<PortfolioMarginBreakdown, ClientError> {
         let result: Result<RequiredMarginBreakdownResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/required_margin_breakdown",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/required_margin_breakdown", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -285,10 +235,7 @@ impl<'a> AccountingRpc<'a> {
     ) -> Result<MarginBreakdownWithOrder, ClientError> {
         let result: Result<RequiredMarginForOrderResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/required_margin_for_order",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/required_margin_for_order", &params)
             .await;
         match result {
             Ok(res) => match res {

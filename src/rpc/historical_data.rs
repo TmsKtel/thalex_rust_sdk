@@ -25,10 +25,7 @@ impl<'a> HistoricalDataRpc<'a> {
     ) -> Result<MarkPriceHistoricalDataRpcResult, RpcErrorResponse> {
         let result: MarkPriceHistoricalDataResponse = self
             .client
-            .send_rpc(
-                "public/mark_price_historical_data",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("public/mark_price_historical_data", &params)
             .await
             .expect("Failed to send RPC request");
         match result {
@@ -42,10 +39,7 @@ impl<'a> HistoricalDataRpc<'a> {
     ) -> Result<IndexPriceHistoricalDataRpcResult, RpcErrorResponse> {
         let result: IndexPriceHistoricalDataResponse = self
             .client
-            .send_rpc(
-                "public/index_price_historical_data",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("public/index_price_historical_data", &params)
             .await
             .expect("Failed to send RPC request");
         match result {

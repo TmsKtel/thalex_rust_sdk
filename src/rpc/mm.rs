@@ -18,13 +18,8 @@ impl<'a> MmRpc<'a> {
         &self,
         params: MassQuoteParams,
     ) -> Result<DoubleSidedQuoteResult, ClientError> {
-        let result: Result<MassQuoteResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/mass_quote",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<MassQuoteResponse, ClientError> =
+            self.client.send_rpc("private/mass_quote", &params).await;
         match result {
             Ok(res) => match res {
                 MassQuoteResponse::MassQuoteResult(res) => Ok(res.result),
@@ -42,10 +37,7 @@ impl<'a> MmRpc<'a> {
     ) -> Result<Value, ClientError> {
         let result: Result<CancelMassQuoteResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/cancel_mass_quote",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/cancel_mass_quote", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -64,10 +56,7 @@ impl<'a> MmRpc<'a> {
     ) -> Result<Value, ClientError> {
         let result: Result<SetMmProtectionResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/set_mm_protection",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/set_mm_protection", &params)
             .await;
         match result {
             Ok(res) => match res {

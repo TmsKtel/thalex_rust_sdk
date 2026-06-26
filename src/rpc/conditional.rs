@@ -19,10 +19,7 @@ impl<'a> ConditionalRpc<'a> {
     pub async fn conditional_orders(&self) -> Result<Vec<ConditionalOrder>, ClientError> {
         let result: Result<ConditionalOrdersResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/conditional_orders",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/conditional_orders", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -38,10 +35,7 @@ impl<'a> ConditionalRpc<'a> {
     pub async fn open_conditional_orders(&self) -> Result<Vec<ConditionalOrder>, ClientError> {
         let result: Result<OpenConditionalOrdersResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/open_conditional_orders",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/open_conditional_orders", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -60,10 +54,7 @@ impl<'a> ConditionalRpc<'a> {
     ) -> Result<ConditionalOrder, ClientError> {
         let result: Result<CreateConditionalOrderResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/create_conditional_order",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/create_conditional_order", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -82,10 +73,7 @@ impl<'a> ConditionalRpc<'a> {
     ) -> Result<Value, ClientError> {
         let result: Result<CancelConditionalOrderResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/cancel_conditional_order",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/cancel_conditional_order", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -101,10 +89,7 @@ impl<'a> ConditionalRpc<'a> {
     pub async fn cancel_all_conditional_orders(&self) -> Result<Value, ClientError> {
         let result: Result<CancelAllConditionalOrdersResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/cancel_all_conditional_orders",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/cancel_all_conditional_orders", &())
             .await;
         match result {
             Ok(res) => match res {

@@ -23,10 +23,7 @@ impl<'a> WalletRpc<'a> {
     ) -> Result<VerifyWithdrawalRpcResult, ClientError> {
         let result: Result<VerifyWithdrawalResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/verify_withdrawal",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/verify_withdrawal", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -40,13 +37,8 @@ impl<'a> WalletRpc<'a> {
     /// Withdraw assets
     /// returns: Value
     pub async fn withdraw(&self, params: WithdrawParams) -> Result<Value, ClientError> {
-        let result: Result<WithdrawResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/withdraw",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<WithdrawResponse, ClientError> =
+            self.client.send_rpc("private/withdraw", &params).await;
         match result {
             Ok(res) => match res {
                 WithdrawResponse::WithdrawResult(res) => Ok(res.result),
@@ -63,10 +55,7 @@ impl<'a> WalletRpc<'a> {
     ) -> Result<Vec<CryptoWithdrawalsRpcResultInner>, ClientError> {
         let result: Result<CryptoWithdrawalsResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/crypto_withdrawals",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/crypto_withdrawals", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -80,13 +69,8 @@ impl<'a> WalletRpc<'a> {
     /// Deposits
     /// returns: CryptoDepositsRpcResult
     pub async fn crypto_deposits(&self) -> Result<CryptoDepositsRpcResult, ClientError> {
-        let result: Result<CryptoDepositsResponse, ClientError> = self
-            .client
-            .send_rpc(
-                "private/crypto_deposits",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
-            .await;
+        let result: Result<CryptoDepositsResponse, ClientError> =
+            self.client.send_rpc("private/crypto_deposits", &()).await;
         match result {
             Ok(res) => match res {
                 CryptoDepositsResponse::CryptoDepositsResult(res) => Ok(res.result),
@@ -101,10 +85,7 @@ impl<'a> WalletRpc<'a> {
     pub async fn btc_deposit_address(&self) -> Result<String, ClientError> {
         let result: Result<BtcDepositAddressResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/btc_deposit_address",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/btc_deposit_address", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -120,10 +101,7 @@ impl<'a> WalletRpc<'a> {
     pub async fn eth_deposit_address(&self) -> Result<String, ClientError> {
         let result: Result<EthDepositAddressResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/eth_deposit_address",
-                serde_json::to_value(()).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/eth_deposit_address", &())
             .await;
         match result {
             Ok(res) => match res {
@@ -142,10 +120,7 @@ impl<'a> WalletRpc<'a> {
     ) -> Result<VerifyInternalTransferRpcResult, ClientError> {
         let result: Result<VerifyInternalTransferResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/verify_internal_transfer",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/verify_internal_transfer", &params)
             .await;
         match result {
             Ok(res) => match res {
@@ -164,10 +139,7 @@ impl<'a> WalletRpc<'a> {
     ) -> Result<Value, ClientError> {
         let result: Result<InternalTransferResponse, ClientError> = self
             .client
-            .send_rpc(
-                "private/internal_transfer",
-                serde_json::to_value(params).expect("Failed to serialize params"),
-            )
+            .send_rpc("private/internal_transfer", &params)
             .await;
         match result {
             Ok(res) => match res {

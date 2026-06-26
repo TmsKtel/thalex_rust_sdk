@@ -66,6 +66,13 @@ where
     }
 }
 
+#[derive(serde::Serialize)]
+struct Request<'a, P> {
+    id: u64,
+    method: &'a str,
+    params: &'a P,
+}
+
 impl WsClient {
     pub fn subscriptions(&self) -> Subscriptions<'_> {
         Subscriptions { client: self }
@@ -151,27 +158,18 @@ impl WsClient {
         Ok(client)
     }
 
-    pub async fn send_rpc<T>(
-        &self,
-        method: &str,
-        params: serde_json::Value,
-    ) -> Result<T, ClientError>
+    pub async fn send_rpc<T, P>(&self, method: &str, params: &P) -> Result<T, ClientError>
     where
         T: serde::de::DeserializeOwned + std::fmt::Debug,
+        P: serde::Serialize,
     {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
         let (tx, rx) = oneshot::channel::<Bytes>();
         self.pending_requests.insert(id, tx);
 
-        let request = serde_json::json!({
-            "jsonrpc": "2.0",
-            "id": id,
-            "method": method,
-            "params": params
-        });
-
-        let text = request.to_string();
+        let text = serde_json::to_string(&Request { id, method, params })
+            .expect("failed serializing request");
 
         if let Err(e) = self.write_tx.send(InternalCommand::Send(Frame::text(text))) {
             self.pending_requests.remove(&id);
@@ -252,7 +250,7 @@ impl WsClient {
         let sub_result: SubscribeResponse = self
             .send_rpc(
                 &format!("{scope}/subscribe"),
-                serde_json::json!({
+                &serde_json::json!({
                     "channels": [channel.clone()]
                 }),
             )
@@ -292,7 +290,7 @@ impl WsClient {
                 let _: RpcResponse = self
                     .send_rpc(
                         "public/unsubscribe",
-                        serde_json::json!({
+                        &serde_json::json!({
                             "channels": [channel.clone()]
                         }),
                     )
@@ -306,7 +304,7 @@ impl WsClient {
                 let _: RpcResponse = self
                     .send_rpc(
                         "private/unsubscribe",
-                        serde_json::json!({
+                        &serde_json::json!({
                             "channels": [channel.clone()]
                         }),
                     )
@@ -337,7 +335,7 @@ impl WsClient {
             let result: Value = self
                 .send_rpc(
                     "public/login",
-                    serde_json::json!({
+                    &serde_json::json!({
                         "token": token,
                         "account": &self.login_state.account_id
                     }),
@@ -358,7 +356,7 @@ impl WsClient {
         let result: RpcResponse = self
             .send_rpc(
                 "private/set_cancel_on_disconnect",
-                serde_json::json!({ "timeout_secs": 6}),
+                &serde_json::json!({ "timeout_secs": 6}),
             )
             .await?;
         debug!("Set cancel_on_disconnect result: {result:?}");
@@ -375,7 +373,7 @@ impl WsClient {
         let _: RpcResponse = self
             .send_rpc(
                 "public/subscribe",
-                serde_json::json!({
+                &serde_json::json!({
                     "channels": public_channels
                 }),
             )
@@ -390,7 +388,7 @@ impl WsClient {
         let _: RpcResponse = self
             .send_rpc(
                 "private/subscribe",
-                serde_json::json!({
+                &serde_json::json!({
                     "channels": private_channels
                 }),
             )

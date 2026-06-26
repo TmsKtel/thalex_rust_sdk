@@ -7,7 +7,7 @@ method_template = Template("""
             .client
             .send_rpc(
                 "$method",
-                serde_json::to_value(params).expect("Failed to serialize params"),
+                &params
             )
             .await;
         match result {
