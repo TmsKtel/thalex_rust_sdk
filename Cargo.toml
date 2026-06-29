@@ -6,6 +6,10 @@ description = "Trading client for Thalex exchange"
 repository = "https://github.com/8ball030/thalex_rust_sdk"
 license = "MIT OR Apache-2.0"
 
+[features]
+default = []
+log-requests = []
+
 [dependencies]
 tokio = { version = "1.52.1", features = ["fs", "time", "sync", "rt-multi-thread", "macros"] }
 futures-util = "0.3"

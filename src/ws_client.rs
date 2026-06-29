@@ -33,6 +33,18 @@ use crate::channels::subscriptions::Subscriptions;
 use crate::rpc::Rpc;
 use std::str::FromStr;
 
+#[cfg(feature = "log-requests")]
+macro_rules! log_req {
+    ($($arg:tt)*) => {
+        log::info!($($arg)*);
+    };
+}
+
+#[cfg(not(feature = "log-requests"))]
+macro_rules! log_req {
+    ($($arg:tt)*) => {};
+}
+
 const PING_INTERVAL: Duration = Duration::from_secs(5);
 const READ_TIMEOUT: Duration = Duration::from_secs(7);
 
@@ -170,6 +182,8 @@ impl WsClient {
 
         let text = serde_json::to_string(&Request { id, method, params })
             .expect("failed serializing request");
+
+        log_req!("{text}");
 
         if let Err(e) = self.write_tx.send(InternalCommand::Send(Frame::text(text))) {
             self.pending_requests.remove(&id);
