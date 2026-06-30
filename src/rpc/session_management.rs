@@ -15,7 +15,7 @@ impl<'a> SessionManagementRpc<'a> {
     /// returns: LoginRpcResult
     pub async fn login(&self, params: LoginParams) -> Result<LoginRpcResult, ClientError> {
         let result: Result<LoginResponse, ClientError> =
-            self.client.send_rpc("public/login", &params).await;
+            self.client.send_rpc("public/login", &params).await.result;
         match result {
             Ok(res) => match res {
                 LoginResponse::LoginResult(res) => Ok(res.result),
@@ -34,7 +34,8 @@ impl<'a> SessionManagementRpc<'a> {
         let result: Result<SetCancelOnDisconnectResponse, ClientError> = self
             .client
             .send_rpc("private/set_cancel_on_disconnect", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 SetCancelOnDisconnectResponse::SetCancelOnDisconnectResult(res) => Ok(res.result),

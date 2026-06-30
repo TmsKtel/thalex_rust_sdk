@@ -27,6 +27,7 @@ impl<'a> HistoricalDataRpc<'a> {
             .client
             .send_rpc("public/mark_price_historical_data", &params)
             .await
+            .result
             .expect("Failed to send RPC request");
         match result {
             MarkPriceHistoricalDataResponse::MarkPriceHistoricalDataResult(res) => Ok(res.result),
@@ -41,6 +42,7 @@ impl<'a> HistoricalDataRpc<'a> {
             .client
             .send_rpc("public/index_price_historical_data", &params)
             .await
+            .result
             .expect("Failed to send RPC request");
         match result {
             IndexPriceHistoricalDataResponse::IndexPriceHistoricalDataResult(res) => Ok(res.result),

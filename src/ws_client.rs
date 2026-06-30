@@ -25,13 +25,22 @@ use crate::{
     routing::{extract_channel, extract_id},
     types::{
         ChannelSender, ClientError, Environment, Error, ExternalEvent, InternalCommand, LoginState,
-        RequestScope, ResponseSender, SubscribeResponse, WsStream,
+        RequestScope, ResponseSender, RpcResult, SubscribeResponse, WsStream,
     },
 };
 
 use crate::channels::subscriptions::Subscriptions;
 use crate::rpc::Rpc;
 use std::str::FromStr;
+
+const SENT_TS_PARALLEL_COUNT: usize = 128;
+
+fn now() -> u64 {
+    std::time::SystemTime::UNIX_EPOCH
+        .elapsed()
+        .unwrap()
+        .as_nanos() as u64
+}
 
 #[cfg(feature = "log-requests")]
 macro_rules! log_req {
@@ -170,14 +179,14 @@ impl WsClient {
         Ok(client)
     }
 
-    pub async fn send_rpc<T, P>(&self, method: &str, params: &P) -> Result<T, ClientError>
+    pub async fn send_rpc<T, P>(&self, method: &str, params: &P) -> RpcResult<T>
     where
         T: serde::de::DeserializeOwned + std::fmt::Debug,
         P: serde::Serialize,
     {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
 
-        let (tx, rx) = oneshot::channel::<Bytes>();
+        let (tx, rx) = oneshot::channel::<(Option<u64>, Bytes)>();
         self.pending_requests.insert(id, tx);
 
         let text = serde_json::to_string(&Request { id, method, params })
@@ -185,15 +194,27 @@ impl WsClient {
 
         log_req!("{text}");
 
-        if let Err(e) = self.write_tx.send(InternalCommand::Send(Frame::text(text))) {
+        if let Err(e) = self
+            .write_tx
+            .send(InternalCommand::Send((id, Frame::text(text))))
+        {
             self.pending_requests.remove(&id);
-            return Err(ClientError::Transport(Box::new(e)));
+            return RpcResult {
+                elapsed_nanos: None,
+                result: Err(ClientError::Transport(Box::new(e))),
+            };
         }
 
-        let response = rx.await?;
-
-        let envelope: T = deserialise_to_type(&response)?;
-        Ok(envelope)
+        match rx.await {
+            Ok((elapsed, response)) => RpcResult {
+                result: deserialise_to_type::<T>(&response).map_err(ClientError::from),
+                elapsed_nanos: elapsed,
+            },
+            Err(e) => RpcResult {
+                result: Err(ClientError::Recv(e)),
+                elapsed_nanos: None,
+            },
+        }
     }
 
     pub async fn shutdown(&self, reason: &'static str) -> Result<(), Error> {
@@ -268,7 +289,8 @@ impl WsClient {
                     "channels": [channel.clone()]
                 }),
             )
-            .await?;
+            .await
+            .result?;
         match sub_result {
             SubscribeResponse::Ok {
                 id: _id,
@@ -308,7 +330,8 @@ impl WsClient {
                             "channels": [channel.clone()]
                         }),
                     )
-                    .await?;
+                    .await
+                    .result?;
                 info!("Unsubscribed from public channel: {channel}");
                 return Ok(());
             }
@@ -322,7 +345,8 @@ impl WsClient {
                             "channels": [channel.clone()]
                         }),
                     )
-                    .await?;
+                    .await
+                    .result?;
                 info!("Unsubscribed from private channel: {channel}");
                 return Ok(());
             }
@@ -354,7 +378,8 @@ impl WsClient {
                         "account": &self.login_state.account_id
                     }),
                 )
-                .await?;
+                .await
+                .result?;
             debug!("Sent login message, received response: {result:?}");
             if let Some(error) = result.get("error") {
                 warn!("Login error: {error:?}");
@@ -372,7 +397,8 @@ impl WsClient {
                 "private/set_cancel_on_disconnect",
                 &serde_json::json!({ "timeout_secs": 6}),
             )
-            .await?;
+            .await
+            .result?;
         debug!("Set cancel_on_disconnect result: {result:?}");
         Ok(())
     }
@@ -391,7 +417,8 @@ impl WsClient {
                     "channels": public_channels
                 }),
             )
-            .await?;
+            .await
+            .result?;
         debug!("Re-subscribed to public channels: {public_channels:?}");
         let private_channels: Vec<String> = {
             self.private_subscriptions
@@ -406,7 +433,8 @@ impl WsClient {
                     "channels": private_channels
                 }),
             )
-            .await?;
+            .await
+            .result?;
         debug!("Re-subscribed to private channels: {private_channels:?}");
         Ok(())
     }
@@ -507,7 +535,7 @@ async fn connection_supervisor(
                     .collect::<Vec<u64>>()
                 {
                     if let Some((_, tx)) = pending_requests.remove(&key) {
-                        let _ = tx.send(r#"{"error":"connection closed"}"#.into());
+                        let _ = tx.send((None, r#"{"error":"connection closed"}"#.into()));
                     }
                 }
 
@@ -553,6 +581,8 @@ async fn run_single_connection(
     let read_deadline = sleep(READ_TIMEOUT);
     tokio::pin!(read_deadline);
 
+    let mut sent_ts = [None; SENT_TS_PARALLEL_COUNT];
+
     loop {
         tokio::select! {
             _ = ping_interval.tick() => {
@@ -572,7 +602,8 @@ async fn run_single_connection(
 
             maybe_cmd = cmd_rx.recv() => {
                 match maybe_cmd {
-                    Some(InternalCommand::Send(msg)) => {
+                    Some(InternalCommand::Send((id, msg))) => {
+                        sent_ts[id as usize % SENT_TS_PARALLEL_COUNT] = Some(now());
                         ws.send(msg).await?;
                     }
                     Some(InternalCommand::Close) => {
@@ -602,6 +633,7 @@ async fn run_single_connection(
                             pending_requests,
                             public_subscriptions,
                             private_subscriptions,
+                            &sent_ts,
                         );
                     }
                     OpCode::Binary => {
@@ -610,6 +642,7 @@ async fn run_single_connection(
                             pending_requests,
                             public_subscriptions,
                             private_subscriptions,
+                            &sent_ts,
                         );
                     }
                     OpCode::Ping => {
@@ -642,8 +675,9 @@ pub fn handle_incoming(
     pending_requests: &Arc<DashMap<u64, ResponseSender>>,
     public_subscriptions: &Arc<DashMap<String, ChannelSender>>,
     private_subscriptions: &Arc<DashMap<String, ChannelSender>>,
+    sent_ts: &[Option<u64>],
 ) {
-    if check_and_send_pending_request(&bytes, pending_requests) {
+    if check_and_send_pending_request(&bytes, pending_requests, sent_ts) {
         return;
     }
     if check_and_send_subscription_message(&bytes, private_subscriptions) {
@@ -656,11 +690,14 @@ pub fn handle_incoming(
 fn check_and_send_pending_request(
     bytes: &Bytes,
     pending_requests: &Arc<DashMap<u64, ResponseSender>>,
+    sent_ts: &[Option<u64>],
 ) -> bool {
     if let Some(id) = extract_id(bytes)
         && let Some((_, tx)) = pending_requests.remove(&id)
     {
-        let _ = tx.send(bytes.clone());
+        let sent_ts = sent_ts[id as usize % SENT_TS_PARALLEL_COUNT];
+        let elapsed = sent_ts.map(|ts| now() - ts);
+        let _ = tx.send((elapsed, bytes.clone()));
         return true;
     }
     false

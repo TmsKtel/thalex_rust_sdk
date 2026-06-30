@@ -16,7 +16,7 @@ impl<'a> BotRpc<'a> {
     /// returns: Vec<Bot>
     pub async fn bots(&self) -> Result<Vec<Bot>, ClientError> {
         let result: Result<BotsResponse, ClientError> =
-            self.client.send_rpc("private/bots", &()).await;
+            self.client.send_rpc("private/bots", &()).await.result;
         match result {
             Ok(res) => match res {
                 BotsResponse::BotsResult(res) => Ok(res.result),
@@ -29,8 +29,11 @@ impl<'a> BotRpc<'a> {
     /// Create a bot
     /// returns: Bot
     pub async fn create_bot(&self, params: CreateBotParams) -> Result<Bot, ClientError> {
-        let result: Result<CreateBotResponse, ClientError> =
-            self.client.send_rpc("private/create_bot", &params).await;
+        let result: Result<CreateBotResponse, ClientError> = self
+            .client
+            .send_rpc("private/create_bot", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CreateBotResponse::CreateBotResult(res) => Ok(res.result),
@@ -43,8 +46,11 @@ impl<'a> BotRpc<'a> {
     /// Cancel a bot
     /// returns: Value
     pub async fn cancel_bot(&self, params: CancelBotParams) -> Result<Value, ClientError> {
-        let result: Result<CancelBotResponse, ClientError> =
-            self.client.send_rpc("private/cancel_bot", &params).await;
+        let result: Result<CancelBotResponse, ClientError> = self
+            .client
+            .send_rpc("private/cancel_bot", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CancelBotResponse::CancelBotResult(res) => Ok(res.result),
@@ -57,8 +63,11 @@ impl<'a> BotRpc<'a> {
     /// Cancel all bots
     /// returns: Value
     pub async fn cancel_all_bots(&self) -> Result<Value, ClientError> {
-        let result: Result<CancelAllBotsResponse, ClientError> =
-            self.client.send_rpc("private/cancel_all_bots", &()).await;
+        let result: Result<CancelAllBotsResponse, ClientError> = self
+            .client
+            .send_rpc("private/cancel_all_bots", &())
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CancelAllBotsResponse::CancelAllBotsResult(res) => Ok(res.result),

@@ -18,8 +18,11 @@ impl<'a> MarketDataRpc<'a> {
         &self,
         params: InstrumentsParams,
     ) -> Result<Vec<Instrument>, ClientError> {
-        let result: Result<InstrumentsResponse, ClientError> =
-            self.client.send_rpc("public/instruments", &params).await;
+        let result: Result<InstrumentsResponse, ClientError> = self
+            .client
+            .send_rpc("public/instruments", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 InstrumentsResponse::InstrumentsResult(res) => Ok(res.result),
@@ -38,7 +41,8 @@ impl<'a> MarketDataRpc<'a> {
         let result: Result<AllInstrumentsResponse, ClientError> = self
             .client
             .send_rpc("public/all_instruments", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 AllInstrumentsResponse::AllInstrumentsResult(res) => Ok(res.result),
@@ -51,8 +55,11 @@ impl<'a> MarketDataRpc<'a> {
     /// Single instrument
     /// returns: Instrument
     pub async fn instrument(&self, params: InstrumentParams) -> Result<Instrument, ClientError> {
-        let result: Result<InstrumentResponse, ClientError> =
-            self.client.send_rpc("public/instrument", &params).await;
+        let result: Result<InstrumentResponse, ClientError> = self
+            .client
+            .send_rpc("public/instrument", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 InstrumentResponse::InstrumentResult(res) => Ok(res.result),
@@ -66,7 +73,7 @@ impl<'a> MarketDataRpc<'a> {
     /// returns: Ticker
     pub async fn ticker(&self, params: TickerParams) -> Result<Ticker, ClientError> {
         let result: Result<TickerResponse, ClientError> =
-            self.client.send_rpc("public/ticker", &params).await;
+            self.client.send_rpc("public/ticker", &params).await.result;
         match result {
             Ok(res) => match res {
                 TickerResponse::TickerResult(res) => Ok(res.result),
@@ -80,7 +87,7 @@ impl<'a> MarketDataRpc<'a> {
     /// returns: Index
     pub async fn index(&self, params: IndexParams) -> Result<Index, ClientError> {
         let result: Result<IndexResponse, ClientError> =
-            self.client.send_rpc("public/index", &params).await;
+            self.client.send_rpc("public/index", &params).await.result;
         match result {
             Ok(res) => match res {
                 IndexResponse::IndexResult(res) => Ok(res.result),
@@ -94,7 +101,7 @@ impl<'a> MarketDataRpc<'a> {
     /// returns: BookRpcResult
     pub async fn book(&self, params: BookParams) -> Result<BookRpcResult, ClientError> {
         let result: Result<BookResponse, ClientError> =
-            self.client.send_rpc("public/book", &params).await;
+            self.client.send_rpc("public/book", &params).await.result;
         match result {
             Ok(res) => match res {
                 BookResponse::BookResult(res) => Ok(res.result),

@@ -18,8 +18,11 @@ impl<'a> MmRpc<'a> {
         &self,
         params: MassQuoteParams,
     ) -> Result<DoubleSidedQuoteResult, ClientError> {
-        let result: Result<MassQuoteResponse, ClientError> =
-            self.client.send_rpc("private/mass_quote", &params).await;
+        let result: Result<MassQuoteResponse, ClientError> = self
+            .client
+            .send_rpc("private/mass_quote", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 MassQuoteResponse::MassQuoteResult(res) => Ok(res.result),
@@ -38,7 +41,8 @@ impl<'a> MmRpc<'a> {
         let result: Result<CancelMassQuoteResponse, ClientError> = self
             .client
             .send_rpc("private/cancel_mass_quote", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CancelMassQuoteResponse::CancelMassQuoteResult(res) => Ok(res.result),
@@ -57,7 +61,8 @@ impl<'a> MmRpc<'a> {
         let result: Result<SetMmProtectionResponse, ClientError> = self
             .client
             .send_rpc("private/set_mm_protection", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 SetMmProtectionResponse::SetMmProtectionResult(res) => Ok(res.result),

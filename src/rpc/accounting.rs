@@ -24,7 +24,7 @@ impl<'a> AccountingRpc<'a> {
     /// returns: Vec<PortfolioEntry>
     pub async fn portfolio(&self) -> Result<Vec<PortfolioEntry>, ClientError> {
         let result: Result<PortfolioResponse, ClientError> =
-            self.client.send_rpc("private/portfolio", &()).await;
+            self.client.send_rpc("private/portfolio", &()).await.result;
         match result {
             Ok(res) => match res {
                 PortfolioResponse::PortfolioResult(res) => Ok(res.result),
@@ -37,8 +37,11 @@ impl<'a> AccountingRpc<'a> {
     /// Open orders
     /// returns: Vec<OrderStatus>
     pub async fn open_orders(&self) -> Result<Vec<OrderStatus>, ClientError> {
-        let result: Result<OpenOrdersResponse, ClientError> =
-            self.client.send_rpc("private/open_orders", &()).await;
+        let result: Result<OpenOrdersResponse, ClientError> = self
+            .client
+            .send_rpc("private/open_orders", &())
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 OpenOrdersResponse::OpenOrdersResult(res) => Ok(res.result),
@@ -54,8 +57,11 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: OrderHistoryParams,
     ) -> Result<OrderHistoryRpcResult, ClientError> {
-        let result: Result<OrderHistoryResponse, ClientError> =
-            self.client.send_rpc("private/order_history", &params).await;
+        let result: Result<OrderHistoryResponse, ClientError> = self
+            .client
+            .send_rpc("private/order_history", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 OrderHistoryResponse::OrderHistoryResult(res) => Ok(res.result),
@@ -74,7 +80,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<ConditionalOrderHistoryResponse, ClientError> = self
             .client
             .send_rpc("private/conditional_order_history", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 ConditionalOrderHistoryResponse::ConditionalOrderHistoryResult(res) => {
@@ -94,8 +101,11 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: TradeHistoryParams,
     ) -> Result<TradeHistoryRpcResult, ClientError> {
-        let result: Result<TradeHistoryResponse, ClientError> =
-            self.client.send_rpc("private/trade_history", &params).await;
+        let result: Result<TradeHistoryResponse, ClientError> = self
+            .client
+            .send_rpc("private/trade_history", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 TradeHistoryResponse::TradeHistoryResult(res) => Ok(res.result),
@@ -114,7 +124,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<TradeValueHistoryResponse, ClientError> = self
             .client
             .send_rpc("private/trade_value_history", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 TradeValueHistoryResponse::TradeValueHistoryResult(res) => Ok(res.result),
@@ -133,7 +144,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<DailyMarkHistoryResponse, ClientError> = self
             .client
             .send_rpc("private/daily_mark_history", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 DailyMarkHistoryResponse::DailyMarkHistoryResult(res) => Ok(res.result),
@@ -152,7 +164,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<TransactionHistoryResponse, ClientError> = self
             .client
             .send_rpc("private/transaction_history", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 TransactionHistoryResponse::TransactionHistoryResult(res) => Ok(res.result),
@@ -168,8 +181,11 @@ impl<'a> AccountingRpc<'a> {
         &self,
         params: RfqHistoryParams,
     ) -> Result<RfqHistoryRpcResult, ClientError> {
-        let result: Result<RfqHistoryResponse, ClientError> =
-            self.client.send_rpc("private/rfq_history", &params).await;
+        let result: Result<RfqHistoryResponse, ClientError> = self
+            .client
+            .send_rpc("private/rfq_history", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 RfqHistoryResponse::RfqHistoryResult(res) => Ok(res.result),
@@ -182,8 +198,11 @@ impl<'a> AccountingRpc<'a> {
     /// Account breakdown
     /// returns: AccountBreakdownRpcResult
     pub async fn account_breakdown(&self) -> Result<AccountBreakdownRpcResult, ClientError> {
-        let result: Result<AccountBreakdownResponse, ClientError> =
-            self.client.send_rpc("private/account_breakdown", &()).await;
+        let result: Result<AccountBreakdownResponse, ClientError> = self
+            .client
+            .send_rpc("private/account_breakdown", &())
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 AccountBreakdownResponse::AccountBreakdownResult(res) => Ok(res.result),
@@ -196,8 +215,11 @@ impl<'a> AccountingRpc<'a> {
     /// Account summary
     /// returns: AccountSummary
     pub async fn account_summary(&self) -> Result<AccountSummary, ClientError> {
-        let result: Result<AccountSummaryResponse, ClientError> =
-            self.client.send_rpc("private/account_summary", &()).await;
+        let result: Result<AccountSummaryResponse, ClientError> = self
+            .client
+            .send_rpc("private/account_summary", &())
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 AccountSummaryResponse::AccountSummaryResult(res) => Ok(res.result),
@@ -213,7 +235,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<RequiredMarginBreakdownResponse, ClientError> = self
             .client
             .send_rpc("private/required_margin_breakdown", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 RequiredMarginBreakdownResponse::RequiredMarginBreakdownResult(res) => {
@@ -236,7 +259,8 @@ impl<'a> AccountingRpc<'a> {
         let result: Result<RequiredMarginForOrderResponse, ClientError> = self
             .client
             .send_rpc("private/required_margin_for_order", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 RequiredMarginForOrderResponse::RequiredMarginForOrderResult(res) => Ok(res.result),

@@ -24,7 +24,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<VerifyWithdrawalResponse, ClientError> = self
             .client
             .send_rpc("private/verify_withdrawal", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 VerifyWithdrawalResponse::VerifyWithdrawalResult(res) => Ok(res.result),
@@ -37,8 +38,11 @@ impl<'a> WalletRpc<'a> {
     /// Withdraw assets
     /// returns: Value
     pub async fn withdraw(&self, params: WithdrawParams) -> Result<Value, ClientError> {
-        let result: Result<WithdrawResponse, ClientError> =
-            self.client.send_rpc("private/withdraw", &params).await;
+        let result: Result<WithdrawResponse, ClientError> = self
+            .client
+            .send_rpc("private/withdraw", &params)
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 WithdrawResponse::WithdrawResult(res) => Ok(res.result),
@@ -56,7 +60,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<CryptoWithdrawalsResponse, ClientError> = self
             .client
             .send_rpc("private/crypto_withdrawals", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CryptoWithdrawalsResponse::CryptoWithdrawalsResult(res) => Ok(res.result),
@@ -69,8 +74,11 @@ impl<'a> WalletRpc<'a> {
     /// Deposits
     /// returns: CryptoDepositsRpcResult
     pub async fn crypto_deposits(&self) -> Result<CryptoDepositsRpcResult, ClientError> {
-        let result: Result<CryptoDepositsResponse, ClientError> =
-            self.client.send_rpc("private/crypto_deposits", &()).await;
+        let result: Result<CryptoDepositsResponse, ClientError> = self
+            .client
+            .send_rpc("private/crypto_deposits", &())
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CryptoDepositsResponse::CryptoDepositsResult(res) => Ok(res.result),
@@ -86,7 +94,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<BtcDepositAddressResponse, ClientError> = self
             .client
             .send_rpc("private/btc_deposit_address", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 BtcDepositAddressResponse::BtcDepositAddressResult(res) => Ok(res.result),
@@ -102,7 +111,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<EthDepositAddressResponse, ClientError> = self
             .client
             .send_rpc("private/eth_deposit_address", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 EthDepositAddressResponse::EthDepositAddressResult(res) => Ok(res.result),
@@ -121,7 +131,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<VerifyInternalTransferResponse, ClientError> = self
             .client
             .send_rpc("private/verify_internal_transfer", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 VerifyInternalTransferResponse::VerifyInternalTransferResult(res) => Ok(res.result),
@@ -140,7 +151,8 @@ impl<'a> WalletRpc<'a> {
         let result: Result<InternalTransferResponse, ClientError> = self
             .client
             .send_rpc("private/internal_transfer", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 InternalTransferResponse::InternalTransferResult(res) => Ok(res.result),

@@ -9,13 +9,16 @@ use yawc::MaybeTlsStream;
 use crate::models::{ErrorResponse, RpcErrorResponse};
 
 pub type WsStream = yawc::WebSocket<MaybeTlsStream<TcpStream>>;
-pub type ResponseSender = oneshot::Sender<Bytes>;
+pub type ResponseSender = oneshot::Sender<(Option<u64>, Bytes)>;
 pub type ChannelSender = tokio::sync::mpsc::UnboundedSender<Bytes>;
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
-pub type Result<T> = core::result::Result<T, Error>;
+pub struct RpcResult<T> {
+    pub result: Result<T, ClientError>,
+    pub elapsed_nanos: Option<u64>,
+}
 
 pub enum InternalCommand {
-    Send(yawc::Frame),
+    Send((u64, yawc::Frame)),
     Close,
 }
 

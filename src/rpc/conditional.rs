@@ -20,7 +20,8 @@ impl<'a> ConditionalRpc<'a> {
         let result: Result<ConditionalOrdersResponse, ClientError> = self
             .client
             .send_rpc("private/conditional_orders", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 ConditionalOrdersResponse::ConditionalOrdersResult(res) => Ok(res.result),
@@ -36,7 +37,8 @@ impl<'a> ConditionalRpc<'a> {
         let result: Result<OpenConditionalOrdersResponse, ClientError> = self
             .client
             .send_rpc("private/open_conditional_orders", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 OpenConditionalOrdersResponse::OpenConditionalOrdersResult(res) => Ok(res.result),
@@ -55,7 +57,8 @@ impl<'a> ConditionalRpc<'a> {
         let result: Result<CreateConditionalOrderResponse, ClientError> = self
             .client
             .send_rpc("private/create_conditional_order", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CreateConditionalOrderResponse::CreateConditionalOrderResult(res) => Ok(res.result),
@@ -74,7 +77,8 @@ impl<'a> ConditionalRpc<'a> {
         let result: Result<CancelConditionalOrderResponse, ClientError> = self
             .client
             .send_rpc("private/cancel_conditional_order", &params)
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CancelConditionalOrderResponse::CancelConditionalOrderResult(res) => Ok(res.result),
@@ -90,7 +94,8 @@ impl<'a> ConditionalRpc<'a> {
         let result: Result<CancelAllConditionalOrdersResponse, ClientError> = self
             .client
             .send_rpc("private/cancel_all_conditional_orders", &())
-            .await;
+            .await
+            .result;
         match result {
             Ok(res) => match res {
                 CancelAllConditionalOrdersResponse::CancelAllConditionalOrdersResult(res) => {
