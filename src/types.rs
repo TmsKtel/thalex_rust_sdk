@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use serde::Deserialize;
 use serde_json::Value;
-use std::{fmt, str::FromStr};
+use std::{fmt, pin::Pin, str::FromStr};
 use thiserror::Error;
 use tokio::{net::TcpStream, sync::oneshot};
 use yawc::MaybeTlsStream;
@@ -16,6 +16,8 @@ pub struct RpcResult<T> {
     pub result: Result<T, ClientError>,
     pub elapsed_nanos: Option<u64>,
 }
+
+pub type RpcAwaitable<T> = Pin<Box<dyn Future<Output = RpcResult<T>> + Send + 'static>>;
 
 pub enum InternalCommand {
     Send((u64, yawc::Frame)),

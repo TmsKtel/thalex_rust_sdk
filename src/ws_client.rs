@@ -25,7 +25,7 @@ use crate::{
     routing::{extract_channel, extract_id},
     types::{
         ChannelSender, ClientError, Environment, Error, ExternalEvent, InternalCommand, LoginState,
-        RequestScope, ResponseSender, RpcResult, SubscribeResponse, WsStream,
+        RequestScope, ResponseSender, RpcAwaitable, RpcResult, SubscribeResponse, WsStream,
     },
 };
 
@@ -214,6 +214,48 @@ impl WsClient {
                 result: Err(ClientError::Recv(e)),
                 elapsed_nanos: None,
             },
+        }
+    }
+
+    pub fn send_rpc_async<T, P>(
+        &self,
+        method: &str,
+        params: &P,
+    ) -> Result<RpcAwaitable<T>, ClientError>
+    where
+        T: serde::de::DeserializeOwned + std::fmt::Debug,
+        P: serde::Serialize,
+    {
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+
+        let (tx, rx) = oneshot::channel::<(Option<u64>, Bytes)>();
+        self.pending_requests.insert(id, tx);
+
+        let text = serde_json::to_string(&Request { id, method, params })
+            .expect("failed serializing request");
+
+        log_req!("{text}");
+
+        match self
+            .write_tx
+            .send(InternalCommand::Send((id, Frame::text(text))))
+        {
+            Err(e) => {
+                self.pending_requests.remove(&id);
+                Err(ClientError::Transport(Box::new(e)))
+            }
+            Ok(_) => Ok(Box::pin(async move {
+                match rx.await {
+                    Ok((elapsed, response)) => RpcResult {
+                        result: deserialise_to_type::<T>(&response).map_err(ClientError::from),
+                        elapsed_nanos: elapsed,
+                    },
+                    Err(e) => RpcResult {
+                        result: Err(ClientError::Recv(e)),
+                        elapsed_nanos: None,
+                    },
+                }
+            })),
         }
     }
 
