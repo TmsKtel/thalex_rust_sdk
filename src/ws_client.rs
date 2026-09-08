@@ -400,7 +400,7 @@ impl WsClient {
         )))
     }
 
-    pub async fn login(&self) -> Result<(), Error> {
+    pub async fn login(&self) -> Result<String, Error> {
         let mut attempts = 5;
         loop {
             if attempts == 0 {
@@ -428,7 +428,13 @@ impl WsClient {
                 tokio::time::sleep(Duration::from_secs(3)).await;
             } else {
                 debug!("Login successful");
-                return Ok(());
+                let account_number = result
+                    .get("result")
+                    .unwrap()
+                    .get("account_number")
+                    .and_then(|v| v.as_str())
+                    .unwrap();
+                return Ok(account_number.to_owned());
             }
         }
     }
